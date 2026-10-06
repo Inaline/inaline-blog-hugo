@@ -1,0 +1,21 @@
+{{ define "main" }}
+<div class="container container--wide layout">
+  <div class="layout-main">
+    <header class="page-header">
+      <h1 class="page-title">#{{ .Title }}</h1>
+    </header>
+    {{ if .RegularPages }}
+      {{ $paginator := .Paginate .RegularPages }}
+      <section class="post-list">
+        {{ range $i, $page := $paginator.Pages }}
+          {{/* index 只用来轮换兜底封面：每页从池子第一张重新开始（3 张图在一页里
+               本来就要轮好几遍，跨页连续没有意义） */}}
+          {{ partial "post-card.html" (dict "page" $page "index" $i) }}
+        {{ end }}
+      </section>
+      {{ partial "pager.html" $paginator }}
+    {{ end }}
+  </div>
+  {{ partial "sidebar.html" . }}
+</div>
+{{ end }}

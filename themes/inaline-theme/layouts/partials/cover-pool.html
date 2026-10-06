@@ -1,0 +1,16 @@
+{{/*
+  封面图池（§7.1 / §7.7）：Hero 背景与文章卡片的兜底图共用这一池。
+
+  规则：配置了 params.hero.covers 就用它（assets 路径，逐张 resources.Get，
+  找不到的构建告警并跳过）；未配置或一张都解析不到，回退主题内置 cover1.jpg。
+  返回 []resource.Image。抽成 partial 是为了让"两处同池"是结构上的事实——
+  改 hugo.yaml 的 hero.covers，Hero 与文章卡片的兜底图一起变。
+*/}}
+{{ $covers := slice }}
+{{ with site.Params.hero }}{{ with .covers }}
+  {{ range . }}
+    {{ with resources.Get . }}{{ $covers = $covers | append . }}{{ else }}{{ warnf "covers: 找不到资源 %q" . }}{{ end }}
+  {{ end }}
+{{ end }}{{ end }}
+{{ if not $covers }}{{ with resources.Get "images/cover/cover1.jpg" }}{{ $covers = slice . }}{{ end }}{{ end }}
+{{ return $covers }}

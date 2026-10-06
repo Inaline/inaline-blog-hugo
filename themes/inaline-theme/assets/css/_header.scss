@@ -1,0 +1,426 @@
+// ---------------------------------------------------------------------------
+// Header
+// 见 DESIGN.md §6
+// ---------------------------------------------------------------------------
+
+.site-header {
+  // fixed 而非 sticky：脱离文档流后 Hero 才能从 y=0 铺满整个视口并钻到它底下。
+  // sticky 会占据 56px 文档流，把 Hero 往下挤，靠负外边距去抵消又会触发外边距塌陷
+  // （负边距会穿过 .main 和 body 顶到根元素，把整个文档包括 Header 一起上移）。
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-header);
+  height: var(--header-height);
+  // Header 内的前景色。默认取正文色；压在 Hero 上时转白（见文件末尾）
+  --header-fg: var(--color-text);
+
+  background: var(--header-bg);
+  backdrop-filter: blur(var(--header-blur));
+  -webkit-backdrop-filter: blur(var(--header-blur));
+  // 用阴影而非分割线区分层级
+  box-shadow: var(--shadow-header);
+  transition: box-shadow var(--duration-base) var(--ease),
+              background-color var(--duration-base) var(--ease),
+              transform var(--duration-base) var(--ease);
+
+  // 滚动后由 main.js 添加，阴影加深
+  &.is-scrolled {
+    box-shadow: var(--shadow-md);
+  }
+
+  // 向下滚动收起、向上滚动展开（main.js 按方向切换）
+  &.is-hidden {
+    transform: translateY(-100%);
+  }
+}
+
+// 三栏 Grid：保证中部导航绝对居中，不因左右宽度不等而偏移
+.header-inner {
+  max-width: var(--container-width);
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+}
+
+// --- Logo ---
+
+.site-logo {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--header-fg);
+  white-space: nowrap;
+
+  // 必须是 :hover 而非仅 .site-logo：全局 a:hover 的特异度是 (0,1,1)，
+  // 比 .site-logo 的 (0,1,0) 高，不显式压回去的话（v2.1）"Logo 去悬停"根本不会生效，
+  // 鼠标一放上去就变主题色。
+  &:hover {
+    color: var(--header-fg);
+  }
+}
+
+// --- 中部导航 ---
+
+.site-nav {
+  height: 100%;
+}
+
+.nav-list {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-item {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 100%;
+  padding: 0 var(--space-4);
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
+  line-height: 1;
+  color: var(--header-fg);
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+
+// 下划线挂在内容包裹层上：
+//  - 宽度恒等于「图标 + 文字」的宽度（不含内边距，与右侧箭头无关）
+//  - 位置紧贴文字下方，而非标题栏边缘
+.nav-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 0;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    // 用 width 而非 transform: scaleX —— 绝对定位元素改宽度不影响其他元素布局，
+    // 且圆角在动画全程保持正圆（scaleX 会把胶囊形拉成椭圆的尖角）
+    transition: width var(--duration-base) var(--ease);
+  }
+}
+
+.nav-link:hover .nav-label::after {
+  width: 100%;
+}
+
+.nav-icon {
+  font-size: 1rem;
+}
+
+.nav-caret {
+  font-size: 0.625rem;
+  transition: transform var(--duration-base) var(--ease);
+}
+
+// 顶级「有二级菜单」的展开箭头：与左侧 .nav-icon 同为 1rem（下拉内箭头保持 10px）。
+// 位于 .nav-label 内，悬停下划线随之覆盖箭头（DESIGN.md §6.3）
+.nav-link--parent .nav-caret {
+  font-size: 1rem;
+}
+
+// --- 二级菜单 ---
+
+.nav-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  // 贴合内容：两字子项自然宽度约 85px，取 112px 略宽于「更多」触发项（约 102px）
+  min-width: 112px;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  // 与 Header 同档透明度，避免展开时"半透明条 + 实心白块"割裂。
+  // backdrop-filter 必须一并跟上：只降背景不模糊，透出来的页面内容会是清晰的，很脏。
+  background: var(--header-bg);
+  backdrop-filter: blur(var(--header-blur));
+  -webkit-backdrop-filter: blur(var(--header-blur));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-dropdown);
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 8px);
+  transition: opacity var(--duration-base) var(--ease),
+              transform var(--duration-base) var(--ease),
+              visibility var(--duration-base);
+}
+
+.nav-dropdown-link {
+  // ::before 的 z-index:-1 需要自身构成层叠上下文，
+  // 否则填充会沉到 .nav-dropdown 面板的半透明背景之下
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--color-text);
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease),
+              text-shadow var(--duration-fast) var(--ease);
+
+  // 悬停填充与右侧按钮同款（方案 C，见 §6.4）：从中心"长出来"而非直接切背景色。
+  // 内高光挂在这层上而非链接本身：inset 阴影属于元素背景绘制层，
+  // 先于 z-index:-1 的填充绘制，留在链接上会被填充整块盖住。
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--color-primary);
+    box-shadow: var(--glow-inset);
+    opacity: 0;
+    transform: scale(.3);
+    transition: transform var(--duration-fast) var(--ease),
+                opacity var(--duration-fast) var(--ease);
+  }
+
+  // 外发光不用：子项距白色面板边缘仅 4px，外发光会溢到面板外的页面上。
+  &:hover {
+    color: var(--color-on-primary);
+    text-shadow: var(--glow-text);
+
+    &::before {
+      opacity: 1;
+      transform: scale(1);
+      transition: transform var(--duration-base) var(--ease),
+                  opacity var(--duration-base) var(--ease);
+    }
+  }
+}
+
+// 悬停展开 / 移出收起；focus-within 支持键盘操作
+.nav-item--has-children {
+  &:hover,
+  &:focus-within {
+    .nav-dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, 0);
+    }
+
+    > .nav-link .nav-caret {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+// --- 三级及以下子菜单（树形导航的更深层级）---
+// 与二级 .nav-dropdown 的区别：挂在父项右侧横向展开，而非顶栏下方居中。
+
+.nav-dropdown-item--has-children {
+  position: relative;
+
+  &:hover,
+  &:focus-within {
+    > .nav-submenu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    > .nav-dropdown-link .nav-caret--nested {
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.nav-submenu {
+  position: absolute;
+  // 向上外扩一个内边距，与父级面板顶边对齐（.nav-dropdown 有 4px 内边距）
+  top: calc(var(--space-1) * -1);
+  left: 100%;
+  min-width: 112px;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--header-bg);
+  backdrop-filter: blur(var(--header-blur));
+  -webkit-backdrop-filter: blur(var(--header-blur));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-dropdown);
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(8px);
+  transition: opacity var(--duration-base) var(--ease),
+              transform var(--duration-base) var(--ease),
+              visibility var(--duration-base);
+}
+
+// --- 右侧操作区 ---
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  justify-self: end;
+}
+
+.action-btn {
+  // ::before 的 z-index:-1 需要按钮自身构成层叠上下文，否则会沉到 Header 背景之下
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--header-fg);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+              text-shadow var(--duration-fast) var(--ease);
+
+  // 悬停填充由这层从中心"长出来"（方案 C）：背景色直接切换太硬，
+  // 改成 scale + opacity。此处的 transition 是退出时用的（fast，收得干脆），
+  // 进入时在 :hover 内覆写为 base（展开看得见，见 DESIGN.md §6.4）。
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--color-primary);
+    opacity: 0;
+    transform: scale(.3);
+    transition: transform var(--duration-fast) var(--ease),
+                opacity var(--duration-fast) var(--ease);
+  }
+
+  // 悬停：图标转白 + 图标辉光（延迟 80ms bloom）。填充不再切背景色，
+  // 由 ::before 放大完成；外光晕与内高光已取消（小按钮上太"炸"）。
+  &:hover {
+    color: var(--color-on-primary);
+    text-shadow: var(--glow-text);
+    // 与上方 transition 的两条属性一一对应：color / text-shadow
+    transition-delay: 0s, 80ms;
+
+    &::before {
+      opacity: 1;
+      transform: scale(1);
+      transition: transform var(--duration-base) var(--ease),
+                  opacity var(--duration-base) var(--ease);
+    }
+  }
+}
+
+// 主题图标纯 CSS 切换。类名即「该主题生效时显示哪一个」：
+// 亮色 → mdi-brightness-4（.icon-when-light），暗色 → mdi-brightness-6（.icon-when-dark）
+.action-btn .icon-when-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] {
+  .action-btn .icon-when-light {
+    display: none;
+  }
+
+  .action-btn .icon-when-dark {
+    display: inline-block;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 首页顶部态：Hero 通栏铺到页面顶端，标题栏必须完全让位
+//
+// 1. 背景透明 —— 让封面图原样透出
+// 2. 去掉 backdrop-filter —— 只改背景色是不够的：毛玻璃会照糊背景，
+//    标题栏位置仍会留下一条模糊带，那就不是"全透明"了
+// 3. 去掉阴影 —— 压在照片上的投影只会变成一道脏印
+// 4. 前景转白 —— 封面图是深色调，亮色模式下的正文色（#1F2328）压上去读不出来
+//
+// 滚动后 .is-scrolled 生效，:not() 失配，上述四条自动全部还原。
+// 只在首页身上生效：其他页面顶部没有 Hero，转白会变成白底白字。
+// ---------------------------------------------------------------------------
+body.has-hero .site-header:not(.is-scrolled) {
+  // 静止时略灰一档，避免整条 Header 全白抢戏；悬停时才提到纯白
+  --header-fg: var(--color-over-hero-soft);
+
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+
+  // 导航项悬停改为纯白（内页仍是主题色）。
+  // 橙色压在照片上不够干净，且和"全透明让位给图片"的意图相冲。
+  // 下划线不受影响，仍是主题色——它本来就细，压在图上作点缀正好。
+  .nav-link:hover {
+    color: var(--color-over-hero);
+  }
+
+  // Logo 同理：静止时是略灰的白，悬停提到纯白。
+  // 与导航项的区别在静止态——Logo 是站名，没有下划线可依托，靠亮度差做反馈。
+  .site-logo:hover {
+    color: var(--color-over-hero);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 前庭敏感人群：Header 显隐直接切换，填充不做缩放生长
+//
+// 必须放在文件末尾，且 :hover 变体要显式列出：
+// 这些覆写与组件规则同为单类选择器（:hover::before 特异度略高），
+// 媒体查询不改变特异度，只能靠源顺序压过组件自身的 transition。
+// 放在文件顶部会被后面的正式规则整段盖掉（v3.8 修正）。
+// ---------------------------------------------------------------------------
+@media (prefers-reduced-motion: reduce) {
+  .site-header {
+    transition: none;
+  }
+
+  .action-btn::before,
+  .action-btn:hover::before,
+  .nav-dropdown-link::before,
+  .nav-dropdown-link:hover::before {
+    transition: none;
+  }
+}

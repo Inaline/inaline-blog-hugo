@@ -1,0 +1,17 @@
+// ---------------------------------------------------------------------------
+// inaline-theme 样式入口
+//
+// 由 Hugo 资产管道编译为单个 main.min.<hash>.css（见 DESIGN.md §4.2）。
+// 使用 @import 而非 @use：Hugo extended 内置的是 LibSass，不支持模块系统。
+//
+// 新增模块时在此追加，保持「多个源文件 → 单个产物」。
+// ---------------------------------------------------------------------------
+
+@import 'tokens';
+@import 'fonts';
+@import 'base';
+@import 'header';
+@import 'hero';
+@import 'post';
+@import 'sidebar';
+@import 'footer';

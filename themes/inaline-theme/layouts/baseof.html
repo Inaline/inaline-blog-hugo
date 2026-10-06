@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="{{ or site.Language.Lang "zh-cn" }}">
+<head>
+  {{ partial "head.html" . }}
+</head>
+<body{{ if .IsHome }} class="has-hero"{{ end }}>
+  {{ partial "header.html" . }}
+  <main class="main{{ if .IsHome }} main--home{{ end }}">
+    {{ block "main" . }}{{ end }}
+  </main>
+  {{ partial "footer.html" . }}
+
+  {{/* 全局脚本：随每个页面加载 */}}
+  {{ $js := resources.Get "js/main.js" | minify | fingerprint }}
+  <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+
+  {{/* 页面级脚本出口：页面模板用 {{ define "page-scripts" }} 注入自己的 JS */}}
+  {{ block "page-scripts" . }}{{ end }}
+</body>
+</html>

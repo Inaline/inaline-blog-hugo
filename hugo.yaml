@@ -1,0 +1,90 @@
+baseURL: "https://example.org/"
+title: "Inaline 博客"
+theme: "inaline-theme"
+
+defaultContentLanguage: "zh-cn"
+locale: "zh-cn"
+hasCJKLanguage: true
+
+pagination:
+  pagerSize: 10
+
+params:
+  description: "个人技术博客"
+  author: "Inaline"
+
+  # -------------------------------------------------------------------------
+  # 首页 Hero（DESIGN.md §7）
+  # covers：封面图列表（assets 下的路径），可以配置多张
+  # - 顺序即切换顺序
+  # - 多于一张时，卡片左下角出现左右箭头循环切换（交叉淡入）
+  # - 不配置 / 全部解析不到则回退主题内置的 images/cover/cover1.jpg
+  # initial_cover：进入 / 刷新时展示哪张封面
+  # - 填 covers 里的路径（如 images/cover/cover2.jpg）→ 每次都从它开始
+  # - 填 random → 每次进入 / 刷新随机一张
+  # - 留空 / 删除该行 → 从 covers 第一张开始
+  # hitokoto：一言列表，页面加载后随机轮换、打字机逐字展示
+  # - 写几条随机几条；只写一条时不循环删除，打完停住
+  # - 留空 / 删除整个 hero 项则卡片不渲染
+  # -------------------------------------------------------------------------
+  hero:
+    covers:
+      - "images/cover/cover1.jpg"
+      - "images/cover/cover2.jpg" # ← company-website/background-1（原 .png 实为 JPEG）
+      - "images/cover/cover3.jpg" # ← company-website/background-2（同上）
+
+    initial_cover: "random"
+
+    # avatar：博主头像，浮在卡片上边缘上方居中，右侧是名称（取 params.author）
+    # - 网络图片：直接写完整 URL（http:// 或 https://，原样引用）
+    # - 本地图片：assets 下的路径（如 images/avatar.jpg），走 resources.Get
+    # - 留空 / 删除该行 → 头像与名称整块不渲染
+    # 注意：站点部署在 https 下时网络图片必须 https，http 会被按混合内容拦截
+    avatar: "https://q.qlogo.cn/headimg_dl?dst_uin=2291374026&spec=640&img_type=jpg"
+
+    hitokoto:
+      - "我希望成为的幸福，仅仅为此我会在你身边。"
+      - "愿你的道路漫长，充满奇迹，充满发现。"
+      - "所有的日子都去吧，在生活中我快乐地向前。"
+
+  # -------------------------------------------------------------------------
+  # 导航：名称 / 链接 / 图标 / 层级全部在此配置，模板不硬编码（DESIGN.md §6.5）
+  # - 树形结构：子菜单直接嵌套在 children 下，层级即嵌套深度，不用 parent/identifier
+  # - 顺序即渲染顺序：不参与任何排序，怎么写就怎么显示
+  # - pageRef 指向内容页，Hugo 解析成真实链接；解析不到会构建告警
+  # - icon 填 Material Design Icons 类名（mdi + mdi-<name>）
+  # -------------------------------------------------------------------------
+  nav:
+    - name: "首页"
+      pageRef: "/"
+      icon: "mdi mdi-home"
+
+    - name: "动态"
+      pageRef: "/moments/"
+      icon: "mdi mdi-message-text"
+
+    - name: "友链"
+      pageRef: "/links/"
+      icon: "mdi mdi-link-variant"
+
+    - name: "关于"
+      pageRef: "/about/"
+      icon: "mdi mdi-information"
+
+    - name: "更多"
+      icon: "mdi mdi-dots-horizontal"
+      children:
+        - name: "归档"
+          pageRef: "/archives/"
+          icon: "mdi mdi-archive-outline"
+
+        - name: "标签"
+          pageRef: "/tags/"
+          icon: "mdi mdi-tag-multiple-outline"
+
+markup:
+  highlight:
+    noClasses: true
+  goldmark:
+    renderer:
+      unsafe: true

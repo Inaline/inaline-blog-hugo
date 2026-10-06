@@ -1,0 +1,8 @@
+name = 'Inaline Theme'
+license = 'MIT'
+description = '面向个人技术博客的极简 Hugo 主题'
+homepage = ''
+min_version = '0.146.0'
+
+[author]
+  name = 'Inaline'

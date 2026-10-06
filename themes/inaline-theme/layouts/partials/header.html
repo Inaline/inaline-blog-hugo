@@ -1,0 +1,27 @@
+<header class="site-header">
+  <div class="header-inner">
+
+    <div class="header-left">
+      <a class="site-logo" href="{{ site.Home.RelPermalink }}">{{ site.Title }}</a>
+    </div>
+
+    <nav class="site-nav" aria-label="主导航">
+      <ul class="nav-list">
+        {{- range site.Params.nav -}}
+          {{ partial "nav-item.html" (dict "item" . "level" 1) }}
+        {{- end }}
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <button type="button" class="action-btn theme-toggle" aria-label="切换深浅色主题">
+        <i class="mdi mdi-brightness-4 icon-when-light" aria-hidden="true"></i>
+        <i class="mdi mdi-brightness-6 icon-when-dark" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="action-btn search-toggle" aria-label="搜索">
+        <i class="mdi mdi-magnify" aria-hidden="true"></i>
+      </button>
+    </div>
+
+  </div>
+</header>

@@ -1,0 +1,23 @@
+{{ define "main" }}
+  {{ partial "hero.html" . }}
+
+  <div class="container container--wide layout" id="home-content">
+    <div class="layout-main">
+      {{ $paginator := .Paginate (where site.RegularPages "Section" "posts") }}
+      <section class="post-list">
+        {{ range $i, $page := $paginator.Pages }}
+          {{/* index 只用来轮换兜底封面：每页从池子第一张重新开始（3 张图在一页里
+               本来就要轮好几遍，跨页连续没有意义） */}}
+          {{ partial "post-card.html" (dict "page" $page "index" $i) }}
+        {{ end }}
+      </section>
+      {{ partial "pager.html" $paginator }}
+    </div>
+    {{ partial "sidebar.html" . }}
+  </div>
+{{ end }}
+
+{{ define "page-scripts" }}
+  {{ $js := resources.Get "js/pages/home.js" | minify | fingerprint }}
+  <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+{{ end }}

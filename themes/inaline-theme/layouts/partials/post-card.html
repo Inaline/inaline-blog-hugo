@@ -1,0 +1,82 @@
+{{/*
+  文章卡片：左图右文（DESIGN.md §7.7）
+
+  参数：page —— 文章页；index —— 在列表里的序号（兜底封面按它轮换）
+  封面取 front matter 的 cover：网络图片（http/https 原样引用）或 assets
+  路径（resources.Get，找不到构建告警）；没配 / 解析不到就从兜底池按序号取一张。
+  兜底池与 Hero 背景同池（§7.1，见 cover-pool.html）——改 hero.covers 两处一起变。
+*/}}
+{{ $page := .page }}
+{{ $index := .index | default 0 }}
+
+{{ $cover := "" }}
+{{ with $page.Params.cover }}
+  {{ if or (hasPrefix . "http://") (hasPrefix . "https://") }}
+    {{ $cover = . }}
+  {{ else }}
+    {{ with resources.Get . }}{{ $cover = .RelPermalink }}{{ else }}{{ warnf "post-card: %s 的 cover 找不到资源 %q，改用兜底图" $page.RelPermalink . }}{{ end }}
+  {{ end }}
+{{ end }}
+{{ if not $cover }}
+  {{ with partial "cover-pool.html" . }}{{ $cover = (index . (mod $index (len .))).RelPermalink }}{{ end }}
+{{ end }}
+
+{{/* 预估阅读时长 = 正文去掉空白后的字符数 ÷ 400 字/分钟，不足 1 分钟按 1 分钟。
+     不用 Hugo 自带的 .ReadingTime：它按空格切词，中文整段会被算成区区几个"词"。
+     400 是中文速读的常用估值，只是个估算值，不必精确 */}}
+{{ $chars := countrunes (replaceRE `\s+` "" ($page.Content | plainify)) }}
+{{ $minutes := math.Max 1 (math.Ceil (div (float $chars) 400.0)) }}
+
+{{/* 图文交替（§7.7）：奇数条图在左、偶数条图在右。index 从 0 起，
+     所以"偶数条"落在 index 为奇数上——判断条件看着反，是对的 */}}
+{{ $flip := eq (mod $index 2) 1 }}
+<article class="post-card{{ if $flip }} post-card--flip{{ end }}">
+  {{/* 整卡覆盖层（§7.7）：一个铺满卡片的空 <a>，点卡片任意位置都能开文章。
+       它是卡片的**子元素而非父元素**——卡片里还有标题（以后还有标签）等各自的链接，
+       把卡片本身套成 <a> 就成了嵌套链接，HTML 不允许。
+       同封面链接一样是标题链接的视觉重复，故也摘出可访问性树与 Tab 序：
+       读屏不念第二遍、键盘不多停一次，键盘用户走标题链接，功能一点不少 */}}
+  <a class="post-card-link" href="{{ $page.RelPermalink }}" tabindex="-1" aria-hidden="true"></a>
+
+  {{/* 封面只是标题链接的视觉重复：从 Tab 序里摘掉，读屏不念第二遍 */}}
+  <a class="post-card-cover" href="{{ $page.RelPermalink }}" tabindex="-1" aria-hidden="true">
+    {{ with $cover }}<img src="{{ . }}" alt="" loading="lazy" width="300" height="200">{{ end }}
+  </a>
+
+  {{/* 置顶角标（§7.7）：front matter 写 pinned: true 才出现。
+       贴在封面外侧上角（非交替卡左上、交替卡右上），白底 + 竖大拇指 + "置顶"。
+       文字不摘出可访问性树——"置顶"是**内容**不是装饰，读屏该念出来 */}}
+  {{ if $page.Params.pinned }}
+    <span class="post-card-badge">
+      <i class="mdi mdi-thumb-up-outline" aria-hidden="true"></i>
+      <span>置顶</span>
+    </span>
+  {{ end }}
+
+  <div class="post-card-body">
+    {{/* 元信息：图标 + 文字，四项一排，排在标题**上方**（§7.7）。
+         发布时间与阅读时长是真值，后两项是占位——阅读量 / 评论量要等
+         Waline 接上后由前端回填，这里先输出占位符把版式撑住 */}}
+    <div class="post-card-meta">
+      <span class="post-card-meta-item">
+        <i class="mdi mdi-calendar-blank-outline" aria-hidden="true"></i>
+        <time datetime="{{ $page.Date.Format "2006-01-02" }}">{{ $page.Date.Format "2006年1月2日" }}</time>
+      </span>
+      <span class="post-card-meta-item" title="预计阅读时长">
+        <i class="mdi mdi-clock-outline" aria-hidden="true"></i>
+        <span>{{ $minutes }} 分钟</span>
+      </span>
+      <span class="post-card-meta-item" title="阅读量">
+        <i class="mdi mdi-eye-outline" aria-hidden="true"></i>
+        <span class="post-card-stat">—</span>
+      </span>
+      <span class="post-card-meta-item" title="评论量">
+        <i class="mdi mdi-comment-outline" aria-hidden="true"></i>
+        <span class="post-card-stat">—</span>
+      </span>
+    </div>
+
+    <h2 class="post-card-title"><a href="{{ $page.RelPermalink }}">{{ $page.Title }}</a></h2>
+    {{ with or $page.Description $page.Summary }}<p class="post-card-summary">{{ . | plainify | truncate 120 }}</p>{{ end }}
+  </div>
+</article>

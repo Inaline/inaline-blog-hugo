@@ -1,0 +1,396 @@
+// ---------------------------------------------------------------------------
+// 文章列表 / 文章详情 / 标签
+// 阶段 3、4 会大幅细化，此处先承接原有样式并接入设计令牌
+// ---------------------------------------------------------------------------
+
+.page-title {
+  font-size: 1.75rem;
+  margin: 0 0 var(--space-5);
+}
+
+.empty-hint {
+  color: var(--color-text-muted);
+}
+
+// --- 文章列表：卡片（§7.7）---
+
+// 条目之间只靠间距分开，不在卡片上再画分割线——与 Header"阴影替代分割线"同一套语言
+.post-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.post-card {
+  display: flex;
+  gap: var(--space-5);
+  // 整卡不补内边距：封面要直接顶到卡片边缘，留白交给右侧文字列自己带。
+  // 少了这层内边距，封面四角会伸到卡片圆角外面，由 overflow 裁掉
+  // （封面自己的圆角也随之取消——裁两次没有意义）
+  overflow: hidden;
+  // 卡面取 --color-elevated（纯白）：亮色下页面底色是浅灰（--color-bg），
+  // 白卡与灰底本身就画出了卡片轮廓，阴影只再补一点"浮起来"的体感——
+  // 不像纯白页面那样，整张卡的边界全靠阴影去描（轻了糊、重了脏）。
+  // 暗色下 elevated 与 surface 同值，卡面仍比背景高一档，观感与改造前一致
+  background: var(--color-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  // 覆盖层（.post-card-link）的定位基准
+  position: relative;
+  transition: box-shadow var(--duration-base) var(--ease),
+              transform var(--duration-base) var(--ease);
+}
+
+.post-card:hover {
+  box-shadow: var(--shadow-md);
+  // 上浮 2px：配合同步加深的阴影，读起来是"整张卡抬起来"，而不是卡片在跳
+  transform: translateY(-2px);
+}
+
+// 整卡覆盖层：铺满卡片、盖在封面与文字之上，卡片任意位置都能点开文章。
+// 它是**子元素而不是父元素**——卡片里还有标题这类链接，把卡片套成 <a> 就是
+// 嵌套链接，HTML 不允许。绝对定位的子元素不是 flex 项，故不影响图文布局。
+// 封面与文字列都是静态定位、没有层级竞争，所以 z-index: 1 就够（这个 1 是
+// **卡片内部**的局部层级，不会伸出去跟 Header / 浮层的 --z-* 打架）。
+// ⚠️ 卡片里日后要加可点的东西（分类 / 标签行），得给它 position: relative
+// 与 z-index: 2 抬到覆盖层之上，否则点了会被覆盖层截胡、跳去文章
+.post-card-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  // 热区跟着卡片的圆角收：圆角之外那几个像素被 overflow 裁掉、本来就不显示卡片，
+  // 不该接点击
+  border-radius: inherit;
+}
+
+// 封面：比例定死（4:3），图位不随图片来源的尺寸变化——真封面与兜底图混排时列表仍然齐。
+// 宽度按两栏布局的主栏（§7.8）取 300px，文字列还剩 500px 上下（约 31 个汉字一行）
+.post-card-cover {
+  display: block;
+  flex: none;
+  width: 300px;
+  // 3:2（宽 300 → 高 200）。16:9 太扁（169px），标题 + 元信息 + 两行摘要就占满了
+  // 卡片，分类 / 标签那一行进来会被顶开；4:3 拿来做横向封面又偏方（225px）。
+  // 跟它们一样，这里只是**下限**：文字列更高时下面那条 align-self 会把封面
+  // 拉到卡片全高，比 3:2 更高也无妨
+  aspect-ratio: 3 / 2;
+  // 显式写出（它本就是 flex 项的默认值）：撑满卡片高度。注意它会**盖掉**
+  // aspect-ratio 定出的高度——拉伸后交叉轴尺寸已是确定值，比例不再参与计算。
+  // 图片靠 object-fit: cover 裁切，不会被拉变形
+  align-self: stretch;
+  // 右上角斜切一刀（顶边收 8%、底边收满），把切走的那块让给卡片白底。
+  // 挂在封面上而不是 <img> 上：悬停时 img 放大 1.04 倍，切线留在封面这层
+  // 才纹丝不动，看着是"照片在斜框里呼吸"；挂 img 上切线会跟着缩放一起挪
+  -webkit-clip-path: polygon(0 0, 92% 0, 100% 100%, 0 100%);
+  clip-path: polygon(0 0, 92% 0, 100% 100%, 0 100%);
+  overflow: hidden;
+  // 图片解码完成前的兜底底色，避免闪白
+  background: var(--color-border);
+}
+
+.post-card-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-base) var(--ease);
+}
+
+.post-card:hover .post-card-cover img {
+  // 图只放大一点点：溢出被 .post-card-cover 裁掉，看起来是"照片在框里呼吸"
+  transform: scale(1.04);
+}
+
+// --- 图文交替（奇数条图在左、偶数条图在右）---
+// 用 row-reverse 而不是 DOM 里换序：模板只管按序号挂一个类，
+// 读屏与 Tab 序仍是"先图后文"的固定顺序，眼睛看到的左右才是交替的
+
+.post-card--flip {
+  flex-direction: row-reverse;
+}
+
+// 文字列的留白跟着换边：贴着封面的那一侧恒为 0（间距已由 .post-card 的 gap 给了）
+.post-card--flip .post-card-body {
+  padding: var(--space-4) 0 var(--space-4) var(--space-4);
+}
+
+// --- 置顶角标（§7.7）---
+
+// 贴在封面的**外侧上角**：非交替卡在左上、交替卡镜像到右上——正是斜切那一刀
+// 没切到的那个角（切的是靠文字列的内侧角）。贴边而非内缩：它是卡片边缘上的
+// 一块标，跟封面同样是"紧贴卡片边缘"（v3.24 的定调）。
+// 挂在卡片而不是封面里：要贴的是**卡片**的边，塞进封面会被那一刀带着走
+.post-card-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  // ⚠️ 故意不设 z-index：压在封面之上（封面是静态元素，必然在定位元素之下），
+  // 但仍在覆盖层 .post-card-link（z-index: 1）之下——点角标照样开文章，
+  // 不会在卡片角上留出一块点不动的死区
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  // 贴边的两侧（上、左）与卡片边缘共线，不圆；只圆外露的那个内侧角，
+  // 角标才像"从卡片角上长出来的一块"，而不是贴上去的方块。
+  // 与卡片角重合的左上角由卡片的 overflow + border-radius 裁圆，不必自己画
+  border-radius: 0 0 var(--radius-md) 0;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  font-size: 0.875rem;
+  // 同 .post-card-meta-item：压平 1 再让 flex 居中，图标与文字不错位
+  line-height: 1;
+}
+
+// 交替卡镜像到右上：贴边侧改成上 + 右，圆角跟着换到左下
+.post-card--flip .post-card-badge {
+  right: 0;
+  left: auto;
+  border-radius: 0 0 0 var(--radius-md);
+}
+
+// 斜切边翻到左侧：非交替卡切右上角，交替卡切左上角，两条斜边相向，
+// 列表纵向扫下来才是左右对称的
+.post-card--flip .post-card-cover {
+  -webkit-clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.post-card-body {
+  display: flex;
+  flex-direction: column;
+  // 文字块在卡片里垂直居中；卡片高度由封面主导，文字多一行少一行都不会歪
+  justify-content: center;
+  // flex 子项的 min-width 默认是 auto：不归零的话长标题 / 长英文串会把卡片撑破
+  min-width: 0;
+  // 卡片不再补内边距，留白改由文字列自带。左边留 0：图文间距已由 .post-card 的
+  // gap 给了，两边都补就成了双份
+  padding: var(--space-4) var(--space-4) var(--space-4) 0;
+}
+
+.post-card-title {
+  font-size: 1.5rem;
+  margin: 0 0 var(--space-1);
+}
+
+.post-card-title a {
+  color: var(--color-text);
+}
+
+// 标题的悬停反馈挂在**卡片**上，而不是标题链接自己身上（:hover 的从 `<a>` 挪到
+// `.post-card`）：覆盖层盖住了标题，指针根本碰不到那个 <a>，写在它上面的 :hover
+// 永远不会触发。挂在卡片上反而更对——整卡可点时，"鼠标停在哪、标题就跟着亮"
+// 本身就是"这里整块都能点"的提示
+.post-card:hover .post-card-title a {
+  color: var(--color-primary);
+}
+
+// 元信息行：图标 + 文字，四项一排（发布时间 / 阅读时长 / 阅读量 / 评论量），
+// 排在标题**上方**——先说清"多久读完、有没有人看过"，再让标题出场。
+// 图标走 mdi 字体（§6.5），它自带 font-size: inherit，不用另定字号，
+// 会跟着这一行的 0.875rem 走
+.post-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  margin-bottom: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.post-card-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  // line-height: 1 只挂在图标上会与文字的行盒错位，这里压平整项再让 flex 居中
+  line-height: 1;
+}
+
+// 阅读量 / 评论量的占位符：等 Waline 接上后由前端回填（§8 阶段 9）
+.post-card-stat {
+  font-variant-numeric: tabular-nums;
+}
+
+// 摘要固定两行：卡片高度由封面的 16:9 定死，摘要再长也不该把卡片撑高，
+// 列表才有整齐的节奏。截断交给 line-clamp（Hugo 侧仍留 truncate 兜 HTML 体积）
+.post-card-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+}
+
+// --- 分页（§7.7）---
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.pager-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  transition: background-color var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+}
+
+// 只在有链接的页码 / 上一页下一页上给悬停反馈；当前页与禁用态不是可点目标
+.pager-link:hover {
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+// 当前页放在悬停规则之后：同特异度，靠源序保证悬停时也是实心主题色
+.pager-link.is-current {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.pager-link.is-disabled {
+  opacity: .45;
+}
+
+// --- 标签 ---
+
+.tag {
+  color: var(--color-primary);
+
+  &:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+  }
+}
+
+.term-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
+
+.term-list a {
+  color: var(--color-primary);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.term-list .count {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+// --- 文章详情 ---
+
+.post-title {
+  font-size: 2rem;
+  margin: 0 0 var(--space-2);
+}
+
+.post-meta {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  margin-bottom: var(--space-6);
+}
+
+.post-content {
+  > :first-child {
+    margin-top: 0;
+  }
+
+  h2,
+  h3 {
+    margin-top: 2em;
+    margin-bottom: 0.75em;
+  }
+
+  img {
+    border-radius: var(--radius-sm);
+  }
+
+  blockquote {
+    margin: 1.5em 0;
+    padding: 0.25em 1em;
+    border-left: 3px solid var(--color-border);
+    color: var(--color-text-muted);
+  }
+
+  pre {
+    overflow-x: auto;
+    padding: 1em;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+
+  // 行内代码：代码块内的不受影响
+  :not(pre) > code {
+    background: var(--color-surface);
+    padding: 0.15em 0.4em;
+    border-radius: var(--radius-sm);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.5em 0;
+  }
+
+  th,
+  td {
+    border: 1px solid var(--color-border);
+    padding: 0.5em 0.75em;
+    text-align: left;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    margin: 2em 0;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 动效降级：必须留在文件末尾——同特异度的规则写在它后面会整段盖掉它（§9 v3.8）
+// ---------------------------------------------------------------------------
+
+@media (prefers-reduced-motion: reduce) {
+  .post-card,
+  .post-card-cover img {
+    transition: none;
+  }
+
+  // 位移与缩放撤掉；标题转主题色、阴影加深这类非运动反馈保留
+  .post-card:hover {
+    transform: none;
+  }
+
+  .post-card:hover .post-card-cover img {
+    transform: none;
+  }
+}

@@ -1,0 +1,83 @@
+{{/*
+  首页 Hero：背景图（视觉固定）+ 中央一言玻璃卡片 + 底部跳动箭头（DESIGN.md §7）
+
+  封面图来自 params.hero.covers（assets 路径，可多张）：每张渲染成一个
+  .hero-bg-layer，初始选中层 is-active（params.hero.initial_cover，
+  固定路径或"构建期随机"）；多于一张时卡片左下角出现左右箭头，
+  JS 只挪 .is-active（交叉淡入见 _hero.scss）。
+  为什么用内联 style 传 URL：Hugo 不会改写 SCSS 里 url() 的路径，而样式表
+  被指纹化到 /css/ 下，写死相对路径迟早对不上；内联跟着发布结果走（§7.1）。
+*/}}
+{{/* 封面池：与文章卡片的兜底图同池（§7.1 / §7.7），解析规则见 cover-pool.html */}}
+{{ $covers := partial "cover-pool.html" . }}
+
+{{/* 初始背景（params.hero.initial_cover）：填路径 → 固定从它开始；
+     填 "random" → 每次随机（模板这次是构建期随机，供无 JS 兜底，
+     浏览器刷新由 home.js 重摇）；留空 → 从第一张开始 */}}
+{{ $initial := 0 }}
+{{ $random := false }}
+{{ if $covers }}{{ with site.Params.hero }}{{ with .initial_cover }}
+  {{ if eq . "random" }}
+    {{ $random = true }}
+    {{ $initial = index (shuffle (seq 0 (sub (len $covers) 1))) 0 }}
+  {{ else }}
+    {{ $want := strings.TrimPrefix "/" . }}
+    {{ $found := false }}
+    {{ range $i, $img := $covers }}
+      {{ if eq (strings.TrimPrefix "/" $img.RelPermalink) $want }}{{ $initial = $i }}{{ $found = true }}{{ end }}
+    {{ end }}
+    {{ if not $found }}{{ warnf "hero.initial_cover: %q 不在 covers 列表中，从第一张开始" . }}{{ end }}
+  {{ end }}
+{{ end }}{{ end }}{{ end }}
+
+<section class="hero"{{ if $random }} data-cover-random="true"{{ end }}>
+  {{ range $i, $img := $covers }}
+  <div class="hero-bg-layer{{ if eq $i $initial }} is-active{{ end }}" style="background-image: url('{{ $img.RelPermalink }}')"></div>
+  {{ end }}
+
+  {{/* 一言卡片：列表未配置则整块不渲染（hero 是可选块） */}}
+  {{ with site.Params.hero }}{{ with .hitokoto }}
+  {{/* 徽章 + 卡片作为一个整体居中（§7.6）：居中基准是两者合起来的外接框。
+       stage 退成 flex 列，两者只是它的两个子项——卡片单独居中会让整块重心偏上 */}}
+  <div class="hero-stage">
+    {{/* 博主头像 + 名称（§7.6）：卡片上方的"作者徽章"（stage 的第一个子项，
+         与卡片的间距即 stage 的 gap）。头像支持网络 URL（http/https 原样引用）
+         与 assets 本地路径（resources.Get，找不到构建告警）；留空整块不渲染 */}}
+    {{ with site.Params.hero.avatar }}
+      {{ $src := . }}
+      {{ if not (or (hasPrefix . "http://") (hasPrefix . "https://")) }}
+        {{ with resources.Get . }}{{ $src = .RelPermalink }}{{ else }}{{ warnf "hero.avatar: 找不到资源 %q" . }}{{ $src = "" }}{{ end }}
+      {{ end }}
+      <div class="hero-profile">
+        {{/* width / height 只是占位（防图片加载完成后跳布局），真实尺寸走 --hero-avatar-size */}}
+        {{ with $src }}<img class="hero-avatar" src="{{ . }}" alt="{{ site.Params.author }}" width="72" height="72" referrerpolicy="no-referrer">{{ end }}
+        <span class="hero-profile-name">{{ site.Params.author }}</span>
+      </div>
+    {{ end }}
+
+    <div class="hero-quote" data-hitokoto="{{ . | jsonify }}">
+      {{ partial "icon.html" (dict "name" "quote" "size" "2rem" "class" "hero-quote-mark hero-quote-mark--open") }}
+      <p class="hero-quote-text">
+        <span class="hero-quote-typed">{{ index . 0 }}</span><span class="hero-quote-cursor" aria-hidden="true"></span>
+      </p>
+      {{ partial "icon.html" (dict "name" "quote" "size" "2rem" "rotate" 180 "class" "hero-quote-mark hero-quote-mark--close") }}
+
+      {{/* 背景切换：只有一张封面时没有可切的，不给死按钮 */}}
+      {{ if gt (len $covers) 1 }}
+      <div class="hero-cover-nav">
+        <button type="button" class="hero-cover-btn hero-cover-btn--prev" aria-label="上一张背景图">
+          <i class="mdi mdi-chevron-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="hero-cover-btn hero-cover-btn--next" aria-label="下一张背景图">
+          <i class="mdi mdi-chevron-right" aria-hidden="true"></i>
+        </button>
+      </div>
+      {{ end }}
+    </div>
+  </div>
+  {{ end }}{{ end }}
+
+  <a class="hero-arrow" href="#home-content" aria-label="向下滚动">
+    <i class="mdi mdi-chevron-down" aria-hidden="true"></i>
+  </a>
+</section>

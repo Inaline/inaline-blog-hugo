@@ -1,0 +1,141 @@
+// ---------------------------------------------------------------------------
+// 设计令牌（Design Tokens）
+// 见 DESIGN.md §3。所有组件只消费这里的 CSS 自定义属性，不直接写死颜色/尺寸。
+// 暗色模式通过覆写同名变量实现，组件样式无需感知主题。
+// ---------------------------------------------------------------------------
+
+// 暗色令牌：媒体查询兜底与 data-theme 显式覆盖共用同一份定义
+@mixin dark-tokens {
+  color-scheme: dark;
+
+  --color-bg: #16181D;
+  --color-surface: #1E2127;
+  --color-elevated: #1E2127; // 抬升层（文章卡片、浮层等）：暗色下与 surface 同值，只比背景高一档
+  --color-text: #E6E7E9;
+  --color-text-muted: #9AA1AC;
+  --color-border: #2C313A;
+  --header-bg: rgba(22, 24, 29, 0.6);
+  --hero-card-bg: rgba(16, 18, 22, 0.4); // Hero 一言卡片玻璃底（§7.5）：仅暗色加深色底
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .25), 0 2px 6px rgba(0, 0, 0, .3);
+  --shadow-md: 0 6px 18px rgba(0, 0, 0, .45);
+  --shadow-header: 0 2px 8px rgba(0, 0, 0, .45);
+  --shadow-dropdown: 0 2px 8px rgba(0, 0, 0, .4), 0 10px 28px rgba(0, 0, 0, .5);
+}
+
+:root {
+  color-scheme: light;
+
+  // 品牌色
+  --color-primary: #FA5D19;
+  --color-primary-hover: #E14E0E;
+  --color-primary-soft: rgba(250, 93, 25, 0.10);
+  --color-on-primary: #FFFFFF; // 主题色实心填充上的前景色（两种主题下都是白）
+  --color-over-hero: #FFFFFF;   // Hero 封面图之上的前景色：封面图为深色调，须用白字
+  --color-over-hero-soft: rgba(255, 255, 255, .85); // 同上，略灰一档（首页顶部态 Header 静止时）
+  --hero-scrim: rgba(0, 0, 0, .35);                 // 封面图压暗遮罩，夜里不刺眼
+
+  // Hero 中央一言卡片（玻璃拟态，压在封面图上；规格见 §7.5）
+  // 浅色不添底：只做毛玻璃，整卡让位给照片；暗色才叠一档深色底（见 dark-tokens）
+  --hero-card-bg: transparent;
+  --hero-card-blur: 24px;
+
+  // Hero 作者徽章（§7.6）：头像直径。徽章块（.hero-profile）的高度也取它——
+  // 名称的行盒比头像高，徽章不钉住的话，组合居中会连行间留白一起算进去
+  --hero-avatar-size: 72px;
+
+  // 封面角标（§7.7，当前只有"置顶"）：压在封面图上的白底角标。
+  // 两种主题下取值相同，故**不进 dark-tokens**——它坐在照片上而不是页面底色上，
+  // 跟着主题翻色会在亮色照片上糊掉（同 --color-over-hero / --glow-*）
+  --badge-bg: #FFFFFF;
+  --badge-fg: #1F2328; // 与 --color-text 同值但语义不同：这是"照片上的字"，暗色下不能翻成浅色
+
+  // 中性色（亮色）：页面浅灰、白卡浮起
+  // 底色转中性灰（v3.28）：底板跟着去色，两个大色块挨在一起，留一丝蓝调都会被看出来
+  --color-bg: #F5F5F5;       // 页面底色：比抬升层低一档，卡片轮廓先由底色画出来
+  --color-surface: #EBEBEB;  // 贴身底板（行内代码等）：须在页面底色与白卡上都看得见
+  --color-elevated: #FFFFFF; // 抬升层（文章卡片、浮层等）：纯白 + 阴影与页面分层
+  --color-text: #1F2328;
+  --color-text-muted: #6B7280;
+  --color-border: #E5E7EB;
+  --header-bg: rgba(255, 255, 255, 0.6);
+
+  // 字体
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-handwriting: "HYTangMeiRen", var(--font-system);
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  // 字体应用层级：默认全站手写体；
+  // 后续设置面板只需切换 <html data-font="system"> 即可全站回退（本期不实现 UI）
+  --font-body: var(--font-handwriting);
+  --font-heading: var(--font-handwriting);
+  --font-ui: var(--font-handwriting);
+
+  // 间距
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+
+  // 圆角
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 24px; // Hero 一言卡片（§7.5）
+
+  // 阴影
+  // 卡片静置（双层）：贴边层勾轮廓 + 弥散层补一点体感。
+  // 白卡压在浅灰底上，明度差已经把卡片轮廓画出来了，阴影只做微调——
+  // 重了反而像贴了张纸，层级区分过度（v3.22 曾加重到 .04/.06，v3.26 收回）
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .03), 0 2px 6px rgba(0, 0, 0, .04);
+  --shadow-md: 0 6px 18px rgba(0, 0, 0, .08);
+  --shadow-header: 0 2px 8px rgba(0, 0, 0, .06); // Header 常驻阴影（替代分割线）
+  // 浮层阴影：紧贴层勾勒边缘 + 大范围层营造抬升，无描边时也能看清边界
+  --shadow-dropdown: 0 2px 8px rgba(0, 0, 0, .06), 0 10px 28px rgba(0, 0, 0, .10);
+
+  // 悬停发光：配合实心主题色填充使用（两种主题下取值相同，故不进 dark-tokens）
+  --glow-inset: inset 0 0 10px rgba(255, 255, 255, .25); // 内高光，让填充块"亮起来"（仅二级菜单子项，挂在其填充层上）
+  --glow-text: 0 0 6px rgba(255, 255, 255, .55);         // 文字/图标自身辉光
+  --glow-halo: 0 0 12px rgba(250, 93, 25, .45);          // 外围光晕（v3.6 起失去引用，保留待用）
+
+  // 布局
+  --container-width: 1200px; // Header 与两栏布局容器（列表页内容区已用上，见 §7.8）
+  --content-width: 42rem;    // 单栏内容宽度（文章详情等单栏页面用）
+  --sidebar-width: 280px;    // 右侧栏宽度：定宽，主栏吃剩余宽度（§7.8）
+  --header-height: 56px;
+  --header-blur: 20px;       // Header 与下拉面板共用的毛玻璃强度（两者须同档，见 §6.3）
+
+  // 层级
+  --z-header: 100;
+  --z-dropdown: 110;
+
+  // 动效
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+}
+
+// 用户显式选择系统字体时
+:root[data-font="system"] {
+  --font-body: var(--font-system);
+  --font-heading: var(--font-system);
+  --font-ui: var(--font-system);
+}
+
+// 暗色：无 JS 时跟随系统
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @include dark-tokens;
+  }
+}
+
+// 暗色：用户显式选择（内联脚本保证该属性始终存在）
+:root[data-theme="dark"] {
+  @include dark-tokens;
+}

@@ -1,0 +1,321 @@
+// ---------------------------------------------------------------------------
+// 首页 Hero：背景图（视觉固定）+ 底部跳动箭头
+// 见 DESIGN.md §7
+// ---------------------------------------------------------------------------
+
+.hero {
+  position: relative;
+  // 铺满整个视口。文档流顶端即为视口顶端（Header 是 fixed，不占位），
+  // 因此 Hero 天然钻到 Header 底下；Header 有 z-index: var(--z-header)，仍渲染在上一层。
+  height: 100vh;
+  overflow: hidden;
+  // 图片解码完成前的兜底底色，避免闪白
+  background: var(--color-surface);
+}
+
+// 每张封面一个图层，直接铺在 .hero 上（inset: 0），切换 = JS 挪 .is-active
+// （背景图不可过渡，只能靠透明度交叉淡入）。
+// fixed 让图片相对**视口**定位——页面滚动、图片不动，即"视觉固定"效果
+// （曾用 JS transform 每帧抵消滚动，主线程晚一帧就是一次抖动，见 §7.1）。
+// 定位区是视口时 cover / center 也按视口算：图片始终居中铺满一屏，
+// 滚出 hero 盒子的部分被裁掉
+.hero-bg-layer {
+  position: absolute;
+  inset: 0;
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 600ms var(--ease);
+}
+
+.hero-bg-layer.is-active {
+  opacity: 1;
+}
+
+// 压暗遮罩。封面图整体偏暗但仍够亮，全屏铺开在夜里相当刺眼，
+// 压一层黑把亮度整体降下来。
+// 用 ::after 而非再做一层 div：无需进模板，且伪元素天然排在各个背景图层之后、盖住它们。
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--hero-scrim);
+  // 遮罩铺满整个 Hero，不挡点击，否则底部箭头和下滚链接全被吃掉
+  pointer-events: none;
+}
+
+// --- 徽章 + 卡片：整块组合居中（§7.6）---
+
+// 站在一起被居中的那一组：作者徽章（.hero-profile）+ 一言卡片（.hero-quote）。
+// 居中基准是两者合起来的外接框，而不是卡片自己的中心——徽章全挂在卡片上方，
+// 卡片单独居中时整块重心偏上（实测偏差 61px：徽章 98 + 间距 24 的一半）。
+// 两者只是同一个 flex 列的两个子项：卡片尺寸仍只由自己的内容决定（§7.5），
+// 徽章是并列的兄弟节点、不参与它的尺寸计算。没有徽章时列里只剩卡片，
+// 居中行为自动退回"卡片自己居中"。
+.hero-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  // 不写这行卡片会被拉满视口宽（stretch）：宽度必须由卡片自己的 max-content 决定
+  align-items: center;
+  justify-content: center;
+  // 徽章与卡片的间距（原 bottom: calc(100% + ...) 的那一档）
+  gap: var(--space-5);
+  // 必须高于 .hero::after 遮罩，否则整块被压暗
+  z-index: 1;
+}
+
+// --- 中央一言玻璃卡片（§7.5）---
+
+.hero-quote {
+  // 定位交给 .hero-stage；relative 只为给角落引号与左下角切换按钮当定位基准
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // 尺寸完全跟随可见文字（§7.5）：宽度 max-content 随打字生长（680px 兜底、
+  // 75vw 封顶后才折行）；高度 min-height 兜底，折行后由内容撑高（每行 +38px）。
+  // 本期不做移动端适配
+  width: max-content;
+  min-width: 680px;
+  max-width: 75vw;
+  min-height: 140px;
+  // 左右 64px 而非 48px：换行后长行的端点会顶到内边距边缘，
+  // 而角落引号内缩 24px、自身 2rem，占到距边 56px——48px 时首字会与引号相碰
+  padding: var(--space-8) calc(var(--space-8) + var(--space-4));
+  // 毛玻璃就是卡片的本体：浅色下不叠底色（--hero-card-bg: transparent），
+  // 暗色下才加一档深色底。无描边、无投影，保持"只有一层玻璃"的简洁
+  background: var(--hero-card-bg);
+  backdrop-filter: blur(var(--hero-card-blur));
+  -webkit-backdrop-filter: blur(var(--hero-card-blur));
+  border-radius: var(--radius-xl);
+}
+
+// 左上 / 右下角引号。开合为同一 SVG，收尾引号在模板里旋转 180°（icon.html）
+.hero-quote-mark {
+  position: absolute;
+  color: var(--color-over-hero);
+  opacity: .35;
+}
+
+.hero-quote-mark--open {
+  top: var(--space-5);
+  left: var(--space-5);
+}
+
+.hero-quote-mark--close {
+  right: var(--space-5);
+  bottom: var(--space-5);
+}
+
+// 卡片尺寸完全跟随可见文字：宽度随打字生长、删除回缩，跨过 75vw 才折行；
+// 高度在文字真的折行的那一刻才长高（上下的内边距差见 .hero-quote 注释）。
+// 不给整句预留宽 / 高——"文字自己长出来"正是打字机要演的东西
+.hero-quote-text {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.9;
+  color: var(--color-over-hero);
+  text-align: center;
+}
+
+// --- 卡片上方：博主头像 + 名称（§7.6）---
+
+// stage 的第一个子项（与卡片的间距 = stage 的 gap），不参与卡片尺寸计算——
+// 打字只让卡片自己长大，徽章始终贴着上边缘；水平居中由 stage 的 align-items 负责
+.hero-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  // 高度钉成头像直径：名称的行盒（3.5rem × 1.75 = 98px）比头像高出一圈，
+  // 那截留白看不见却会被算进组合的外接框，把整块压低 13px。钉住之后
+  // 徽章的外接框就是头像的圆，与视觉边界一致（名称行盒溢出、居中，字形不受影响）
+  height: var(--hero-avatar-size);
+  // 名称不折行；整块宽度随内容，撑不到卡片
+  white-space: nowrap;
+}
+
+.hero-avatar {
+  display: block;
+  width: var(--hero-avatar-size);
+  height: var(--hero-avatar-size);
+  border-radius: 50%;
+  object-fit: cover;
+  // 照片上要有轮廓才立得住：2px 半透明白圈。box-shadow 外扩不占布局、不吃圆角
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .55);
+  // 进：顺时针转一圈；出：从 360° 平滑转回 0° = 逆时针原路转回来。
+  // 用 transition 而不是 animation——回程正是要的动作，且中途移出会从当前
+  // 角度直接掉头。静态时 360° ≡ 0°，不悬停无残留状态
+  transition: transform 500ms var(--ease);
+}
+
+.hero-avatar:hover {
+  transform: rotate(360deg);
+}
+
+.hero-profile-name {
+  color: var(--color-over-hero);
+  font-size: 3.5rem;
+  font-weight: 500;
+  letter-spacing: .02em;
+  // 与箭头同理：名字直接压在照片上，浅色照片里纯白字会糊，给一点投影兜底
+  text-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+}
+
+// --- 卡片左下角：背景切换 ---
+
+// 绝对定位，不进卡片的 flex 流——短文案时卡片仍由文字（或 min-width）定宽，
+// 不会被按钮撑大。与两张角落引号同距边 var(--space-5)（24px），视觉上成套
+.hero-cover-nav {
+  position: absolute;
+  left: var(--space-5);
+  bottom: var(--space-5);
+  display: flex;
+  gap: var(--space-2);
+}
+
+.hero-cover-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-over-hero);
+  font-size: 1rem;
+  line-height: 1;
+  opacity: .55;
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.hero-cover-btn:hover,
+.hero-cover-btn:focus-visible {
+  opacity: 1;
+}
+
+// 打字光标：2px 竖条，随文字基线对齐。
+// steps(2, jump-none) 是方波闪烁——整条时间轴只取不透明/透明两个值且各占一半；
+// 平滑的 opacity 过渡会变成"呼吸灯"，不是光标。
+.hero-quote-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: var(--color-over-hero);
+  animation: hero-cursor-blink 1.1s steps(2, jump-none) infinite;
+}
+
+// 打字 / 删除进行中光标保持常亮，只有停顿时才闪（由 home.js 切换 .is-typing）
+.hero-quote.is-typing .hero-quote-cursor {
+  animation: none;
+}
+
+@keyframes hero-cursor-blink {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+// --- 底部跳动箭头 ---
+
+.hero-arrow {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  font-size: 2rem;
+  color: var(--color-over-hero);
+  // 必须高于 .hero::after 遮罩，否则箭头会被压暗
+  z-index: 1;
+  // 基准 transform 也要写：prefers-reduced-motion 下 animation 被关掉，
+  // 没有它箭头就会丢掉居中偏移
+  transform: translateX(-50%);
+  // 缓动写在各关键帧上（同一段位移快慢不同），此处 linear 只是兜底
+  animation: hero-arrow-bounce 2s linear infinite;
+}
+
+// 箭头只是个装饰性下滚入口，悬停不给任何反馈。
+// 这行是必需的：_base.scss 里的 a:hover 是 (0,1,1)，而 .hero-arrow 只有 (0,1,0)，
+// 不管的话鼠标一放上去图标就会变成主题色（橙），和"箭头"的身份不符。
+.hero-arrow:hover,
+.hero-arrow:focus {
+  color: var(--color-over-hero);
+}
+
+// 兜底可读性：封面图若是浅色调，纯白箭头会糊进背景
+.hero-arrow .mdi {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .35));
+}
+
+// 位移与透明度绑在同一个动画上：跳到最高点（动画起点）时纯白不透明，
+// 落到最低点时淡到 70%（即 30% 透明），回程再亮回来。
+// keyframes 里必须带上 -50%：transform 会被动画整体接管，
+// 否则箭头会在跳动时丢掉水平居中。
+//
+// 缓动不写在 animation 简写上，而是逐帧声明：
+// 关键帧里的 animation-timing-function 管的是「从这一帧到下一帧」这一段，
+// 于是下行与回程可以用不同的曲线。
+//
+// 下行 0% → 50%：cubic-bezier(.55,.55,.75,1)
+//   控制点 P1 落在对角线 y = x 上（.55/.55 = 1），意味着**起始斜率恰好等于匀速**——
+//   不是"蹿出去"，而是匀速起跑；P2 = (.75, 1) 让终点斜率归零，即最后才刹住。
+//   合起来就是：大部分路程匀速，只在收尾一小段渐渐慢下来。
+//   对比 ease-out（cubic-bezier(0,0,.58,1)）：它的起点斜率接近无穷，一上来就把
+//   六成路程走完，剩下四成时间全程在爬——那正是"匀速时间短、一直在减速"的观感。
+//
+// 回程 50% → 100%：cubic-bezier(.25,0,.45,.45)
+//   这是下行曲线的中心对称镜像（(x1,y1,x2,y2) → (1-x2,1-y2,1-x1,1-y1)）。
+//   镜像保证两件事：回程起点斜率 = 0（接住下行归零的收尾速度），
+//   回程终点斜率 = 1（等于下行起点斜率）。整圈没有任何速度突变。
+//   若回程沿用过 ease-in，它到顶时是斜着冲进去的，而下行只能以斜率 1 起步，
+//   最高点会出现一次明显减速——看起来像"顿一下"。
+@keyframes hero-arrow-bounce {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(.55, .55, .75, 1);
+  }
+
+  50% {
+    transform: translate(-50%, 12px);
+    opacity: .7;
+    animation-timing-function: cubic-bezier(.25, 0, .45, .45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-arrow {
+    animation: none;
+  }
+
+  // 背景切换不做交叉淡入，直接换
+  .hero-bg-layer {
+    transition: none;
+  }
+
+  // 一言不做打字（home.js 直接静态展示随机一条），光标一并隐藏
+  .hero-quote-cursor {
+    display: none;
+  }
+
+  // 头像不做旋转
+  .hero-avatar {
+    transition: none;
+  }
+}

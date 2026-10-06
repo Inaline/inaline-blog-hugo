@@ -1,0 +1,30 @@
+{{/*
+  分页导航（§7.7）：首页与列表页共用。
+
+  参数：paginator（`.Paginate` 的返回值）
+  文章总数不超过 pagerSize（hugo.yaml）时只有一页，整块不渲染——
+  现在两篇文章，这段模板要等文章多起来才会出现在页面上。
+*/}}
+{{ if gt .TotalPages 1 }}
+<nav class="pager" aria-label="分页">
+  {{ with .Prev }}
+    <a class="pager-link pager-link--step" href="{{ .URL }}" rel="prev">上一页</a>
+  {{ else }}
+    <span class="pager-link pager-link--step is-disabled">上一页</span>
+  {{ end }}
+
+  {{ range .Pagers }}
+    {{ if eq .PageNumber $.PageNumber }}
+      <span class="pager-link is-current" aria-current="page">{{ .PageNumber }}</span>
+    {{ else }}
+      <a class="pager-link" href="{{ .URL }}">{{ .PageNumber }}</a>
+    {{ end }}
+  {{ end }}
+
+  {{ with .Next }}
+    <a class="pager-link pager-link--step" href="{{ .URL }}" rel="next">下一页</a>
+  {{ else }}
+    <span class="pager-link pager-link--step is-disabled">下一页</span>
+  {{ end }}
+</nav>
+{{ end }}

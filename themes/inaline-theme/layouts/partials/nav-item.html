@@ -1,0 +1,71 @@
+{{- /* 递归渲染导航树（配置见 hugo.yaml 的 params.nav，规格见 DESIGN.md §6.5）。
+       参数：item  = 当前节点（含 name / pageRef / icon / children）
+             level = 层级，1 为顶级，≥2 为下拉项；更深层级由同一 partial 递归输出。
+       渲染顺序即 params.nav / children 中的书写顺序，模板不做任何排序。 */ -}}
+{{- $item := .item -}}
+{{- $level := .level -}}
+{{- $children := $item.children -}}
+{{- $href := "" -}}
+{{- with $item.pageRef -}}
+  {{- $ref := . -}}
+  {{- with site.GetPage $ref -}}
+    {{- $href = .RelPermalink -}}
+  {{- else -}}
+    {{- warnf "导航配置（params.nav）：pageRef %q 未找到对应页面" $ref -}}
+    {{- $href = $ref | relLangURL -}}
+  {{- end -}}
+{{- end -}}
+{{- if eq $level 1 }}
+  <li class="nav-item{{ if $children }} nav-item--has-children{{ end }}">
+    {{- if $children }}
+    <button type="button" class="nav-link nav-link--parent" aria-haspopup="true">
+      <span class="nav-label">
+        {{ with $item.icon }}<i class="{{ . }} nav-icon" aria-hidden="true"></i>{{ end }}
+        <span class="nav-text">{{ $item.name }}</span>
+        {{- /* 箭头放在 .nav-label 内：下划线一并覆盖它（DESIGN.md §6.3） */}}
+        <i class="mdi mdi-chevron-down nav-caret" aria-hidden="true"></i>
+      </span>
+    </button>
+    <ul class="nav-dropdown">
+      {{- range $children -}}
+      {{ partial "nav-item.html" (dict "item" . "level" 2) }}
+      {{- end }}
+    </ul>
+    {{- else }}
+    <a class="nav-link" href="{{ $href }}">
+      <span class="nav-label">
+        {{ with $item.icon }}<i class="{{ . }} nav-icon" aria-hidden="true"></i>{{ end }}
+        <span class="nav-text">{{ $item.name }}</span>
+      </span>
+    </a>
+    {{- end }}
+  </li>
+{{- else }}
+  <li class="nav-dropdown-item{{ if $children }} nav-dropdown-item--has-children{{ end }}">
+    {{- if and $children $href }}
+    <a class="nav-dropdown-link" href="{{ $href }}">
+      {{ with $item.icon }}<i class="{{ . }}" aria-hidden="true"></i>{{ end }}
+      <span>{{ $item.name }}</span>
+      <i class="mdi mdi-chevron-right nav-caret nav-caret--nested" aria-hidden="true"></i>
+    </a>
+    {{- else if $children }}
+    <button type="button" class="nav-dropdown-link" aria-haspopup="true">
+      {{ with $item.icon }}<i class="{{ . }}" aria-hidden="true"></i>{{ end }}
+      <span>{{ $item.name }}</span>
+      <i class="mdi mdi-chevron-right nav-caret nav-caret--nested" aria-hidden="true"></i>
+    </button>
+    {{- else }}
+    <a class="nav-dropdown-link" href="{{ $href }}">
+      {{ with $item.icon }}<i class="{{ . }}" aria-hidden="true"></i>{{ end }}
+      <span>{{ $item.name }}</span>
+    </a>
+    {{- end }}
+    {{- with $children }}
+    <ul class="nav-submenu">
+      {{- range . -}}
+      {{ partial "nav-item.html" (dict "item" . "level" (add $level 1)) }}
+      {{- end }}
+    </ul>
+    {{- end }}
+  </li>
+{{- end -}}

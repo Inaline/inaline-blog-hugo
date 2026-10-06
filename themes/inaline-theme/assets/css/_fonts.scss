@@ -1,0 +1,17 @@
+// ---------------------------------------------------------------------------
+// 字体声明
+//
+// 注意：字体由 head.html 通过 resources.Get 发布到 /fonts/ 下
+// （见 partials/head.html 的 preload 链接），本文件的相对路径依赖这一点。
+// 改动其一必须同步改动另一处。
+//
+// 编译后样式表位于 /css/main.min.<hash>.css，故 ../fonts/ 指向 /fonts/。
+// ---------------------------------------------------------------------------
+
+@font-face {
+  font-family: "HYTangMeiRen";
+  src: url("../fonts/HYTangMeiRen55W.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

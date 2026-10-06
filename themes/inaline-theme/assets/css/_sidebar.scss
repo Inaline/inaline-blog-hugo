@@ -1,0 +1,53 @@
+// ---------------------------------------------------------------------------
+// 两栏布局骨架 + 右侧栏
+// 见 DESIGN.md §7.8。侧栏当前只有空白占位卡，真实组件（个人卡 / 公告 /
+// 标签云 / 最新文章）后续逐个填进来——每个组件一张 .sidebar-card。
+// ---------------------------------------------------------------------------
+
+// 主栏吃剩余宽度、侧栏定宽。minmax(0, 1fr) 而非 1fr：栅格列的 min-width
+// 默认是 auto，长标题 / 长英文串会把主栏顶宽、反过来把侧栏挤没
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--sidebar-width);
+  // 栏间距：两栏靠 --color-bg 的灰底与白卡已经分得很开，32px 显得疏远，收到 24px
+  gap: var(--space-5);
+  // 侧栏不被主栏拉高：占位卡保持自身高度，日后加 sticky 也才有意义
+  align-items: start;
+}
+
+// 主栏内部的 .post-list / .pager 等仍按普通块流排布，这里只补一条：
+// 作为栅格子项，主栏也得能收缩（同 .post-card-body 的 min-width: 0）
+.layout-main {
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+// 占位卡：与文章卡片同一套语言（白面 + 阴影 + 圆角），先把侧栏的节奏撑出来
+.sidebar-card {
+  min-height: 120px;
+  padding: var(--space-4);
+  background: var(--color-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+// 断点：主栏最小宽度 = 封面 260 + 图文间距 24 + 卡片左右内边距 32 = 316，
+// 再给文字列留 364px（约 22 个汉字一行），主栏即 680px；
+// 680 + 栏间距 32 + 侧栏 320 = 1032 内容宽，加容器左右内边距 48 → 视口 1080。
+// 收到这个宽度就把侧栏整个撤掉，主栏吃满——不做"侧栏变窄"的中间态：
+// 320 已是能塞下标签云这类内容的下限，再窄不如让位给文章
+@media (max-width: 1080px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  // 只改列数不够：栅格仍留着一条 320px 空列
+  .sidebar {
+    display: none;
+  }
+}

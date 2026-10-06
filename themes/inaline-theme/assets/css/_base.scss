@@ -1,0 +1,92 @@
+// ---------------------------------------------------------------------------
+// Reset + 基础排版
+// ---------------------------------------------------------------------------
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  // 锚点跳转平滑滚动（首页下箭头 → 文章列表）。
+  // 放全局而非只挂在箭头上：以后所有页内锚点（目录、脚注回跳）都该是平滑的。
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    // 前庭敏感人群对整页滚动动画反应很强，这里必须关掉
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--color-text);
+  background: var(--color-bg);
+  transition: background-color var(--duration-base) var(--ease),
+              color var(--duration-base) var(--ease);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  line-height: 1.4;
+  font-weight: 400; // 手写体笔画较粗，正常字重即可
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-primary-hover);
+  }
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+// 主内容区：两栏布局落地前，内容使用较窄的内容宽度
+.main {
+  // Header 是 fixed，不占文档流，这里补回它的高度
+  padding: calc(var(--header-height) + var(--space-6)) 0 var(--space-8);
+  min-height: 60vh;
+}
+
+// 首页：Hero 要铺满整个视口并钻到 Header 底下，不补
+.main--home {
+  padding-top: 0;
+}
+
+// Hero 之后的首页内容，与 Hero 拉开距离
+.hero + .container {
+  padding-top: var(--space-6);
+}
+
+// 下箭头的锚点落点。Header 是 fixed，会盖住视口顶部 56px，
+// 不预留的话滚过去的第一行（现在是首张文章卡片）正好压在标题栏底下。
+#home-content {
+  scroll-margin-top: calc(var(--header-height) + var(--space-4));
+}
+
+.container {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+
+// 两栏页面（首页 / 分区 / 标签词条）改用全站容器宽度：与 Header 左右对齐，见 §7.8
+.container--wide {
+  max-width: var(--container-width);
+}
