@@ -35,7 +35,7 @@
   background: var(--color-elevated);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  // 覆盖层（.post-card-link）的定位基准
+  // 置顶角标（.post-card-badge）的定位基准——它贴的是**卡片**的边，不是封面的边
   position: relative;
   transition: box-shadow var(--duration-base) var(--ease),
               transform var(--duration-base) var(--ease);
@@ -43,27 +43,18 @@
 
 .post-card:hover {
   box-shadow: var(--shadow-md);
-  // 上浮 2px：配合同步加深的阴影，读起来是"整张卡抬起来"，而不是卡片在跳
-  transform: translateY(-2px);
+  // 上浮 2px + 极轻微放大：单靠位移只是"卡片挪了一下"，叠上放大才读得出
+  // "整张卡朝你抬起来"。放大取 1.01——848px 宽的卡每侧只涨约 4px，仍远小于
+  // 条目间距（--space-5 = 24px），不会与上下卡或右侧栏打架；再往上调就开始像
+  // "卡片在跳"而不是"浮起来"了。变换由 .post-card 上的 transition 统一接管
+  transform: translateY(-2px) scale(1.01);
 }
 
-// 整卡覆盖层：铺满卡片、盖在封面与文字之上，卡片任意位置都能点开文章。
-// 它是**子元素而不是父元素**——卡片里还有标题这类链接，把卡片套成 <a> 就是
-// 嵌套链接，HTML 不允许。绝对定位的子元素不是 flex 项，故不影响图文布局。
-// 封面与文字列都是静态定位、没有层级竞争，所以 z-index: 1 就够（这个 1 是
-// **卡片内部**的局部层级，不会伸出去跟 Header / 浮层的 --z-* 打架）。
-// ⚠️ 卡片里日后要加可点的东西（分类 / 标签行），得给它 position: relative
-// 与 z-index: 2 抬到覆盖层之上，否则点了会被覆盖层截胡、跳去文章
-.post-card-link {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  // 热区跟着卡片的圆角收：圆角之外那几个像素被 overflow 裁掉、本来就不显示卡片，
-  // 不该接点击
-  border-radius: inherit;
-}
+// ⚠️ 不做整卡点击（v3.30 加过、v3.32 撤掉）：铺满卡片的空 <a> 会把指针全接走，
+// 标题与摘要就再也选不中、复制不了，而"复制文章标题"是列表页的常见动作。
+// 现在只有标题与封面两个可点区，卡片其余部分保持普通文本。
 
-// 封面：比例定死（4:3），图位不随图片来源的尺寸变化——真封面与兜底图混排时列表仍然齐。
+// 封面：比例定死（3:2），图位不随图片来源的尺寸变化——真封面与兜底图混排时列表仍然齐。
 // 宽度按两栏布局的主栏（§7.8）取 300px，文字列还剩 500px 上下（约 31 个汉字一行）
 .post-card-cover {
   display: block;
@@ -96,7 +87,9 @@
   transition: transform var(--duration-base) var(--ease);
 }
 
-.post-card:hover .post-card-cover img {
+// 悬停反馈挂在**封面链接自己**身上，不再挂卡片：整卡点击撤掉后，"停哪都放大"
+// 会暗示整张卡可点，而实际只有标题与封面能点（同下面标题那条的取舍）
+.post-card-cover:hover img {
   // 图只放大一点点：溢出被 .post-card-cover 裁掉，看起来是"照片在框里呼吸"
   transform: scale(1.04);
 }
@@ -124,9 +117,11 @@
   position: absolute;
   top: 0;
   left: 0;
-  // ⚠️ 故意不设 z-index：压在封面之上（封面是静态元素，必然在定位元素之下），
-  // 但仍在覆盖层 .post-card-link（z-index: 1）之下——点角标照样开文章，
-  // 不会在卡片角上留出一块点不动的死区
+  // 角标压在封面之上（封面是静态元素，必然排在定位元素之下），而它正坐在
+  // 封面链接的角上——不声明 pointer-events: none 就会在那里留出一块点不动的
+  // 死区。v3.30–v3.31 这块由整卡覆盖层兜着，v3.32 撤掉覆盖层后得自己让开。
+  // 角标本身没有任何可点内容，让开不损失功能
+  pointer-events: none;
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -138,8 +133,13 @@
   background: var(--badge-bg);
   color: var(--badge-fg);
   font-size: 0.875rem;
-  // 同 .post-card-meta-item：压平 1 再让 flex 居中，图标与文字不错位
+  // 角标是自带底色的紧凑胶囊：压平行高把盒子收紧，高度只由字号 + 内边距决定，
+  // 不跟着正文的 1.75 走（行高越高，白底方块越胖）
   line-height: 1;
+
+  i {
+    font-size: 0.8125rem;
+  }
 }
 
 // 交替卡镜像到右上：贴边侧改成上 + 右，圆角跟着换到左下
@@ -175,20 +175,23 @@
 
 .post-card-title a {
   color: var(--color-text);
+  // 颜色过渡走 --duration-fast（§3.5：颜色、图标归这一档），150ms——比卡片位移的
+  // 250ms 快半拍，指针扫过标题时颜色跟得上手，又不至于硬切。全局 `a` 没有过渡
+  // （_base.scss），所以这里必须显式声明，否则颜色是瞬间翻过去的
+  transition: color var(--duration-fast) var(--ease);
 }
 
-// 标题的悬停反馈挂在**卡片**上，而不是标题链接自己身上（:hover 的从 `<a>` 挪到
-// `.post-card`）：覆盖层盖住了标题，指针根本碰不到那个 <a>，写在它上面的 :hover
-// 永远不会触发。挂在卡片上反而更对——整卡可点时，"鼠标停在哪、标题就跟着亮"
-// 本身就是"这里整块都能点"的提示
-.post-card:hover .post-card-title a {
+// 标题的悬停反馈挂在**标题链接自己**身上。v3.30 曾把它挪到卡片上，前提是覆盖层
+// 盖住了标题、指针碰不到那个 <a>；v3.32 撤掉覆盖层后这个前提没了，挂回 <a> 才对——
+// 整卡可点时才该"停哪都亮"，现在可点的只有标题和封面，那样反而在骗人
+.post-card-title a:hover {
   color: var(--color-primary);
 }
 
 // 元信息行：图标 + 文字，四项一排（发布时间 / 阅读时长 / 阅读量 / 评论量），
 // 排在标题**上方**——先说清"多久读完、有没有人看过"，再让标题出场。
-// 图标走 mdi 字体（§6.5），它自带 font-size: inherit，不用另定字号，
-// 会跟着这一行的 0.875rem 走
+// 图标走 Font Awesome（§6.5）。FA 字形比 MDI 满，字号比这一行的 0.875rem
+// 再收一档到 0.8125rem，否则图标会压过文字
 .post-card-meta {
   display: flex;
   flex-wrap: wrap;
@@ -199,12 +202,18 @@
   font-size: 0.875rem;
 }
 
+// 图标与文字之间的高低差是**字体问题**，不在这里补（DESIGN.md §3.3 待办）：
+// HYTangMeiRen 的数字字形在 em 盒里坐得比汉字低，而 Font Awesome 图标按
+// 自身度量排布，于是"图标 + 纯数字"看起来图标偏高。用 line-height / 位移去凑，
+// 换字体后会变成反向错位——补丁得跟着字体走，不如等换字体
 .post-card-meta-item {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  // line-height: 1 只挂在图标上会与文字的行盒错位，这里压平整项再让 flex 居中
-  line-height: 1;
+
+  i {
+    font-size: 0.8125rem;
+  }
 }
 
 // 阅读量 / 评论量的占位符：等 Waline 接上后由前端回填（§8 阶段 9）
@@ -212,7 +221,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-// 摘要固定两行：卡片高度由封面的 16:9 定死，摘要再长也不该把卡片撑高，
+// 摘要固定两行：文字列高度由内容决定、封面再撑满卡片；摘要再长也不该把卡片撑高，
 // 列表才有整齐的节奏。截断交给 line-clamp（Hugo 侧仍留 truncate 兜 HTML 体积）
 .post-card-summary {
   display: -webkit-box;
@@ -257,6 +266,33 @@
 
 // 当前页放在悬停规则之后：同特异度，靠源序保证悬停时也是实心主题色
 .pager-link.is-current {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+// ---------------------------------------------------------------------------
+// 首页整页背景图上的分页器
+//
+// 页码默认态没有底色，灰字会直接压在照片上读不出来。三条都必须带 body.has-hero
+// 收在首页：分页器是 section / term 页共用的，不加限定会在那些页面上多出白底页码片。
+//
+// 注意特异度：body.has-hero .pager-link 是 (0,2,1)，压得过 .pager-link:hover (0,2,0)
+// 与 .pager-link.is-current (0,2,0)——只写一条会把当前页的实心主题色和悬停反馈一起干掉。
+// 所以照上面的结构一条不少地重复一遍，靠源序还原层级。
+// ---------------------------------------------------------------------------
+body.has-hero .pager-link {
+  background: var(--color-elevated);
+}
+
+// 悬停用 --color-border 而非 --color-surface：暗色下 surface 与 elevated 同值(#1E2127)，
+// 用 surface 会变成"悬停没反应"；border 在亮(#E5E7EB)暗(#2C313A)两套下都看得出变化
+body.has-hero .pager-link:hover {
+  background: var(--color-border);
+  color: var(--color-primary);
+}
+
+// 放最后：与上一条同特异度，靠源序保证当前页仍是实心主题色
+body.has-hero .pager-link.is-current {
   background: var(--color-primary);
   color: var(--color-on-primary);
 }
@@ -376,7 +412,7 @@
 }
 
 // ---------------------------------------------------------------------------
-// 动效降级：必须留在文件末尾——同特异度的规则写在它后面会整段盖掉它（§9 v3.8）
+// 动效降级：必须留在文件末尾——同特异度的规则写在它后面会整段盖掉它（DESIGN.md §2.2）
 // ---------------------------------------------------------------------------
 
 @media (prefers-reduced-motion: reduce) {
@@ -390,7 +426,7 @@
     transform: none;
   }
 
-  .post-card:hover .post-card-cover img {
+  .post-card-cover:hover img {
     transform: none;
   }
 }

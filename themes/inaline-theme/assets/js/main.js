@@ -64,9 +64,93 @@
     update(); // 刷新后可能已处于滚动位置
   }
 
+  /**
+   * 页脚运行时长：初值由模板在构建时算好（无 JS 也读得到数），
+   * 这里接管成"按真实时间逐秒重算"——用 Date.now() 反推差值而不是自增：
+   * 后台标签页的定时器会被浏览器节流，自增会越走越慢
+   */
+  function initFooterUptime() {
+    var el = document.querySelector('[data-uptime-start]');
+    if (!el || el.dataset.uptimeBound === 'true') return; // 幂等：重复 init 不叠加定时器
+    el.dataset.uptimeBound = 'true';
+
+    var start = Number(el.dataset.uptimeStart) * 1000;
+    var days = el.querySelector('[data-uptime-part="days"]');
+    var hours = el.querySelector('[data-uptime-part="hours"]');
+    var minutes = el.querySelector('[data-uptime-part="minutes"]');
+    var seconds = el.querySelector('[data-uptime-part="seconds"]');
+    if (!isFinite(start) || !days || !hours || !minutes || !seconds) return;
+
+    function tick() {
+      var s = Math.max(0, Math.floor((Date.now() - start) / 1000));
+      days.textContent = Math.floor(s / 86400);
+      hours.textContent = Math.floor((s % 86400) / 3600);
+      minutes.textContent = Math.floor((s % 3600) / 60);
+      seconds.textContent = s % 60;
+    }
+
+    tick(); // 先对齐一次：构建到现在这段时间差要补上
+    setInterval(tick, 1000);
+  }
+
+  /**
+   * 侧栏联系方式里的 copy 类按钮（微信这种没有网页地址的）：点击复制到剪贴板，
+   * 并弹一个"已复制"气泡。气泡只在真的复制成功后才出——它是承诺，不是反馈音
+   */
+  function initSocialCopy() {
+    var links = document.querySelectorAll('.social-link[data-copy]');
+    if (!links.length) return;
+
+    function copyText(text) {
+      // 局域网 http 访问不是安全上下文，没有 clipboard API，用隐藏 textarea 兜底
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise(function (resolve, reject) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-100px'; // 别让它把页面撑出滚动条
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try {
+          ok = document.execCommand('copy');
+        } catch (e) {
+          ok = false;
+        }
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('copy failed'));
+      });
+    }
+
+    function flash(el) {
+      el.classList.add('is-copied');
+      clearTimeout(el.copyTimer); // 连点两次时重新计时，别让第一次的定时器提前收走气泡
+      el.copyTimer = setTimeout(function () {
+        el.classList.remove('is-copied');
+      }, 1600);
+    }
+
+    Array.prototype.forEach.call(links, function (el) {
+      if (el.dataset.copyBound === 'true') return;
+      el.dataset.copyBound = 'true';
+      el.addEventListener('click', function () {
+        copyText(el.dataset.copy).then(function () {
+          flash(el);
+        }).catch(function () {
+          /* 复制失败（浏览器不给权限）：不弹气泡，假装什么都没发生 */
+        });
+      });
+    });
+  }
+
   function init() {
     initThemeToggle();
     initHeaderScroll();
+    initFooterUptime();
+    initSocialCopy();
   }
 
   init();

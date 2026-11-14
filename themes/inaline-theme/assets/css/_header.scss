@@ -142,19 +142,20 @@
   width: 100%;
 }
 
+// FA 的字形比 MDI 同字号更满，导航图标整体比正文小一档
 .nav-icon {
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 
 .nav-caret {
-  font-size: 0.625rem;
+  font-size: 0.5625rem;
   transition: transform var(--duration-base) var(--ease);
 }
 
-// 顶级「有二级菜单」的展开箭头：与左侧 .nav-icon 同为 1rem（下拉内箭头保持 10px）。
+// 顶级「有二级菜单」的展开箭头：与左侧 .nav-icon 同为 0.875rem（下拉内箭头保持 9px）。
 // 位于 .nav-label 内，悬停下划线随之覆盖箭头（DESIGN.md §6.3）
 .nav-link--parent .nav-caret {
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 
 // --- 二级菜单 ---
@@ -315,7 +316,7 @@
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--header-fg);
-  font-size: 1rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: color var(--duration-fast) var(--ease),
               text-shadow var(--duration-fast) var(--ease);
@@ -354,7 +355,7 @@
 }
 
 // 主题图标纯 CSS 切换。类名即「该主题生效时显示哪一个」：
-// 亮色 → mdi-brightness-4（.icon-when-light），暗色 → mdi-brightness-6（.icon-when-dark）
+// 亮色 → fa-moon（.icon-when-light），暗色 → fa-sun（.icon-when-dark）
 .action-btn .icon-when-dark {
   display: none;
 }

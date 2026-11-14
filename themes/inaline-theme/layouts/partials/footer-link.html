@@ -1,0 +1,17 @@
+{{/* 页脚里的一个超链接（备案号 / 底部链接共用）。
+     入参：text 显示文字、url 链接地址
+     - 外链（http / https 开头）开新标签页，并带 rel="noopener"
+     - 站内路径（/index.xml 这类）走当前页，且过一遍 relURL：
+       站点将来挂到子路径下（baseURL 带 path）时，超链接不会漏掉那段前缀。
+       只有以 / 开头的才当站内路径——relURL 会往带协议前缀的地址（mailto: 等）
+       前面也拼上 base path，那些得原样放行
+     - url 留空则退化成纯文字，不生成空 href 的哑链接 */}}
+{{- $text := .text -}}
+{{- $url := .url -}}
+{{- if $url -}}
+  {{- if hasPrefix $url "/" }}{{ $url = $url | relURL }}{{ end -}}
+  {{- $ext := hasPrefix (lower $url) "http" -}}
+  <a class="footer-link" href="{{ $url }}"{{ if $ext }} target="_blank" rel="noopener"{{ end }}>{{ $text }}</a>
+{{- else -}}
+  <span>{{ $text }}</span>
+{{- end -}}

@@ -1,0 +1,68 @@
+// ---------------------------------------------------------------------------
+// 首页整页背景：固定封面图层 + 压暗遮罩
+// 模板见 layouts/partials/page-background.html
+// ---------------------------------------------------------------------------
+
+.page-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  // 高度钉成"大视口"常量，而不是 inset: 0。
+  // bottom: 0 会让盒子跟着**布局视口**走：iOS 地址栏收起/展开时高度变化，
+  // background-size: cover 要重算，整张图当着用户的面跳一下。
+  // lvh 是地址栏收起时的高度，与工具栏状态无关，盒子永不重排；
+  // 代价只是地址栏展开时图片下沿多裁掉一点——对 cover 背景无所谓。
+  // 前一行是兜底：iOS < 15.4 不认 lvh，但那些版本的 100vh 本身就约等于大视口。
+  height: 100vh;
+  height: 100lvh;
+  // 落在绘制顺序的"负层级"一档：压过 html 的画布底色，又被所有内容与 Header 盖住。
+  // 成立的前提是 body 在首页透明（见文件末尾）——body 不透明会整块盖掉它。
+  z-index: -1;
+  // 纯装饰：卡片之间与四周的空白处，点击不该落在它身上（可继承，::after 与各图层一并生效）
+  pointer-events: none;
+  // 图片解码前的兜底底色；与 html 同色，过卷回弹时露出的是同一块
+  background: var(--color-bg);
+}
+
+// 每张封面一个图层：切换 = JS 挪 .is-active（背景图不可过渡，只能交叉淡入）
+.page-bg-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  // 必须保留：盒子比视口高（lvh），不写会平铺
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 600ms var(--ease);
+}
+
+.page-bg-layer.is-active {
+  opacity: 1;
+}
+
+// 压暗遮罩：亮色下 --page-scrim 是 transparent（等于没有，照片原样露出），
+// 暗色下才压一层黑——浅色正文压深色照片要靠它，反过来的亮色模式不需要。
+// 用 ::after 而非再做一层 div：无需进模板，且伪元素天然排在各个背景图层之后、盖住它们。
+.page-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--page-scrim);
+  // 与图片一起淡入淡出，主题切换不是硬跳
+  transition: background-color var(--duration-base) var(--ease);
+}
+
+// 首页 body 透明，图层才透得出来。
+// body 的背景属于"常规流块级背景"，绘制在负层级图层**之后**，不透明就把它盖死了。
+// 其余页面不带 has-hero，渲染路径与今天完全一致。
+body.has-hero {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  // 背景切换不做交叉淡入，直接换
+  .page-bg-layer {
+    transition: none;
+  }
+}

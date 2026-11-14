@@ -151,17 +151,18 @@
   }
 
   // -------------------------------------------------------------------------
-  // Hero 背景切换（§7.1）：卡片左下角左右箭头在封面上循环，交叉淡入
+  // 首页背景切换：卡片左下角左右箭头在封面上循环，交叉淡入
+  // 图层是整页背景（.page-bg，见 page-background.html），不在 Hero 里
   // -------------------------------------------------------------------------
 
-  function initHeroCovers() {
-    var hero = document.querySelector('.hero');
-    var layers = hero ? hero.querySelectorAll('.hero-bg-layer') : [];
+  function initPageCovers() {
+    var bg = document.querySelector('.page-bg');
+    var layers = bg ? bg.querySelectorAll('.page-bg-layer') : [];
     var box = document.querySelector('.hero-quote');
     var prev = box && box.querySelector('.hero-cover-btn--prev');
     var next = box && box.querySelector('.hero-cover-btn--next');
-    if (!hero || layers.length < 2 || !prev || !next || hero.dataset.coversBound === 'true') return;
-    hero.dataset.coversBound = 'true';
+    if (!bg || layers.length < 2 || !prev || !next || bg.dataset.coversBound === 'true') return;
+    bg.dataset.coversBound = 'true';
 
     // 与模板里 .is-active 的那层对应
     var index = 0;
@@ -180,7 +181,7 @@
 
     // initial_cover = random：模板那次随机是"每次构建"的，只当无 JS 兜底；
     // 构建产物是静态 HTML，要让浏览器刷新也换图，只能在这里按每次载入重摇
-    if (hero.dataset.coverRandom === 'true') {
+    if (bg.dataset.coverRandom === 'true') {
       show(Math.floor(Math.random() * layers.length));
     }
 
@@ -190,7 +191,7 @@
 
   function init() {
     initHeroQuote();
-    initHeroCovers();
+    initPageCovers();
   }
 
   init();

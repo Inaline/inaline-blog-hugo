@@ -2,6 +2,7 @@
 title: "Hugo 目录结构速览"
 date: 2026-10-03T22:00:00+08:00
 draft: false
+categories: ["技术"]
 tags: ["Hugo"]
 summary: "记录这个项目当前的目录结构，方便后续维护主题与内容。"
 ---

@@ -10,6 +10,13 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  // 画布底色。首页的整页背景图层（z-index: -1）就压在这层之上，
+  // 首页 body 透明后它是唯一的兜底：iOS 橡皮筋过卷露出来的、以及图片解码前
+  // 闪出来的，都是它，不能是浏览器默认的白。
+  background-color: var(--color-bg);
+  // 与 body 的 transition 同步：内容短于视口时（body 盒比画布矮）切主题，
+  // 只在 body 区过渡而画布硬切，会在 body 底边露出一条错位的缝
+  transition: background-color var(--duration-base) var(--ease);
   // 锚点跳转平滑滚动（首页下箭头 → 文章列表）。
   // 放全局而非只挂在箭头上：以后所有页内锚点（目录、脚注回跳）都该是平滑的。
   scroll-behavior: smooth;

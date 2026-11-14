@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // 两栏布局骨架 + 右侧栏
-// 见 DESIGN.md §7.8。侧栏当前只有空白占位卡，真实组件（个人卡 / 公告 /
-// 标签云 / 最新文章）后续逐个填进来——每个组件一张 .sidebar-card。
+// 见 DESIGN.md §7.8。侧栏已落地博主信息卡、最新文章与近期评论，公告 / 标签云后续接着填——
+// 每个组件一张 .sidebar-card。
 // ---------------------------------------------------------------------------
 
 // 主栏吃剩余宽度、侧栏定宽。minmax(0, 1fr) 而非 1fr：栅格列的 min-width
@@ -36,11 +36,12 @@
   box-shadow: var(--shadow-sm);
 }
 
-// 断点：主栏最小宽度 = 封面 260 + 图文间距 24 + 卡片左右内边距 32 = 316，
-// 再给文字列留 364px（约 22 个汉字一行），主栏即 680px；
-// 680 + 栏间距 32 + 侧栏 320 = 1032 内容宽，加容器左右内边距 48 → 视口 1080。
-// 收到这个宽度就把侧栏整个撤掉，主栏吃满——不做"侧栏变窄"的中间态：
-// 320 已是能塞下标签云这类内容的下限，再窄不如让位给文章
+// 断点：主栏里固定吃掉 340px（封面 300 + 图文间距 24 + 文字列右内边距 16），
+// 再给文字列留 340px（约 21 个汉字一行），主栏最小 680px；
+// 680 + 栏间距 24 + 侧栏 280 = 984 内容宽，加容器左右内边距 48 → 视口 1032。
+// 断点留在 1080px：主栏 680 是钉住的那一头，收窄侧栏与栏间距省下的宽度全归主栏。
+// 到点把侧栏整个撤掉，主栏吃满——不做"侧栏变窄"的中间态：
+// 280 已是能塞下标签云这类内容的下限，再窄不如让位给文章
 @media (max-width: 1080px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
@@ -49,5 +50,474 @@
   // 只改列数不够：栅格仍留着一条 320px 空列
   .sidebar {
     display: none;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 博主信息卡（.sidebar-profile）
+//
+// 头像 + 名称在一条横向分割线之上，线下是三项数据（数字在上、标题在下），
+// 再下面是一排联系方式。本卡没有标题组件——头像是视觉入口，名称就是它的标题
+// （见 partials/sidebar-profile.html）。
+// 整卡居中：卡片只有 280px 宽，左对齐会显得一侧空着一大块。
+// ---------------------------------------------------------------------------
+
+.sidebar-profile {
+  text-align: center;
+}
+
+.profile-avatar {
+  display: block;
+  width: var(--profile-avatar-size);
+  height: var(--profile-avatar-size);
+  margin: 0 auto; // 图片是行内替换元素，居中得靠 margin（父级的 text-align 不管用）
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-name {
+  margin: var(--space-3) 0 0; // 覆盖全局 p 的下外边距，之后的间距由 .profile-stats 给
+  color: var(--color-text);
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+// 名称与数据之间原本有一条横向分割线，已按需求去掉——头像、名称、数据、图标
+// 四段现在靠间距分节。间距取 --space-4，与数据行到图标行的那条一致
+.profile-stats {
+  display: flex;
+  margin-top: var(--space-4);
+}
+
+.profile-stat {
+  flex: 1; // 三格等宽：数字长短不同，"字数"那格也不会被挤窄
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+// 数字与标题两行各自的 line-height 收到 1.3：全局的 1.75 会把这对文字撑开，
+// 看着不像一组。数字不着主题色——这里的橙色是"可点"的信号（本卡里链接都是橙的），
+// 三个不能点的数字上色会误导读者的手指
+.profile-stat-num {
+  color: var(--color-text);
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
+
+.profile-stat-label {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+// --- 联系方式 ---
+
+.profile-socials {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+// 图标按钮：默认只有一枚品牌色的图标，悬停时品牌色铺满整圆、图标转白并抬起 2px，
+// 按下再压回来缩一点——"点到了"这件事在指针离开前就有反馈（复制类的按钮尤其需要）。
+// 32px 是六个图标还能排成一行留在卡里的上限：6×32 + 5×8 = 232 < 内容宽 248
+.social-link {
+  --social-color: var(--color-primary); // 兜底：没登记品牌色的图标走主题色
+  --social-on: var(--color-on-primary); // 品牌色铺满时的前景色（图标转白）
+  position: relative;                   // 「已复制」气泡的定位基准
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  // 以下几行是给 <button> 用的（copy 类）：抹掉 UA 默认样式，让它与 <a> 长得一样
+  border: 0;
+  background: none;
+  color: var(--social-color);
+  font: inherit;
+  line-height: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease),
+              transform var(--duration-fast) var(--ease);
+
+  &:hover,
+  &:focus-visible {
+    background: var(--social-color);
+    color: var(--social-on);
+    transform: translateY(-2px);
+  }
+
+  // 源序在 :hover 之后、同特异度：按住的那一刻以它为准
+  &:active {
+    transform: translateY(0) scale(.92);
+  }
+}
+
+// 每家取自己的品牌色（色值见 _tokens.scss）。漏登记的会落回 .social-link 上
+// 那条兜底的主题色——不理想但不会坏
+.social-link--rss { --social-color: var(--brand-rss); }
+.social-link--email { --social-color: var(--brand-email); }
+.social-link--wechat { --social-color: var(--brand-wechat); }
+.social-link--bilibili { --social-color: var(--brand-bilibili); }
+.social-link--qq { --social-color: var(--brand-qq); }
+
+// GitHub 的品牌色近黑，暗色下 --brand-github 会翻成白（见 _tokens.scss），
+// 这时铺满的圆是白的，图标必须反过来取卡片底色，两种主题下才都成立
+.social-link--github {
+  --social-color: var(--brand-github);
+  --social-on: var(--color-elevated);
+}
+
+// 「已复制」气泡：只出现在 copy 类按钮里，点击后由 js/main.js 挂 .is-copied。
+// 底色 --color-text、字色 --color-bg —— 这两个正好互为反相（深底浅字 / 浅底深字），
+// 亮暗两套主题都读得清，不必再加令牌
+.social-tip {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  white-space: nowrap;
+  opacity: 0;
+  // 气泡悬在按钮上方，指针从下面经过时最容易误碰，别让它抢走按钮的点击
+  pointer-events: none;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.social-link.is-copied .social-tip {
+  opacity: 1;
+}
+
+// ---------------------------------------------------------------------------
+// 最新文章（.sidebar-latest）
+//
+// 标题行：图标 + 文案；列表每条是"缩略图 + 标题 / 日期"，整行一个链接。
+// 缩略图 60×60（1:1 居中裁切）：侧栏内容宽只有 248px，图占 60 后
+// 标题列还有 176px，两行能放下约 23 个汉字。
+// ---------------------------------------------------------------------------
+
+.sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+
+  // 图标与标题同色、比文字稍大：它是标题的标点，不抢主题色的注意力
+  i {
+    color: inherit;
+    font-size: 1.0625rem;
+    line-height: 1;
+  }
+}
+
+.latest-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// 整行可点：色变交给链接本身，日期保持弱化、不参与悬停
+.latest-item {
+  display: flex;
+  // 图比两行文字矮、比一行文字高，居中后两种标题长度都不会一头沉
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text);
+  transition: color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+
+// 缩略图外层负责圆角与裁切，图片放大时才不会溢出到文字上
+.latest-cover {
+  flex: none;
+  width: 60px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  // 图片解码完成前的兜底底色，避免闪白
+  background: var(--color-border);
+}
+
+.latest-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-base) var(--ease);
+}
+
+.latest-item:hover .latest-cover img {
+  transform: scale(1.04);
+}
+
+.latest-body {
+  display: flex;
+  flex-direction: column;
+  // flex 子项默认 min-width: auto：长标题会把这一行顶宽
+  min-width: 0;
+}
+
+.latest-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.latest-date {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+// ---------------------------------------------------------------------------
+// 近期评论（.sidebar-comments）
+//
+// 标题行沿用 .sidebar-title。每条评论是一个整行链接：
+// 左侧 32px 圆形头像，右侧上排"用户名 / 相对时间"，下排评论正文（最多两行）。
+// 头像用 32px 而非最新文章的 60px 缩略图：正文是主体，头像只做身份标识；
+// 圆形外框同时容纳头像图片与名字首字两种内容（见 sidebar-comments.html）。
+// ---------------------------------------------------------------------------
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// 整行可点：悬停时只让用户名转主题色，时间与正文保持弱化
+.comment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--color-text);
+}
+
+// 圆形头像：图片与首字共用这个外框。flex: none 防止长用户名把它压扁；
+// overflow: hidden 把方形图片裁成圆
+.comment-avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 50%;
+  // 用页面底色而不是 --color-surface：暗色下 surface 与 elevated 同值，
+  // 头像圆会整个融进卡片；bg 与 elevated 在两套主题下都保持一档明度差
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.comment-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.comment-body {
+  display: flex;
+  flex: 1; // 占满头像是剩下的宽度
+  flex-direction: column;
+  min-width: 0; // flex 子项默认 min-width: auto，长评论会顶宽这一行
+}
+
+// 上排：用户名靠左、时间靠右；时间 flex: none，名字太长时只压名字
+.comment-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.comment-name {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.comment-item:hover .comment-name {
+  color: var(--color-primary);
+}
+
+.comment-time {
+  flex: none;
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+// 正文字号比用户名小一档（12px），弱化但不至于读起来吃力；
+// 行高保持 1.55，列表才有呼吸感
+.comment-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+// ---------------------------------------------------------------------------
+// 分类（.sidebar-categories）
+//
+// 标题行沿用 .sidebar-title。列表每条是整行链接：分类名靠左、文章数靠右。
+// 鼠标悬停时在行上铺一层 --color-bg 的浅底（比卡片低一档，两种主题下都看得见），
+// 分类名同时转主题色；列表左右各外扩 8px，浅底才能贴到卡片内边距的边缘，
+// 而文字仍与标题对齐。
+// ---------------------------------------------------------------------------
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0 calc(var(--space-2) * -1);
+  padding: 0;
+  list-style: none;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  transition: background-color var(--duration-fast) var(--ease);
+
+  &:hover {
+    background: var(--color-bg);
+  }
+}
+
+.category-name {
+  overflow: hidden;
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.category-item:hover .category-name {
+  color: var(--color-primary);
+}
+
+.category-count {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+}
+
+// ---------------------------------------------------------------------------
+// 标签云（.sidebar-tags）
+//
+// 胶囊形标签自动换行，标签名后跟文章数。默认底为 --color-bg（卡片上低一档），
+// 悬停整颗铺主题色、文字转白——与导航 / 联系方式同一套"实心填充"的反馈。
+// ---------------------------------------------------------------------------
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  max-width: 100%;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  transition: background-color var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+
+  &:hover {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+}
+
+.tag-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-count {
+  flex: none;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-link,
+  .latest-item,
+  .comment-name,
+  .category-item,
+  .category-name,
+  .tag-chip {
+    transition: none;
+  }
+
+  .latest-cover img {
+    transition: none;
+  }
+
+  .latest-item:hover .latest-cover img {
+    transform: none;
   }
 }

@@ -1,0 +1,28 @@
+{{/*
+  解析一篇文章的封面 URL（文章卡片与侧栏最新文章共用）。
+
+  参数：page  —— 文章页
+        index —— 兜底封面在池中的轮换序号
+
+  规则：front matter 的 cover 是网络地址（http/https）则原样使用；是 assets
+  路径则走 resources.Get（找不到构建告警）；没配 / 解析不到时从封面池按
+  index 轮换取一张。返回字符串 URL。
+*/}}
+{{- $page := .page -}}
+{{- $index := .index | default 0 -}}
+{{- $cover := "" -}}
+{{- with $page.Params.cover -}}
+  {{- if or (hasPrefix . "http://") (hasPrefix . "https://") -}}
+    {{- $cover = . -}}
+  {{- else -}}
+    {{- with resources.Get . -}}{{ $cover = .RelPermalink }}{{- else -}}
+      {{- warnf "post-cover: %s 的 cover 找不到资源 %q，改用兜底图" $page.RelPermalink . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $cover -}}
+  {{- with partial "cover-pool.html" $page -}}
+    {{- $cover = (index . (mod $index (len .))).RelPermalink -}}
+  {{- end -}}
+{{- end -}}
+{{- return $cover -}}

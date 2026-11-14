@@ -1,0 +1,42 @@
+{{/* 侧栏 · 最新文章
+
+   数据直接取 posts 分区的常规页，按发布日期倒序取前 N 篇（N = params.sidebar.latest.count）。
+   每条渲染为整行可点：左侧方形缩略图 + 右侧标题（最多两行）与发布日期。
+   缩略图与文章卡片共用封面解析（post-cover.html）：优先 front matter 的 cover，
+   没配则从封面池按序号轮换。
+
+   配置见 hugo.yaml 的 params.sidebar.latest；enable 关掉或整块删掉则整卡不渲染。
+*/}}
+{{ $s := default dict site.Params.sidebar }}
+{{ $l := default dict $s.latest }}
+
+{{ if $l.enable }}
+  {{ $title := or $l.title "最新文章" }}
+  {{ $count := $l.count | default 5 }}
+  {{ $posts := first $count ((where site.RegularPages "Section" "posts").ByDate.Reverse) }}
+
+  {{ with $posts }}
+  <div class="sidebar-card sidebar-latest">
+    <h2 class="sidebar-title">
+      <i class="fa-regular fa-clock" aria-hidden="true"></i>
+      <span>{{ $title }}</span>
+    </h2>
+
+    <ul class="latest-list">
+      {{ range $i, $p := . }}
+        {{ $cover := partial "post-cover.html" (dict "page" $p "index" $i) }}
+        <li>
+          {{/* 整行一个链接：缩略图只是标题的视觉补充，不必单独再进 Tab 序 */}}
+          <a class="latest-item" href="{{ $p.RelPermalink }}">
+            {{ with $cover }}<span class="latest-cover"><img src="{{ . }}" alt="" loading="lazy" width="60" height="60"></span>{{ end }}
+            <span class="latest-body">
+              <span class="latest-title">{{ $p.Title }}</span>
+              <time class="latest-date" datetime="{{ $p.Date.Format "2006-01-02" }}">{{ $p.Date.Format "2006年1月2日" }}</time>
+            </span>
+          </a>
+        </li>
+      {{ end }}
+    </ul>
+  </div>
+  {{ end }}
+{{ end }}

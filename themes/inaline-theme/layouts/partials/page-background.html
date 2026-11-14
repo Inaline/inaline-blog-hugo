@@ -1,0 +1,60 @@
+{{/*
+  首页整页背景：铺满视口的固定封面图层 + 压暗遮罩
+
+  它是**首页**的背景，不是 Hero 的背景——从首屏一直铺到页脚，滚动时图像固定不动
+  （.page-bg 用 position: fixed，见 _page-bg.scss）。
+
+  三件事的理由，都写在这里，以后别再走回头路：
+
+  1) 为什么是 position: fixed 而不是 background-attachment: fixed
+     后者在 iOS Safari 上被禁用（当 scroll 处理），旧实现正是栽在这上面：
+     桌面看着"视觉固定"，iPhone 上图片跟着页面跑。fixed 定位的独立元素
+     是唯一在 iOS 上真能站住的写法。
+
+  2) 为什么 URL 走内联 style 而不是写在 SCSS 里
+     Hugo 不会改写 SCSS 里 url() 的路径，而样式表被指纹化到 /css/ 下，
+     写死相对路径迟早对不上；内联跟着发布结果走。
+
+  3) 为什么每张封面一个图层
+     背景图本身不可过渡，切换只能靠透明度交叉淡入，那就必须两个图层同时在。
+
+  ---- 两条硬约束，改动时别撞 ----
+
+  A. 必须渲染为 <body> 的第一个子元素（见 baseof.html）。
+     它靠 z-index: -1 落在"画布底色之上、一切内容之下"，而负层级只在
+     根层叠上下文里才有这个位置；中间隔一个带 transform / filter / opacity
+     的祖先，它就被困住，或者干脆被那个祖先的背景盖掉。
+
+  B. 首页 body 必须透明（_page-bg.scss 的 body.has-hero）。
+     body 的背景是"常规流块级背景"，绘制顺序在负层级之后，不透明就会把
+     整个图层盖死。
+
+  封面池与文章卡片的兜底图同池（见 cover-pool.html），改 hugo.yaml 的
+  hero.covers，两处一起变。
+*/}}
+{{ $covers := partial "cover-pool.html" . }}
+
+{{/* 初始背景（params.hero.initial_cover）：填路径 → 固定从它开始；
+     填 "random" → 每次随机（模板这次是构建期随机，供无 JS 兜底，
+     浏览器刷新由 home.js 重摇）；留空 → 从第一张开始 */}}
+{{ $initial := 0 }}
+{{ $random := false }}
+{{ if $covers }}{{ with site.Params.hero }}{{ with .initial_cover }}
+  {{ if eq . "random" }}
+    {{ $random = true }}
+    {{ $initial = index (shuffle (seq 0 (sub (len $covers) 1))) 0 }}
+  {{ else }}
+    {{ $want := strings.TrimPrefix "/" . }}
+    {{ $found := false }}
+    {{ range $i, $img := $covers }}
+      {{ if eq (strings.TrimPrefix "/" $img.RelPermalink) $want }}{{ $initial = $i }}{{ $found = true }}{{ end }}
+    {{ end }}
+    {{ if not $found }}{{ warnf "hero.initial_cover: %q 不在 covers 列表中，从第一张开始" . }}{{ end }}
+  {{ end }}
+{{ end }}{{ end }}{{ end }}
+
+<div class="page-bg"{{ if $random }} data-cover-random="true"{{ end }}>
+  {{ range $i, $img := $covers }}
+  <div class="page-bg-layer{{ if eq $i $initial }} is-active{{ end }}" style="background-image: url('{{ $img.RelPermalink }}')"></div>
+  {{ end }}
+</div>

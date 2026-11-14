@@ -1,0 +1,265 @@
+# =============================================================================
+# inaline-theme 站点配置示例（YAML 版）
+#
+# 用法：复制本文件到站点根目录并改名为 hugo.yaml，然后按需修改：
+#   cp hugo.example.yaml hugo.yaml
+# Hugo 只读取 hugo.yaml / hugo.toml / hugo.json 这几个确切的文件名，
+# 本文件不会被构建读取，放在仓库里只为查阅。
+#
+# TOML 版见同目录的 hugo.example.toml，两者内容等价，任选其一
+# （Hugo 同时发现两个格式的配置会报错，别两份都留）。
+#
+# 文件命名沿用开源惯例（同 .env.example）：扩展名放最后，
+# 编辑器仍按 YAML 高亮，而不是当成未知类型。
+#
+# 关于图片：covers / avatar 里的本地路径都相对**站点的 assets/ 目录**。
+# 主题自带三张示例封面（cover1/2/3.jpg），所以下面直接写 images/cover/cover1.jpg
+# 就能引到；把同名文件放进站点自己的 assets/images/cover/ 即覆盖成你的图。
+# =============================================================================
+
+# 站点根地址：部署后对外可访问的完整地址，末尾带 /。
+# 页脚版权信息里的站名链接、relURL 生成的相对链接都以它为准
+baseURL: "https://example.org/"
+title: "我的博客"
+
+# 主题目录名。用 Hugo Modules 安装时这里换成模块路径
+theme: "inaline-theme"
+
+# 主题的界面文案目前只有简体中文，这三项保持默认即可
+defaultContentLanguage: "zh-cn"
+locale: "zh-cn"
+# 中文/日文/韩文按字计词：开着它，"字数"统计与阅读时长才准确
+hasCJKLanguage: true
+
+# 列表页每页文章数
+pagination:
+  pagerSize: 10
+
+params:
+  # 站点描述（写入 <meta name="description">）与作者名。
+  # author 同时是 Hero 徽章与侧栏博主卡的默认名称
+  description: "个人技术博客"
+  author: "博主昵称"
+
+  # ---------------------------------------------------------------------------
+  # 首页背景图 / Hero
+  #
+  # covers：封面图列表（相对站点 assets 的路径），可以配置多张
+  # - 这些图铺满**整个首页**（从首屏到页脚，滚动时图像固定不动），
+  #   不再只是首屏 Hero 的背景
+  # - 顺序即切换顺序
+  # - 多于一张时，卡片左下角出现左右箭头循环切换（交叉淡入）
+  # - 不配置 / 全部解析不到则回退主题内置的 images/cover/cover1.jpg
+  #
+  # initial_cover：进入 / 刷新时展示哪张封面
+  # - 填 covers 里的路径（如 images/cover/cover2.jpg）→ 每次都从它开始
+  # - 填 random → 每次进入 / 刷新随机一张
+  # - 留空 / 删除该行 → 从 covers 第一张开始
+  #
+  # hitokoto：一言列表，页面加载后随机轮换、打字机逐字展示
+  # - 写几条随机几条；只写一条时不循环删除，打完停住
+  # - 留空 / 删除整个 hero 项则卡片不渲染
+  #
+  # avatar：博主头像，浮在一言卡片上边缘上方居中，右侧是名称（取 params.author）
+  # - 网络图片：直接写完整 URL（http:// 或 https://，原样引用）
+  # - 本地图片：assets 下的路径（如 images/avatar.jpg），走 resources.Get
+  # - 留空 / 删除该行 → 头像与名称整块不渲染
+  # 注意：站点部署在 https 下时网络图片必须 https，http 会被按混合内容拦截
+  # ---------------------------------------------------------------------------
+  hero:
+    covers:
+      - "images/cover/cover1.jpg"
+      - "images/cover/cover2.jpg"
+      - "images/cover/cover3.jpg"
+
+    initial_cover: "random"
+
+    avatar: "" # ← 例：images/avatar.jpg 或 https://example.com/avatar.jpg
+
+    hitokoto:
+      - "我希望成为的幸福，仅仅为此我会在你身边。"
+      - "愿你的道路漫长，充满奇迹，充满发现。"
+      - "所有的日子都去吧，在生活中我快乐地向前。"
+
+  # ---------------------------------------------------------------------------
+  # 页脚
+  #
+  # 从上到下的每一行都是可选的：对应的配置留空 / 删掉，整行就不渲染。
+  # 凡是有 url 的项都自动生成超链接；url 留空则只显示文字。
+  # 外链（http/https 开头）自动开新标签页，站内链接（/index.xml 等）走当前页。
+  # ---------------------------------------------------------------------------
+  footer:
+    # 备案号：一行一个，通常是"工信部备案 + 公安备案"两条
+    # text 留空则该条不渲染（两条都空 → 整行不渲染）
+    filings:
+      - text: "" # 例：粤ICP备00000000号
+        url: "https://beian.miit.gov.cn/" # 留空则不生成超链接
+      - text: "" # 例：粤公网安备 00000000000000号
+        url: ""
+
+    # Powered by：渲染成"Powered by Hugo & theme inaline"，两个名字都可点。
+    # 这是主题自带的身份信息，没得改也没必要改，故只留开关不给配置项
+    powered_by: true
+
+    # 访客统计：数字目前是占位符（显示 —），等 Waline 接上后由前端回填，
+    # 见 partials/footer.html 里 data-footer-stat 那几处。false 则整行不渲染
+    stats: true
+
+    # 站点开始运行的时刻（RFC 3339，务必带时区）：
+    # 页脚按它算出"已运行 X 天 X 小时 X 分 X 秒"，并逐秒走动
+    # ← 改成你自己的建站时间
+    since: "2025-01-01T00:00:00+08:00"
+
+    # 底部链接。默认指向 Hugo 自动生成的 RSS 与站点地图，一般不用改
+    links:
+      - name: "RSS"
+        url: "/index.xml"
+      - name: "Sitemap"
+        url: "/sitemap.xml"
+
+    # 版权起始年份；结束年份取构建时的当前年。留空则只显示当前年
+    copyright_since: 2025
+
+  # ---------------------------------------------------------------------------
+  # 侧栏
+  #
+  # 组件自上而下堆叠，一个组件一张卡；不想要的组件把 enable 关掉（或整块删掉）。
+  # ---------------------------------------------------------------------------
+  sidebar:
+    # 博主信息卡：头像 + 名称 + 三项数据（文章 / 字数 / 评论）+ 联系方式。
+    # 本卡没有标题组件——头像与名称本身就是它的标题
+    profile:
+      enable: true
+
+      # 头像：同 hero.avatar——网络图片写完整 URL，本地图片写 assets 下的路径。
+      # 留空则沿用 hero.avatar（同一个人，不必配两遍）
+      avatar: ""
+
+      # 名称：留空取 params.author
+      name: ""
+
+      # 联系方式：按需要的挑几个排成一行，顺序即渲染顺序。
+      # 图标名只能用这 6 个（图形见 partials/icon.html，品牌色见 _tokens.scss）：
+      #   rss / email / wechat / bilibili / github / qq
+      # url  → 超链接：以 / 开头的当站内路径（走 relURL）；外链开新标签页；
+      #        邮箱写 mailto:xxx@yyy
+      # copy → 点击复制到剪贴板并弹一个"已复制"气泡（微信这类没有网页地址的用它）
+      # 两个都不写的条目会被跳过，名字写错会在构建时告警
+      socials:
+        - name: "github"
+          url: "https://github.com/yourname"
+
+        - name: "rss"
+          url: "/index.xml"
+
+        - name: "email"
+          url: "mailto:you@example.com"
+
+        - name: "wechat"
+          copy: "your_wechat_id"
+
+        - name: "qq"
+          copy: "123456789"
+
+        # - name: "bilibili"
+        #   url: "https://space.bilibili.com/0000000"
+
+    # 最新文章：标题 + 图标 + 列表（缩略图 / 标题 / 发布日期）。
+    # 数据直接取 posts 分区，按发布日期倒序；count 为显示条数。
+    # enable 关掉或整块删掉则整卡不渲染
+    latest:
+      enable: true
+      title: "最新文章"
+      count: 5
+
+    # 近期评论：评论系统（Waline）尚未接入，列表内容是主题内置的占位数据，
+    # 接上后由前端按 data-sidebar-comments 回填（见 sidebar-comments.html）。
+    # 每条显示圆形头像、用户名、相对时间与正文；count 为显示条数。
+    # enable 关掉或整块删掉则整卡不渲染
+    comments:
+      enable: true
+      title: "近期评论"
+      count: 5
+
+    # 分类：整行显示"分类名 + 文章数"，按文章数降序。
+    # 数据来自文章的 categories front matter；没有分类则整卡不渲染
+    categories:
+      enable: true
+      title: "分类"
+      count: 8
+
+    # 标签：胶囊形标签自动换行，标签名后跟文章数，按文章数降序。
+    # 数据来自文章的 tags front matter；没有标签则整卡不渲染
+    tags:
+      enable: true
+      title: "标签"
+      count: 20
+
+# -----------------------------------------------------------------------------
+# 导航：Hugo 标准菜单（menu.main），模板不硬编码
+# - 同级按 weight 升序，weight 相同再按名称
+# - 层级用 parent + identifier：子项的 parent 指向父项的 identifier
+# - pageRef 指向内容页，Hugo 解析成真实链接；外链直接写 url
+#   （下面 /moments/ /links/ 等都要求站点有同名内容页，用不上的删掉即可）
+# - 图标放在 params.icon，填 Font Awesome 类名（如 fa-solid fa-house）
+# -----------------------------------------------------------------------------
+menu:
+  main:
+    - name: "首页"
+      pageRef: "/"
+      weight: 10
+      params:
+        icon: "fa-solid fa-house"
+
+    - name: "动态"
+      pageRef: "/moments/"
+      weight: 20
+      params:
+        icon: "fa-solid fa-comment-dots"
+
+    - name: "友链"
+      pageRef: "/links/"
+      weight: 30
+      params:
+        icon: "fa-solid fa-link"
+
+    - name: "关于"
+      pageRef: "/about/"
+      weight: 40
+      params:
+        icon: "fa-solid fa-circle-info"
+
+    - name: "更多"
+      identifier: "more"
+      weight: 50
+      params:
+        icon: "fa-solid fa-ellipsis"
+
+    - name: "归档"
+      pageRef: "/archives/"
+      parent: "more"
+      weight: 10
+      params:
+        icon: "fa-solid fa-box-archive"
+
+    - name: "标签"
+      pageRef: "/tags/"
+      parent: "more"
+      weight: 20
+      params:
+        icon: "fa-solid fa-tag"
+
+# -----------------------------------------------------------------------------
+# 以下为 Hugo 自身的渲染设置，与主题无关，照搬即可
+# -----------------------------------------------------------------------------
+
+# 代码高亮的颜色走内联样式而非 class：主题没带 Chroma 样式表，
+# 关掉 noClasses 会让代码块失去配色
+markup:
+  highlight:
+    noClasses: true
+
+  # 允许 Markdown 里的原始 HTML（文章里嵌 <video>、自定义 div 等需要它）
+  goldmark:
+    renderer:
+      unsafe: true

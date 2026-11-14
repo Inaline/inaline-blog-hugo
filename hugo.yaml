@@ -14,8 +14,10 @@ params:
   author: "Inaline"
 
   # -------------------------------------------------------------------------
-  # 首页 Hero（DESIGN.md §7）
+  # 首页背景图 / Hero
   # covers：封面图列表（assets 下的路径），可以配置多张
+  # - 这些图铺满**整个首页**（从首屏到页脚，滚动时图像固定不动），
+  #   不再只是首屏 Hero 的背景
   # - 顺序即切换顺序
   # - 多于一张时，卡片左下角出现左右箭头循环切换（交叉淡入）
   # - 不配置 / 全部解析不到则回退主题内置的 images/cover/cover1.jpg
@@ -40,7 +42,7 @@ params:
     # - 本地图片：assets 下的路径（如 images/avatar.jpg），走 resources.Get
     # - 留空 / 删除该行 → 头像与名称整块不渲染
     # 注意：站点部署在 https 下时网络图片必须 https，http 会被按混合内容拦截
-    avatar: "https://q.qlogo.cn/headimg_dl?dst_uin=2291374026&spec=640&img_type=jpg"
+    avatar: "https://q.qlogo.cn/headimg_dl?dst_uin=2291374026&spec=640"
 
     hitokoto:
       - "我希望成为的幸福，仅仅为此我会在你身边。"
@@ -48,39 +50,169 @@ params:
       - "所有的日子都去吧，在生活中我快乐地向前。"
 
   # -------------------------------------------------------------------------
-  # 导航：名称 / 链接 / 图标 / 层级全部在此配置，模板不硬编码（DESIGN.md §6.5）
-  # - 树形结构：子菜单直接嵌套在 children 下，层级即嵌套深度，不用 parent/identifier
-  # - 顺序即渲染顺序：不参与任何排序，怎么写就怎么显示
-  # - pageRef 指向内容页，Hugo 解析成真实链接；解析不到会构建告警
-  # - icon 填 Material Design Icons 类名（mdi + mdi-<name>）
+  # 页脚
+  # 从上到下的每一行都是可选的：对应的配置留空 / 删掉，整行就不渲染。
+  # 凡是有 url 的项都自动生成超链接；url 留空则只显示文字。
+  # 外链（http/https 开头）自动开新标签页，站内链接（/index.xml 等）走当前页。
   # -------------------------------------------------------------------------
-  nav:
+  footer:
+    # 备案号：一行一个，通常是"工信部备案 + 公安备案"两条
+    # text 留空则该条不渲染（两条都空 → 整行不渲染）
+    filings:
+      - text: "" # 例：粤ICP备00000000号
+        url: "https://beian.miit.gov.cn/" # 留空则不生成超链接
+      - text: "" # 例：粤公网安备 00000000000000号
+        url: ""
+
+    # Powered by：渲染成"Powered by Hugo & theme inaline"，两个名字都可点。
+    # 这是主题自带的身份信息，没得改也没必要改，故只留开关不给配置项
+    powered_by: true
+
+    # 访客统计：数字目前是占位符（显示 —），等 Waline 接上后由前端回填，
+    # 见 partials/footer.html 里 data-footer-stat 那几处。false 则整行不渲染
+    stats: true
+
+    # 站点开始运行的时刻（RFC 3339，务必带时区）：
+    # 页脚按它算出"已运行 X 天 X 小时 X 分 X 秒"，并逐秒走动
+    # ← 改成你自己的建站时间
+    since: "2025-01-01T00:00:00+08:00"
+
+    # 底部链接。默认指向 Hugo 自动生成的 RSS 与站点地图，一般不用改
+    links:
+      - name: "RSS"
+        url: "/index.xml"
+      - name: "Sitemap"
+        url: "/sitemap.xml"
+
+    # 版权起始年份；结束年份取构建时的当前年。留空则只显示当前年
+    copyright_since: 2025
+
+  # -------------------------------------------------------------------------
+  # 侧栏
+  # 组件自上而下堆叠，一个组件一张卡；不想要的组件把 enable 关掉（或整块删掉）。
+  # -------------------------------------------------------------------------
+  sidebar:
+    # 博主信息卡：头像 + 名称 + 一条分割线下的三项数据（文章 / 字数 / 评论）+ 联系方式。
+    # 本卡没有标题组件——头像与名称本身就是它的标题
+    profile:
+      enable: true
+
+      # 头像：同 hero.avatar——网络图片写完整 URL，本地图片写 assets 下的路径。
+      # 留空则沿用 hero.avatar（同一个人，不必配两遍）
+      avatar: ""
+
+      # 名称：留空取 params.author
+      name: ""
+
+      # 联系方式：按需要的挑几个排成一行，顺序即渲染顺序。
+      # 图标名只能用这 6 个（图形见 partials/icon.html，品牌色见 _tokens.scss）：
+      #   rss / email / wechat / bilibili / github / qq
+      # url  → 超链接：以 / 开头的当站内路径（走 relURL）；外链开新标签页；
+      #        邮箱写 mailto:xxx@yyy
+      # copy → 点击复制到剪贴板并弹一个"已复制"气泡（微信这类没有网页地址的用它）
+      # 两个都不写的条目会被跳过，名字写错会在构建时告警
+      socials:
+        - name: "github"
+          url: "https://github.com/inaline"
+
+        - name: "rss"
+          url: "/index.xml"
+
+        - name: "email"
+          url: "mailto:inaline@example.com" # ← 改成你的邮箱
+
+        - name: "wechat"
+          copy: "inaline_wx" # ← 改成你的微信号
+
+        - name: "qq"
+          copy: "2291374026"
+
+        # - name: "bilibili"
+        #   url: "https://space.bilibili.com/<uid>"
+
+    # 最新文章：标题 + 图标 + 列表（缩略图 / 标题 / 发布日期）。
+    # 数据直接取 posts 分区，按发布日期倒序；count 为显示条数。
+    # enable 关掉或整块删掉则整卡不渲染
+    latest:
+      enable: true
+      title: "最新文章"
+      count: 5
+
+    # 近期评论：评论系统（Waline）尚未接入，列表内容是主题内置的占位数据，
+    # 接上后由前端按 data-sidebar-comments 回填（见 sidebar-comments.html）。
+    # 每条显示圆形头像、用户名、相对时间与正文；count 为显示条数。
+    # enable 关掉或整块删掉则整卡不渲染
+    comments:
+      enable: true
+      title: "近期评论"
+      count: 5
+
+    # 分类：整行显示"分类名 + 文章数"，按文章数降序。
+    # 数据来自文章的 categories front matter；没有分类则整卡不渲染
+    categories:
+      enable: true
+      title: "分类"
+      count: 8
+
+    # 标签：胶囊形标签自动换行，标签名后跟文章数，按文章数降序。
+    # 数据来自文章的 tags front matter；没有标签则整卡不渲染
+    tags:
+      enable: true
+      title: "标签"
+      count: 20
+
+# ---------------------------------------------------------------------------
+# 导航：Hugo 标准菜单（menu.main），模板不硬编码（DESIGN.md §6.5）
+# - 同级按 weight 升序，weight 相同再按名称
+# - 层级用 parent + identifier：子项的 parent 指向父项的 identifier
+# - pageRef 指向内容页，Hugo 解析成真实链接；外链直接写 url
+# - 图标放在 params.icon，填 Font Awesome 类名（如 fa-solid fa-house）
+# ---------------------------------------------------------------------------
+menu:
+  main:
     - name: "首页"
       pageRef: "/"
-      icon: "mdi mdi-home"
+      weight: 10
+      params:
+        icon: "fa-solid fa-house"
 
     - name: "动态"
       pageRef: "/moments/"
-      icon: "mdi mdi-message-text"
+      weight: 20
+      params:
+        icon: "fa-solid fa-comment-dots"
 
     - name: "友链"
       pageRef: "/links/"
-      icon: "mdi mdi-link-variant"
+      weight: 30
+      params:
+        icon: "fa-solid fa-link"
 
     - name: "关于"
       pageRef: "/about/"
-      icon: "mdi mdi-information"
+      weight: 40
+      params:
+        icon: "fa-solid fa-circle-info"
 
     - name: "更多"
-      icon: "mdi mdi-dots-horizontal"
-      children:
-        - name: "归档"
-          pageRef: "/archives/"
-          icon: "mdi mdi-archive-outline"
+      identifier: "more"
+      weight: 50
+      params:
+        icon: "fa-solid fa-ellipsis"
 
-        - name: "标签"
-          pageRef: "/tags/"
-          icon: "mdi mdi-tag-multiple-outline"
+    - name: "归档"
+      pageRef: "/archives/"
+      parent: "more"
+      weight: 10
+      params:
+        icon: "fa-solid fa-box-archive"
+
+    - name: "标签"
+      pageRef: "/tags/"
+      parent: "more"
+      weight: 20
+      params:
+        icon: "fa-solid fa-tag"
 
 markup:
   highlight:

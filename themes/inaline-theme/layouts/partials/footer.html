@@ -1,5 +1,82 @@
+{{/* 页脚：自上而下的六行，全部来自 hugo.yaml 的 params.footer。
+     每行只看自己那项配置，删掉 / 留空即少一行，互不影响；
+     配置整体缺失时兜底只留版权行（配置项清单见 hugo.yaml 的注释）。
+     深色毛玻璃外观见 assets/css/_footer.scss，运行时长由 js/main.js 接管。 */}}
+
+{{ $f := default dict site.Params.footer }}
+{{ $year := now.Year }}
+
 <footer class="site-footer">
   <div class="container">
-    <p>&copy; {{ now.Year }} {{ with site.Params.copyright }}{{ . }}{{ else }}{{ site.Title }}{{ end }}</p>
+
+    {{/* 1. 备案号：filings 里一行写一条（工信部 / 公安），这里并排渲染。
+           text 为空的条目在下面被滤掉，两条都空则整行不渲染 */}}
+    {{ with $f.filings }}
+      {{ $items := slice }}
+      {{ range . }}{{ if .text }}{{ $items = $items | append . }}{{ end }}{{ end }}
+      {{ with $items }}
+        <p class="footer-line">
+          {{- range $i, $item := . -}}
+            {{- if $i }}<span class="footer-sep">|</span>{{ end -}}
+            {{- partial "footer-link.html" (dict "text" $item.text "url" $item.url) -}}
+          {{- end -}}
+        </p>
+      {{ end }}
+    {{ end }}
+
+    {{/* 2. Powered by：引擎与主题是主题自带的身份信息，只给开关不给配置项 */}}
+    {{ if $f.powered_by }}
+      <p class="footer-line">
+        Powered by <a class="footer-link" href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a>
+        &amp; theme <a class="footer-link" href="https://github.com/Inaline/hugo-theme-inaline" target="_blank" rel="noopener">inaline</a>
+      </p>
+    {{ end }}
+
+    {{/* 3. 访客统计：四个数字现在都是占位符，等接入 Waline 后由前端按
+           data-footer-stat 回填（值域见 hugo.yaml 的注释），模板侧不再改 */}}
+    {{ if $f.stats }}
+      <p class="footer-line">
+        <span class="footer-stat">今日访客: <span class="footer-num" data-footer-stat="today-visitors">--</span></span>
+        <span class="footer-sep">|</span>
+        <span class="footer-stat">今日访问: <span class="footer-num" data-footer-stat="today-views">--</span></span>
+        <span class="footer-sep">|</span>
+        <span class="footer-stat">累计访客: <span class="footer-num" data-footer-stat="total-visitors">--</span></span>
+        <span class="footer-sep">|</span>
+        <span class="footer-stat">累计访问: <span class="footer-num" data-footer-stat="total-views">--</span></span>
+      </p>
+    {{ end }}
+
+    {{/* 4. 运行时长：构建时先算一次作初值（无 JS 也读得到数），
+           页面加载后由 main.js 按 data-uptime-start 逐秒重算 */}}
+    {{ with $f.since }}
+      {{ $start := time.AsTime . }}
+      {{ $elapsed := sub now.Unix $start.Unix }}
+      {{ if lt $elapsed 0 }}{{ $elapsed = 0 }}{{ end }}
+      <p class="footer-line" data-uptime-start="{{ $start.Unix }}">
+        本站已流畅运行
+        <span class="footer-num" data-uptime-part="days">{{ div $elapsed 86400 }}</span> 天
+        <span class="footer-num" data-uptime-part="hours">{{ div (mod $elapsed 86400) 3600 }}</span> 小时
+        <span class="footer-num" data-uptime-part="minutes">{{ div (mod $elapsed 3600) 60 }}</span> 分
+        <span class="footer-num" data-uptime-part="seconds">{{ mod $elapsed 60 }}</span> 秒
+      </p>
+    {{ end }}
+
+    {{/* 5. 底部链接：默认为 Hugo 自动生成的 RSS 与站点地图 */}}
+    {{ with $f.links }}
+      <p class="footer-line">
+        {{- range $i, $item := . -}}
+          {{- if $i }}<span class="footer-sep">|</span>{{ end -}}
+          {{- partial "footer-link.html" (dict "text" $item.name "url" $item.url) -}}
+        {{- end -}}
+      </p>
+    {{ end }}
+
+    {{/* 6. 版权：站名可点，指向本站 baseURL（走当前页，不开新标签）；
+           起始年与今年相同时（或没配起始年）只显示今年 */}}
+    <p class="footer-line">
+      Copyright {{ with $f.copyright_since }}{{ if lt . $year }}{{ . }}-{{ end }}{{ end }}{{ $year }}
+      <a class="footer-link footer-site" href="{{ site.BaseURL }}">{{ site.Title }}</a>. All Rights Reserved.
+    </p>
+
   </div>
 </footer>

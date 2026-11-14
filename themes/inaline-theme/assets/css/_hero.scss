@@ -1,49 +1,20 @@
 // ---------------------------------------------------------------------------
-// 首页 Hero：背景图（视觉固定）+ 底部跳动箭头
-// 见 DESIGN.md §7
+// 首页 Hero：一言卡片 + 作者徽章 + 底部跳动箭头
+// 背景图已升级为整页图层，不在这里（见 _page-bg.scss 与 partials/page-background.html）
 // ---------------------------------------------------------------------------
 
 .hero {
   position: relative;
   // 铺满整个视口。文档流顶端即为视口顶端（Header 是 fixed，不占位），
   // 因此 Hero 天然钻到 Header 底下；Header 有 z-index: var(--z-header)，仍渲染在上一层。
+  // svh（小视口）而非 vh：iOS 上 vh 是"地址栏收起时"的高度，而首屏加载时地址栏
+  // 是展开的，用 vh 会把底部箭头顶到屏幕外，"向下滚动"的入口直接看不见。
+  // 桌面端 svh == vh，无差别；前一行兜底不认 svh 的旧浏览器。
   height: 100vh;
+  height: 100svh;
+  // 与背景无关：兜底 .hero-profile 的 nowrap——超长作者名会横向溢出视口，
+  // 多出一条横向滚动条
   overflow: hidden;
-  // 图片解码完成前的兜底底色，避免闪白
-  background: var(--color-surface);
-}
-
-// 每张封面一个图层，直接铺在 .hero 上（inset: 0），切换 = JS 挪 .is-active
-// （背景图不可过渡，只能靠透明度交叉淡入）。
-// fixed 让图片相对**视口**定位——页面滚动、图片不动，即"视觉固定"效果
-// （曾用 JS transform 每帧抵消滚动，主线程晚一帧就是一次抖动，见 §7.1）。
-// 定位区是视口时 cover / center 也按视口算：图片始终居中铺满一屏，
-// 滚出 hero 盒子的部分被裁掉
-.hero-bg-layer {
-  position: absolute;
-  inset: 0;
-  background-attachment: fixed;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0;
-  transition: opacity 600ms var(--ease);
-}
-
-.hero-bg-layer.is-active {
-  opacity: 1;
-}
-
-// 压暗遮罩。封面图整体偏暗但仍够亮，全屏铺开在夜里相当刺眼，
-// 压一层黑把亮度整体降下来。
-// 用 ::after 而非再做一层 div：无需进模板，且伪元素天然排在各个背景图层之后、盖住它们。
-.hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--hero-scrim);
-  // 遮罩铺满整个 Hero，不挡点击，否则底部箭头和下滚链接全被吃掉
-  pointer-events: none;
 }
 
 // --- 徽章 + 卡片：整块组合居中（§7.6）---
@@ -64,8 +35,6 @@
   justify-content: center;
   // 徽章与卡片的间距（原 bottom: calc(100% + ...) 的那一档）
   gap: var(--space-5);
-  // 必须高于 .hero::after 遮罩，否则整块被压暗
-  z-index: 1;
 }
 
 // --- 中央一言玻璃卡片（§7.5）---
@@ -120,6 +89,9 @@
   line-height: 1.9;
   color: var(--color-over-hero);
   text-align: center;
+  // 亮色模式下卡片没有底色、整页背景也不压暗，白字只剩"照片本身够暗"一条兜底。
+  // 给一点投影兜住：同 .hero-profile-name 的理由，只针对文字、不压暗图片
+  text-shadow: 0 2px 6px rgba(0, 0, 0, .35);
 }
 
 // --- 卡片上方：博主头像 + 名称（§7.6）---
@@ -161,8 +133,11 @@
   font-size: 3.5rem;
   font-weight: 500;
   letter-spacing: .02em;
-  // 与箭头同理：名字直接压在照片上，浅色照片里纯白字会糊，给一点投影兜底
-  text-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+  // 暗影兜底 + 白色辉光：投影在前，先让白字从照片里"立"住；辉光在后，从字形边缘向外散开。
+  // 光晕参数集中在 --glow-name（见 _tokens.scss），大字号需要比 --glow-text 更宽的扩散半径
+  text-shadow:
+    0 2px 6px rgba(0, 0, 0, .35),
+    var(--glow-name);
 }
 
 // --- 卡片左下角：背景切换 ---
@@ -187,7 +162,7 @@
   border: 0;
   background: none;
   color: var(--color-over-hero);
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1;
   opacity: .55;
   cursor: pointer;
@@ -238,10 +213,8 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  font-size: 2rem;
+  font-size: 1.75rem;
   color: var(--color-over-hero);
-  // 必须高于 .hero::after 遮罩，否则箭头会被压暗
-  z-index: 1;
   // 基准 transform 也要写：prefers-reduced-motion 下 animation 被关掉，
   // 没有它箭头就会丢掉居中偏移
   transform: translateX(-50%);
@@ -258,7 +231,7 @@
 }
 
 // 兜底可读性：封面图若是浅色调，纯白箭头会糊进背景
-.hero-arrow .mdi {
+.hero-arrow i {
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .35));
 }
 
@@ -302,11 +275,6 @@
 @media (prefers-reduced-motion: reduce) {
   .hero-arrow {
     animation: none;
-  }
-
-  // 背景切换不做交叉淡入，直接换
-  .hero-bg-layer {
-    transition: none;
   }
 
   // 一言不做打字（home.js 直接静态展示随机一条），光标一并隐藏

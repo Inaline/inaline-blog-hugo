@@ -1,11 +1,14 @@
 {{/*
   右侧栏（DESIGN.md §7.8）
 
-  当前只有几张空白占位卡，先把两栏的节奏撑出来；个人卡 / 公告 / 标签云 /
-  最新文章这些真实组件后续逐个填进来——一个组件一张 .sidebar-card。
+  一个组件一张 .sidebar-card，自上而下堆叠（间距 = .sidebar 的 gap）。
+  已落地：博主信息卡、最新文章、近期评论、分类、标签。公告后续接着往这里加，
+  每个组件自带 enable 开关（见 hugo.yaml 的 params.sidebar）。
 */}}
 <aside class="sidebar" aria-label="侧栏">
-  <div class="sidebar-card"></div>
-  <div class="sidebar-card"></div>
-  <div class="sidebar-card"></div>
+  {{ partial "sidebar-profile.html" . }}
+  {{ partial "sidebar-latest.html" . }}
+  {{ partial "sidebar-comments.html" . }}
+  {{ partial "sidebar-categories.html" . }}
+  {{ partial "sidebar-tags.html" . }}
 </aside>

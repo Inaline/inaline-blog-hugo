@@ -2,6 +2,7 @@
 title: "你好，世界"
 date: 2026-10-03T21:00:00+08:00
 draft: false
+categories: ["随笔"]
 tags: ["随笔", "Hugo"]
 summary: "第一篇示例文章，用来验证 inaline-theme 的文章页渲染效果。"
 ---

@@ -16,6 +16,12 @@
   --color-border: #2C313A;
   --header-bg: rgba(22, 24, 29, 0.6);
   --hero-card-bg: rgba(16, 18, 22, 0.4); // Hero 一言卡片玻璃底（§7.5）：仅暗色加深色底
+  --page-scrim: rgba(0, 0, 0, .35); // 首页整页背景压暗遮罩：暗色下把封面压下去，夜里不刺眼
+
+  // 社交图标品牌色：取自各家官方色，一排联系方式里才分得开（用法见 _sidebar.scss）。
+  // GitHub 的品牌色是近黑，落在暗色卡片上会整个消失——这是唯一一个需要翻色的品牌色，
+  // 所以它单独出现在这里，跟 --color-bg 这些一起翻
+  --brand-github: #FFFFFF;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .25), 0 2px 6px rgba(0, 0, 0, .3);
   --shadow-md: 0 6px 18px rgba(0, 0, 0, .45);
@@ -32,8 +38,20 @@
   --color-primary-soft: rgba(250, 93, 25, 0.10);
   --color-on-primary: #FFFFFF; // 主题色实心填充上的前景色（两种主题下都是白）
   --color-over-hero: #FFFFFF;   // Hero 封面图之上的前景色：封面图为深色调，须用白字
-  --color-over-hero-soft: rgba(255, 255, 255, .85); // 同上，略灰一档（首页顶部态 Header 静止时）
-  --hero-scrim: rgba(0, 0, 0, .35);                 // 封面图压暗遮罩，夜里不刺眼
+  --color-over-hero-soft: rgba(255, 255, 255, .85); // 同上，略灰一档（首页顶部态 Header 静止时、页脚正文）
+  // 首页整页背景的压暗遮罩。亮色不压：照片原样露出，正文靠卡片自己的不透明底兜住；
+  // 暗色才压在照片上（见 dark-tokens）。必须是显式的 transparent 而不是"不定义"——
+  // 变量缺失会让 background: var(--page-scrim) 在计算值阶段整条失效。
+  --page-scrim: transparent;
+
+  // 页脚毛玻璃条（见 _footer.scss）。与 --color-over-hero / --badge-bg 同类——
+  // 它是"压在封面图上的色块"，两种主题下取值相同，故**不进 dark-tokens**：
+  // 跟着主题翻色的话，亮色下它会退回浅色，"和正文区分、更突出"就没了。
+  // 写成等价的 rgba 而不是 color-mix(in srgb, #1a1a1a 48%, transparent)：
+  // color-mix 在 Safari < 16.2 / Firefox < 113 上整条声明失效，
+  // 页脚会连底色一起丢掉，只剩白字直接压在照片上
+  --footer-scrim: rgba(26, 26, 26, .48);
+  --footer-blur: 3px;
 
   // Hero 中央一言卡片（玻璃拟态，压在封面图上；规格见 §7.5）
   // 浅色不添底：只做毛玻璃，整卡让位给照片；暗色才叠一档深色底（见 dark-tokens）
@@ -43,6 +61,21 @@
   // Hero 作者徽章（§7.6）：头像直径。徽章块（.hero-profile）的高度也取它——
   // 名称的行盒比头像高，徽章不钉住的话，组合居中会连行间留白一起算进去
   --hero-avatar-size: 72px;
+
+  // 侧栏博主卡的头像直径。比 Hero 徽章那位（72px）大一圈：博主卡是侧栏的头块，
+  // 头像是它的视觉入口，值得更重。卡片内容宽 248px，96px 约占三分之一，
+  // 再大整卡就只剩头像了
+  --profile-avatar-size: 96px;
+
+  // 社交图标品牌色（_sidebar.scss）：一排联系方式里，各家用自己的品牌色才分得开。
+  // 与 --color-over-hero / --badge-bg 同类——色块坐在卡片上而不是页面底色上，
+  // 两种主题下取值相同，故不进 dark-tokens（GitHub 除外，见 dark-tokens）
+  --brand-rss: #F26522;    // RSS 橙
+  --brand-email: #3B82F6;  // 邮件的通用蓝（没有官方色）
+  --brand-wechat: #07C160;
+  --brand-bilibili: #00AEEC;
+  --brand-github: #181717;
+  --brand-qq: #12B7F5;
 
   // 封面角标（§7.7，当前只有"置顶"）：压在封面图上的白底角标。
   // 两种主题下取值相同，故**不进 dark-tokens**——它坐在照片上而不是页面底色上，
@@ -103,6 +136,11 @@
   --glow-inset: inset 0 0 10px rgba(255, 255, 255, .25); // 内高光，让填充块"亮起来"（仅二级菜单子项，挂在其填充层上）
   --glow-text: 0 0 6px rgba(255, 255, 255, .55);         // 文字/图标自身辉光
   --glow-halo: 0 0 12px rgba(250, 93, 25, .45);          // 外围光晕（v3.6 起失去引用，保留待用）
+
+  // Hero 作者名称的白色辉光（§7.6）：名字压在封面照片上，光晕让白字从背景里"亮"出来。
+  // 与 --color-over-hero 同类——它坐在照片上而不是页面底色上，两种主题下取值相同，故不进 dark-tokens。
+  // 双层：近层收拢字形边缘，远层做弥散；单层要么像描边、要么像一块白雾
+  --glow-name: 0 0 16px rgba(255, 255, 255, .45), 0 0 42px rgba(255, 255, 255, .18);
 
   // 布局
   --container-width: 1200px; // Header 与两栏布局容器（列表页内容区已用上，见 §7.8）

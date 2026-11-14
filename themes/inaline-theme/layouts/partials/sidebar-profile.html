@@ -1,0 +1,87 @@
+{{/* 侧栏 · 博主信息卡
+
+   头像 + 名称 + 一条横向分割线下的三项数据（文章 / 字数 / 评论）+ 一排联系方式。
+   本卡没有标题组件——头像与名称本身就是它的标题。
+   配置见 hugo.yaml 的 params.sidebar.profile；enable 关掉或整块删掉则整卡不渲染。
+
+   联系方式（socials）按名字取图标，可选：rss / email / wechat / bilibili / github / qq
+   （图形在 partials/icon.html，这里只管选图与生成链接）：
+     · 有 url  → 超链接。以 / 开头的走 relURL 当站内路径，其余（http(s)、mailto:）原样输出
+     · 有 copy → 按钮，点击复制到剪贴板并弹"已复制"气泡（见 js/main.js）
+   url 与 copy 都没有的条目会被跳过，未知图标名会构建告警。
+*/}}
+
+{{ $s := default dict site.Params.sidebar }}
+{{ $p := default dict $s.profile }}
+
+{{ if $p.enable }}
+  {{/* 头像：与 hero.avatar 同一套解析（网络 URL 原样引用 / assets 本地路径走 resources.Get）。
+       本卡留空则沿用 hero.avatar——同一个人，不必配两遍 */}}
+  {{ $avatar := "" }}
+  {{ with $p.avatar }}{{ $avatar = . }}{{ else }}{{ with site.Params.hero }}{{ $avatar = .avatar }}{{ end }}{{ end }}
+  {{ if and $avatar (not (or (hasPrefix $avatar "http://") (hasPrefix $avatar "https://"))) }}
+    {{ with resources.Get $avatar }}{{ $avatar = .RelPermalink }}{{ else }}{{ warnf "sidebar.profile.avatar: 找不到资源 %q" $avatar }}{{ $avatar = "" }}{{ end }}
+  {{ end }}
+
+  {{ $name := or $p.name site.Params.author }}
+
+  {{/* 文章：与首页列表同一个集合（posts 分区的常规页）。
+       字数：各篇 .WordCount 之和——Hugo 的 WordCount 对中日韩逐字计数，
+       中文站拿到的就是"字数"而不是"空格分隔的词数" */}}
+  {{ $posts := where site.RegularPages "Section" "posts" }}
+  {{ $words := 0 }}
+  {{ range $posts }}{{ $words = add $words .WordCount }}{{ end }}
+  {{/* 五位数以上折成"万字"，否则一长串数字在卡里读不出来。
+       $k 是"万位 + 千位"拼成的整数，低位为 0 时不显示小数（10000 → 1万，12345 → 1.2万） */}}
+  {{ $wordsText := $words }}
+  {{ if ge $words 10000 }}
+    {{ $k := div $words 1000 }}
+    {{ if mod $k 10 }}{{ $wordsText = printf "%d.%d万" (div $k 10) (mod $k 10) }}{{ else }}{{ $wordsText = printf "%d万" (div $k 10) }}{{ end }}
+  {{ end }}
+
+  {{/* 名称 → 无障碍标签。这张表同时是图标名的白名单：主题自绘 SVG 只有这几个 */}}
+  {{ $labels := dict
+    "rss" "RSS" "email" "邮箱" "wechat" "微信"
+    "bilibili" "Bilibili" "github" "GitHub" "qq" "QQ" }}
+
+  <div class="sidebar-card sidebar-profile">
+    {{ with $avatar }}<img class="profile-avatar" src="{{ . }}" alt="{{ $name }}" width="96" height="96" referrerpolicy="no-referrer">{{ end }}
+    {{ with $name }}<p class="profile-name">{{ . }}</p>{{ end }}
+
+    <div class="profile-stats">
+      <div class="profile-stat">
+        <span class="profile-stat-num">{{ len $posts }}</span>
+        <span class="profile-stat-label">文章</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-num">{{ $wordsText }}</span>
+        <span class="profile-stat-label">字数</span>
+      </div>
+      <div class="profile-stat">
+        {{/* 评论数待接入 Waline 后由前端回填（锚点 data-sidebar-stat），现在渲染占位符 */}}
+        <span class="profile-stat-num" data-sidebar-stat="comments">--</span>
+        <span class="profile-stat-label">评论</span>
+      </div>
+    </div>
+
+    {{ with $p.socials }}
+      <div class="profile-socials">
+        {{- range . }}
+          {{- $label := index $labels .name }}
+          {{- if not $label }}
+            {{- warnf "sidebar.profile.socials: 未知的图标名 %q（可选：rss / email / wechat / bilibili / github / qq）" .name }}
+          {{- else if .url }}
+            {{- $href := .url }}
+            {{- if hasPrefix $href "/" }}{{ $href = $href | relURL }}{{ end }}
+            {{- $ext := hasPrefix (lower $href) "http" }}
+            <a class="social-link social-link--{{ .name }}" href="{{ $href }}"{{ if $ext }} target="_blank" rel="noopener"{{ end }} title="{{ $label }}" aria-label="{{ $label }}">{{ partial "icon.html" (dict "name" .name "size" "1.05em") }}</a>
+          {{- else if .copy }}
+            <button type="button" class="social-link social-link--{{ .name }}" data-copy="{{ .copy }}" aria-label="复制{{ $label }}">{{ partial "icon.html" (dict "name" .name "size" "1.05em") }}<span class="social-tip" aria-hidden="true">已复制</span></button>
+          {{- else }}
+            {{- warnf "sidebar.profile.socials: %q 既没有 url 也没有 copy，已跳过" .name }}
+          {{- end }}
+        {{- end }}
+      </div>
+    {{ end }}
+  </div>
+{{ end }}

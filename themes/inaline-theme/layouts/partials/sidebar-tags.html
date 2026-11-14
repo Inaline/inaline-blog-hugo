@@ -1,0 +1,36 @@
+{{/* 侧栏 · 标签
+
+   数据取 site.Taxonomies.tags，按文章数降序取前 N 个（N = params.sidebar.tags.count），
+   渲染成一排可换行的胶囊标签，标签名后跟文章数。没有标签时整卡不渲染。
+   配置见 hugo.yaml 的 params.sidebar.tags；enable 关掉或整块删掉则整卡不渲染。
+*/}}
+{{ $s := default dict site.Params.sidebar }}
+{{ $c := default dict $s.tags }}
+
+{{ if $c.enable }}
+  {{ $title := or $c.title "标签" }}
+  {{ $count := $c.count | default 20 }}
+  {{ $terms := slice }}
+  {{ with site.Taxonomies.tags }}{{ $terms = .ByCount }}{{ end }}
+  {{ $terms = first $count $terms }}
+
+  {{ with $terms }}
+  <div class="sidebar-card sidebar-tags">
+    <h2 class="sidebar-title">
+      <i class="fa-solid fa-tags" aria-hidden="true"></i>
+      <span>{{ $title }}</span>
+    </h2>
+
+    <ul class="tag-cloud">
+      {{ range . }}
+        <li>
+          <a class="tag-chip" href="{{ .Page.RelPermalink }}">
+            <span class="tag-name">{{ .Page.LinkTitle }}</span>
+            <span class="tag-count">{{ .Count }}</span>
+          </a>
+        </li>
+      {{ end }}
+    </ul>
+  </div>
+  {{ end }}
+{{ end }}

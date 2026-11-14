@@ -7,7 +7,7 @@
 
     <nav class="site-nav" aria-label="主导航">
       <ul class="nav-list">
-        {{- range site.Params.nav -}}
+        {{- range site.Menus.main -}}
           {{ partial "nav-item.html" (dict "item" . "level" 1) }}
         {{- end }}
       </ul>
@@ -15,11 +15,11 @@
 
     <div class="header-actions">
       <button type="button" class="action-btn theme-toggle" aria-label="切换深浅色主题">
-        <i class="mdi mdi-brightness-4 icon-when-light" aria-hidden="true"></i>
-        <i class="mdi mdi-brightness-6 icon-when-dark" aria-hidden="true"></i>
+        <i class="fa-solid fa-moon icon-when-light" aria-hidden="true"></i>
+        <i class="fa-solid fa-sun icon-when-dark" aria-hidden="true"></i>
       </button>
       <button type="button" class="action-btn search-toggle" aria-label="搜索">
-        <i class="mdi mdi-magnify" aria-hidden="true"></i>
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
       </button>
     </div>
 

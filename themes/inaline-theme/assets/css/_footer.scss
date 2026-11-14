@@ -1,15 +1,60 @@
 // ---------------------------------------------------------------------------
 // 页脚
-// 阶段 5 会细化（备案号、运行天数、社交图标等）
+//
+// 深色毛玻璃条：压在首页的整页背景图之上（内页则压在页面底色上），
+// 比正文区重一档，把"页面到头了"这条线画出来。
+//
+// 它是全站唯一的恒定深色块，不跟主题翻色——深遮罩 + 白字就是它的身份：
+// 亮色模式下若翻成浅色，"和正文区分、更突出"的意图当场就没了。
+// 所以这里消费的都是跨主题恒定的令牌（--footer-scrim / --color-over-hero*），
+// 与 --badge-bg / --glow-* 同一类（见 _tokens.scss 的说明）。
 // ---------------------------------------------------------------------------
 
 .site-footer {
-  border-top: 1px solid var(--color-border);
-  padding: var(--space-5) 0;
-  color: var(--color-text-muted);
+  padding: var(--space-6) 0;
+  // 一层薄玻璃，不是一块面板：底色压得轻（--footer-scrim 不到五成）、
+  // blur 只给 3px，照片的明暗和色相仍要透上来，页脚只是"比正文暗一档"。
+  // 缺了模糊的话，照片的高频细节会跟文字打架，白字发脏
+  background: var(--footer-scrim);
+  backdrop-filter: blur(var(--footer-blur)) saturate(1.08);
+  -webkit-backdrop-filter: blur(var(--footer-blur)) saturate(1.08);
+  color: var(--color-over-hero-soft);
   font-size: 0.875rem;
+  // 比正文（1.75）收紧一档：六行是同一组信息，行与行该挨得住
+  line-height: 1.6;
+  text-align: center;
+}
 
-  p {
-    margin: 0;
+.footer-line {
+  margin: 0; // 覆盖全局 p 的下外边距，行距统一交给下面这条
+}
+
+// 六行信息彼此相关，只留一口气，别拉成段落
+.footer-line + .footer-line {
+  margin-top: var(--space-1);
+}
+
+// 「|」分隔符：只做停顿不做内容，比相邻文字退一档
+// （用 opacity 而不是另写一个半透明白：颜色跟着所属的那一行走，不写死）
+.footer-sep {
+  margin: 0 var(--space-3);
+  opacity: .45;
+}
+
+// 链接：压在深色上的橙色，悬停转纯白。
+// 与首页顶部态 Header 同一条理由（见 _header.scss）：深色底上再往深里走
+// （全局 a:hover 是 --color-primary-hover）只会越看越糊，提亮才有反馈
+.footer-link {
+  color: var(--color-primary);
+  transition: color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-over-hero);
   }
+}
+
+// 数字与站名：整片里唯一"要看的值"，用主题色提出来，其余都是说明文字
+.footer-num,
+.footer-site {
+  color: var(--color-primary);
 }
