@@ -1,0 +1,21 @@
+{{/*
+  轮播图卡片的文字区（§7.10）：日期 + 标题 + 摘要。
+  整图背景卡片共用，文字压在图片底部。
+
+  参数：entry —— carousel.html 里组装好的 dict
+*/}}
+{{ $e := . }}
+<div class="carousel-body">
+  {{ with $e.datetext }}
+  <p class="carousel-meta">
+    <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+    <time datetime="{{ $e.dateiso }}">{{ . }}</time>
+  </p>
+  {{ end }}
+
+  <h2 class="carousel-title">
+    {{ if $e.url }}<a href="{{ $e.url }}">{{ $e.title }}</a>{{ else }}{{ $e.title }}{{ end }}
+  </h2>
+
+  {{ with $e.summary }}<p class="carousel-summary">{{ . }}</p>{{ end }}
+</div>

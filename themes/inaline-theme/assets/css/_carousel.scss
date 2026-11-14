@@ -1,0 +1,194 @@
+// ---------------------------------------------------------------------------
+// 首页文章列表顶部轮播图（§7.10）
+//
+// 桌面端固定高度，与右侧栏 profile 卡等高，首行底边自然对齐；
+// 侧栏撤掉的窄屏改回 3:1 画幅。卡片绝对定位叠放，
+// 靠 opacity / visibility 交叉淡入（与整页背景同一手法）。
+// 所有幻灯片都是整图背景：图片铺满，底部渐变压暗，文字压底。
+// ---------------------------------------------------------------------------
+
+.carousel {
+  position: relative;
+  height: var(--carousel-height);
+  margin-bottom: var(--space-5);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-sm);
+}
+
+// 与 .layout 撤掉侧栏的断点一致：没有 profile 可对齐，恢复按宽度定高
+@media (max-width: 1080px) {
+  .carousel {
+    height: auto;
+    aspect-ratio: 3 / 1;
+    min-height: 220px;
+  }
+}
+
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--duration-slow) var(--ease),
+              visibility var(--duration-slow);
+}
+
+.carousel-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+// --- 整图背景 ---
+
+.carousel-bg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  // 未激活时略微放大，激活后落回 1：切换时形成明显的推近 / 拉远
+  transform: scale(1.1);
+  transition: transform var(--duration-slower) var(--ease-out);
+}
+
+.carousel-slide.is-active .carousel-bg {
+  transform: scale(1);
+}
+
+// 底部压暗，保证白字在亮照片上也读得清
+.carousel-slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+              rgba(0, 0, 0, .72) 0%,
+              rgba(0, 0, 0, .30) 42%,
+              rgba(0, 0, 0, .04) 100%);
+}
+
+.carousel-slide .carousel-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding-top: var(--space-7);
+  // 文字比图片晚半拍：先淡入，再向上落位
+  opacity: 0;
+  transform: translateY(var(--space-6));
+  transition: opacity var(--duration-slow) var(--ease),
+              transform var(--duration-slower) var(--ease-out);
+}
+
+.carousel-slide.is-active .carousel-body {
+  opacity: 1;
+  transform: translateY(0);
+  // 幻灯片先露出来，文字再跟上；切出时不带延迟
+  transition-delay: 100ms;
+}
+
+// --- 文字区 ---
+
+.carousel-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-6);
+  // 右侧指示器竖排，给文字留出避让空间
+  padding-right: calc(var(--space-6) + var(--space-5));
+}
+
+.carousel-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  color: var(--color-over-hero-soft);
+  font-size: 0.875rem;
+}
+
+.carousel-meta i {
+  font-size: 0.8125rem;
+}
+
+.carousel-title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.4;
+}
+
+.carousel-title,
+.carousel-title a {
+  color: var(--color-over-hero);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .45);
+}
+
+// 全局 a:hover 会转主题色，压在照片上会糊掉，显式锁回白色
+.carousel-title a:hover {
+  color: var(--color-over-hero);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.carousel-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: var(--space-2) 0 0;
+  color: var(--color-over-hero-soft);
+  line-height: 1.6;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .45);
+}
+
+// --- 右侧竖向指示器 ---
+// 选中项从 12px 圆点拉长到 32px（两个圆点 + 中间间距），即"占两个位置"
+
+.carousel-dots {
+  position: absolute;
+  top: 50%;
+  right: var(--space-4);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  transform: translateY(-50%);
+}
+
+.carousel-dot {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  // 照片上的未选中项统一用白色；无阴影、无描边
+  background: var(--color-over-hero);
+  cursor: pointer;
+  transition: height var(--duration-slow) var(--ease-out),
+              background-color var(--duration-slow) var(--ease);
+}
+
+.carousel-dot:hover {
+  background: var(--color-primary);
+}
+
+.carousel-dot.is-active {
+  height: calc(24px + var(--space-2)); // 两个圆点 + 中间间距
+  background: var(--color-primary);
+}
+
+// --- 减少动态效果 ---
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel-slide,
+  .carousel-slide .carousel-body,
+  .carousel-bg,
+  .carousel-dot {
+    transition: none;
+  }
+}

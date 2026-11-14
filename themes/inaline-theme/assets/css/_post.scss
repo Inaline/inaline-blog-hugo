@@ -258,9 +258,8 @@
               color var(--duration-fast) var(--ease);
 }
 
-// 只在有链接的页码 / 上一页下一页上给悬停反馈；当前页与禁用态不是可点目标
-.pager-link:hover {
-  background: var(--color-surface);
+// 仅可点链接有悬停反馈：只换文字色，不动背景。当前页不是 <a>，不受影响
+a.pager-link:hover {
   color: var(--color-primary);
 }
 
@@ -270,35 +269,43 @@
   color: var(--color-on-primary);
 }
 
+// 上一页 / 下一页只有图标，收掉文字内边距保持方形
+.pager-link--step {
+  padding: 0;
+  font-size: 0.875rem;
+}
+
 // ---------------------------------------------------------------------------
 // 首页整页背景图上的分页器
 //
-// 页码默认态没有底色，灰字会直接压在照片上读不出来。三条都必须带 body.has-hero
+// 页码默认态没有底色，灰字会直接压在照片上读不出来。两条都必须带 body.has-hero
 // 收在首页：分页器是 section / term 页共用的，不加限定会在那些页面上多出白底页码片。
-//
-// 注意特异度：body.has-hero .pager-link 是 (0,2,1)，压得过 .pager-link:hover (0,2,0)
-// 与 .pager-link.is-current (0,2,0)——只写一条会把当前页的实心主题色和悬停反馈一起干掉。
-// 所以照上面的结构一条不少地重复一遍，靠源序还原层级。
 // ---------------------------------------------------------------------------
 body.has-hero .pager-link {
   background: var(--color-elevated);
 }
 
-// 悬停用 --color-border 而非 --color-surface：暗色下 surface 与 elevated 同值(#1E2127)，
-// 用 surface 会变成"悬停没反应"；border 在亮(#E5E7EB)暗(#2C313A)两套下都看得出变化
-body.has-hero .pager-link:hover {
-  background: var(--color-border);
-  color: var(--color-primary);
-}
-
-// 放最后：与上一条同特异度，靠源序保证当前页仍是实心主题色
+// 放最后：靠源序保证当前页仍是实心主题色
 body.has-hero .pager-link.is-current {
   background: var(--color-primary);
   color: var(--color-on-primary);
 }
 
-.pager-link.is-disabled {
-  opacity: .45;
+// 省略号不是可点目标，只占位对齐；首页背景上没有白色底片，转白加投影保证可读
+.pager-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  user-select: none;
+}
+
+body.has-hero .pager-ellipsis {
+  color: var(--color-over-hero-soft);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .35);
 }
 
 // --- 标签 ---

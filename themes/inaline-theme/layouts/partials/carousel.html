@@ -1,0 +1,113 @@
+{{/*
+  首页文章列表顶部的轮播图（§7.10）。
+
+  只在首页第一页渲染（调用方判断 PageNumber）；由 params.carousel 配置：
+  - enable / autoplay / interval：总开关、自动轮播、间隔
+  - items：每项可写 slug 引用文章，也可手动填 title / summary / date / image / url
+
+  所有卡片统一为整图背景：图片铺满，底部渐变压暗，日期 / 标题 / 摘要压在底部。
+  slug 解析不到、缺少标题、图片资源找不到时构建期告警并跳过 / 回退；
+  整块没有可用条目时不渲染。
+*/}}
+{{ $cfg := site.Params.carousel }}
+{{ if and $cfg $cfg.enable $cfg.items }}
+  {{ $entries := slice }}
+
+  {{ range $i, $item := $cfg.items }}
+    {{ $page := false }}
+    {{ with $item.slug }}
+      {{ $page = site.GetPage (printf "/posts/%s" .) }}
+      {{ if not $page }}{{ $page = site.GetPage . }}{{ end }}
+      {{ if not $page }}{{ warnf "carousel: 找不到 slug 为 %q 的文章，已跳过" . }}{{ end }}
+    {{ end }}
+
+    {{ if or $page (not $item.slug) }}
+      {{ $title := $item.title | default "" }}
+      {{ $summary := $item.summary | default "" }}
+      {{ $url := $item.url | default "" }}
+      {{ $dateText := "" }}
+      {{ $dateISO := "" }}
+
+      {{ with $page }}
+        {{ if not $title }}{{ $title = .Title }}{{ end }}
+        {{ if not $summary }}{{ with or .Description .Summary }}{{ $summary = . | plainify | truncate 140 }}{{ end }}{{ end }}
+        {{ if not $url }}{{ $url = .RelPermalink }}{{ end }}
+        {{ if not .Date.IsZero }}
+          {{ $dateText = .Date.Format "2006年1月2日" }}
+          {{ $dateISO = .Date.Format "2006-01-02" }}
+        {{ end }}
+      {{ end }}
+
+      {{/* 手动填写的站内链接走 relURL；外链与 mailto 原样保留 */}}
+      {{ if and $url (not (or (hasPrefix $url "http://") (hasPrefix $url "https://") (hasPrefix $url "mailto:"))) }}
+        {{ $url = relURL $url }}
+      {{ end }}
+
+      {{/* 手动日期：支持 Hugo 解析出的时间对象，也支持 RFC 3339 / YYYY-MM-DD 字符串 */}}
+      {{ if and $item.date (not $dateText) }}
+        {{ $dateText = time.Format "2006年1月2日" $item.date }}
+        {{ $dateISO = time.Format "2006-01-02" $item.date }}
+      {{ end }}
+
+      {{/* 图片：manual image 优先；否则引用文章封面；再否则从封面池按序号回退 */}}
+      {{ $image := "" }}
+      {{ with $item.image }}
+        {{ if or (hasPrefix . "http://") (hasPrefix . "https://") }}
+          {{ $image = . }}
+        {{ else }}
+          {{ with resources.Get . }}{{ $image = .RelPermalink }}{{ else }}
+            {{ warnf "carousel: 找不到图片资源 %q，改用兜底封面" . }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
+      {{ if and (not $image) $page }}
+        {{ $image = partial "post-cover.html" (dict "page" $page "index" $i) }}
+      {{ end }}
+      {{ if not $image }}
+        {{ with partial "cover-pool.html" . }}
+          {{ $image = (index . (mod $i (len .))).RelPermalink }}
+        {{ end }}
+      {{ end }}
+
+      {{ $summary = $summary | plainify | truncate 140 }}
+      {{ if $title }}
+        {{ $entries = $entries | append (dict
+          "title" $title
+          "summary" $summary
+          "url" $url
+          "image" $image
+          "datetext" $dateText
+          "dateiso" $dateISO
+        ) }}
+      {{ else }}
+        {{ warnf "carousel: 第 %d 项缺少 title，已跳过" (add $i 1) }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{ if $entries }}
+    {{ $autoplay := $cfg.autoplay | default false }}
+    {{ $interval := $cfg.interval | default 6000 }}
+    <section class="carousel" data-carousel data-autoplay="{{ $autoplay }}" data-interval="{{ $interval }}" aria-roledescription="轮播图" aria-label="推荐文章">
+      {{ range $i, $e := $entries }}
+        <article class="carousel-slide{{ if eq $i 0 }} is-active{{ end }}"
+                 data-carousel-slide
+                 aria-roledescription="幻灯片"
+                 aria-label="第 {{ add $i 1 }} 张，共 {{ len $entries }} 张"
+                 aria-hidden="{{ if eq $i 0 }}false{{ else }}true{{ end }}"{{ if ne $i 0 }} inert{{ end }}>
+          {{ with $e.image }}<img class="carousel-bg" src="{{ . }}" alt="" loading="{{ if eq $i 0 }}eager{{ else }}lazy{{ end }}">{{ end }}
+          {{ partial "carousel-body.html" $e }}
+        </article>
+      {{ end }}
+
+      <div class="carousel-dots" role="group" aria-label="切换幻灯片">
+        {{ range $i, $e := $entries }}
+          <button type="button"
+                  class="carousel-dot{{ if eq $i 0 }} is-active{{ end }}"
+                  data-carousel-dot="{{ $i }}"
+                  aria-label="第 {{ add $i 1 }} 张"{{ if eq $i 0 }} aria-current="true"{{ end }}></button>
+        {{ end }}
+      </div>
+    </section>
+  {{ end }}
+{{ end }}

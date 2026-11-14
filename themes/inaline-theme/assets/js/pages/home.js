@@ -189,9 +189,111 @@
     next.addEventListener('click', function () { show(index + 1); });
   }
 
+  // -------------------------------------------------------------------------
+  // 文章列表顶部轮播图（§7.10）：点击右侧指示器切换；可选自动轮播
+  // 鼠标悬停 / 键盘焦点进入时暂停，移开 / 失焦后恢复
+  // -------------------------------------------------------------------------
+
+  function initCarousel() {
+    var roots = document.querySelectorAll('[data-carousel]');
+
+    Array.prototype.forEach.call(roots, function (root) {
+      if (root.dataset.bound === 'true') return;
+      root.dataset.bound = 'true';
+
+      var slides = root.querySelectorAll('[data-carousel-slide]');
+      var dots = root.querySelectorAll('[data-carousel-dot]');
+      if (slides.length < 2 || !dots.length) return;
+
+      var index = 0;
+      var i;
+      for (i = 0; i < slides.length; i++) {
+        if (slides[i].classList.contains('is-active')) { index = i; break; }
+      }
+
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var autoplay = root.dataset.autoplay === 'true' && !reduced;
+      var interval = parseInt(root.dataset.interval, 10);
+      if (!isFinite(interval) || interval < 2000) interval = 6000;
+
+      var timer = null;
+      var paused = false;
+
+      function show(target) {
+        var next = ((target % slides.length) + slides.length) % slides.length;
+
+        Array.prototype.forEach.call(slides, function (slide, n) {
+          var active = n === next;
+          slide.classList.toggle('is-active', active);
+          slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+          if (active) {
+            slide.removeAttribute('inert');
+          } else {
+            slide.setAttribute('inert', '');
+          }
+        });
+
+        Array.prototype.forEach.call(dots, function (dot, n) {
+          var active = n === next;
+          dot.classList.toggle('is-active', active);
+          if (active) {
+            dot.setAttribute('aria-current', 'true');
+          } else {
+            dot.removeAttribute('aria-current');
+          }
+        });
+
+        index = next;
+      }
+
+      function stop() {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      }
+
+      function schedule() {
+        stop();
+        if (!autoplay || paused || document.hidden) return;
+        timer = setTimeout(function () {
+          show(index + 1);
+          schedule();
+        }, interval);
+      }
+
+      Array.prototype.forEach.call(dots, function (dot, n) {
+        dot.addEventListener('click', function () {
+          show(n);
+          schedule(); // 手动切换后重新计时，别让刚点到的图立刻被带走
+        });
+      });
+
+      root.addEventListener('mouseenter', function () { paused = true; stop(); });
+      root.addEventListener('mouseleave', function () { paused = false; schedule(); });
+      root.addEventListener('focusin', function () { paused = true; stop(); });
+      root.addEventListener('focusout', function (e) {
+        if (!root.contains(e.relatedTarget)) {
+          paused = false;
+          schedule();
+        }
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          stop();
+        } else {
+          schedule();
+        }
+      });
+
+      schedule();
+    });
+  }
+
   function init() {
     initHeroQuote();
     initPageCovers();
+    initCarousel();
   }
 
   init();

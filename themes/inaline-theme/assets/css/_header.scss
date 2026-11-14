@@ -200,12 +200,9 @@
   line-height: 1.4;
   color: var(--color-text);
   white-space: nowrap;
-  transition: color var(--duration-fast) var(--ease),
-              text-shadow var(--duration-fast) var(--ease);
+  transition: color var(--duration-fast) var(--ease);
 
   // 悬停填充与右侧按钮同款（方案 C，见 §6.4）：从中心"长出来"而非直接切背景色。
-  // 内高光挂在这层上而非链接本身：inset 阴影属于元素背景绘制层，
-  // 先于 z-index:-1 的填充绘制，留在链接上会被填充整块盖住。
   &::before {
     content: '';
     position: absolute;
@@ -213,17 +210,15 @@
     z-index: -1;
     border-radius: inherit;
     background: var(--color-primary);
-    box-shadow: var(--glow-inset);
     opacity: 0;
     transform: scale(.3);
     transition: transform var(--duration-fast) var(--ease),
                 opacity var(--duration-fast) var(--ease);
   }
 
-  // 外发光不用：子项距白色面板边缘仅 4px，外发光会溢到面板外的页面上。
+  // 不加发光：子项距白色面板边缘仅 4px，光晕会溢到面板外的页面上。
   &:hover {
     color: var(--color-on-primary);
-    text-shadow: var(--glow-text);
 
     &::before {
       opacity: 1;
@@ -318,8 +313,7 @@
   color: var(--header-fg);
   font-size: 0.875rem;
   cursor: pointer;
-  transition: color var(--duration-fast) var(--ease),
-              text-shadow var(--duration-fast) var(--ease);
+  transition: color var(--duration-fast) var(--ease);
 
   // 悬停填充由这层从中心"长出来"（方案 C）：背景色直接切换太硬，
   // 改成 scale + opacity。此处的 transition 是退出时用的（fast，收得干脆），
@@ -337,13 +331,9 @@
                 opacity var(--duration-fast) var(--ease);
   }
 
-  // 悬停：图标转白 + 图标辉光（延迟 80ms bloom）。填充不再切背景色，
-  // 由 ::before 放大完成；外光晕与内高光已取消（小按钮上太"炸"）。
+  // 悬停：图标转白，填充由 ::before 放大完成；不加发光（小按钮上太"炸"）。
   &:hover {
     color: var(--color-on-primary);
-    text-shadow: var(--glow-text);
-    // 与上方 transition 的两条属性一一对应：color / text-shadow
-    transition-delay: 0s, 80ms;
 
     &::before {
       opacity: 1;

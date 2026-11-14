@@ -2,29 +2,48 @@
   分页导航（§7.7）：首页与列表页共用。
 
   参数：paginator（`.Paginate` 的返回值）
-  文章总数不超过 pagerSize（hugo.yaml）时只有一页，整块不渲染——
-  现在两篇文章，这段模板要等文章多起来才会出现在页面上。
+  文章总数不超过 pagerSize（hugo.yaml）时只有一页，整块不渲染。
+  页数多时只显示首尾页与当前页前后各一页，中间用省略号收拢。
+  首页不渲染上一页箭头，末页不渲染下一页箭头。
 */}}
 {{ if gt .TotalPages 1 }}
+  {{ $total := .TotalPages }}
+  {{ $current := .PageNumber }}
+
+  {{/* 当前页左右各取一页作为窗口；首尾页单独固定显示，所以窗口从 2 开始、到 total-1 结束 */}}
+  {{ $start := sub $current 1 }}
+  {{ if lt $start 2 }}{{ $start = 2 }}{{ end }}
+  {{ $end := add $current 1 }}
+  {{ if gt $end (sub $total 1) }}{{ $end = sub $total 1 }}{{ end }}
+
 <nav class="pager" aria-label="分页">
   {{ with .Prev }}
-    <a class="pager-link pager-link--step" href="{{ .URL }}" rel="prev">上一页</a>
-  {{ else }}
-    <span class="pager-link pager-link--step is-disabled">上一页</span>
+    <a class="pager-link pager-link--step" href="{{ .URL }}" rel="prev" aria-label="上一页">
+      <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+    </a>
   {{ end }}
 
+  {{ $prevShown := 0 }}
   {{ range .Pagers }}
-    {{ if eq .PageNumber $.PageNumber }}
-      <span class="pager-link is-current" aria-current="page">{{ .PageNumber }}</span>
-    {{ else }}
-      <a class="pager-link" href="{{ .URL }}">{{ .PageNumber }}</a>
+    {{ $n := .PageNumber }}
+    {{ if or (eq $n 1) (eq $n $total) (and (ge $n $start) (le $n $end)) }}
+      {{/* 与上一个显示项之间跳过了页码 → 用省略号补位 */}}
+      {{ if gt (sub $n $prevShown) 1 }}
+        <span class="pager-ellipsis" aria-hidden="true">…</span>
+      {{ end }}
+      {{ if eq $n $current }}
+        <span class="pager-link is-current" aria-current="page">{{ $n }}</span>
+      {{ else }}
+        <a class="pager-link" href="{{ .URL }}">{{ $n }}</a>
+      {{ end }}
+      {{ $prevShown = $n }}
     {{ end }}
   {{ end }}
 
   {{ with .Next }}
-    <a class="pager-link pager-link--step" href="{{ .URL }}" rel="next">下一页</a>
-  {{ else }}
-    <span class="pager-link pager-link--step is-disabled">下一页</span>
+    <a class="pager-link pager-link--step" href="{{ .URL }}" rel="next" aria-label="下一页">
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+    </a>
   {{ end }}
 </nav>
 {{ end }}

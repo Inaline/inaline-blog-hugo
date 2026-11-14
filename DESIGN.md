@@ -78,7 +78,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 ```
 
 > `--brand-github` 是唯一例外：近黑色在暗色卡片上会消失，暗色下翻为 `#FFFFFF`。
-> 压在照片 / 深色上的色块（`--color-over-hero*`、`--footer-scrim`、`--badge-*`、`--glow-*`）
+> 压在照片 / 深色上的色块（`--color-over-hero*`、`--footer-scrim`、`--badge-*`、`--glow-name`）
 > 不跟主题翻色——它们坐在图片上，与页面底色无关。
 
 ### 3.2 中性色
@@ -133,9 +133,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --shadow-header: 0 2px 8px rgba(0,0,0,.06);
 --shadow-dropdown: 0 2px 8px rgba(0,0,0,.06), 0 10px 28px rgba(0,0,0,.10);
 
-// 发光（压在照片 / 实心填充上，两种主题同值）
---glow-inset: inset 0 0 10px rgba(255,255,255,.25); // 填充块内高光
---glow-text:  0 0 6px rgba(255,255,255,.55);        // 小图标 / 文字辉光
+// 发光（压在照片上，两种主题同值）
 --glow-halo:  0 0 12px rgba(250,93,25,.45);         // 外围光晕（当前无引用，预留）
 --glow-name:  0 0 16px rgba(255,255,255,.45), 0 0 42px rgba(255,255,255,.18); // Hero 名称
 
@@ -148,6 +146,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --container-width: 1200px;  // Header 与两栏页面容器
 --content-width: 42rem;     // 单栏内容宽度（文章详情等）
 --sidebar-width: 280px;
+--carousel-height: 270px;   // 首页轮播图，与侧栏 profile 卡等高
 --header-height: 56px;
 --header-blur: 20px;
 
@@ -156,8 +155,11 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 
 // 动效
 --ease: cubic-bezier(.4, 0, .2, 1);
+--ease-out: cubic-bezier(.22, 1, .36, 1); // 慢起快收：轮播缩放 / 文字落位
 --duration-fast: 150ms;   // 颜色、图标
 --duration-base: 250ms;   // 位移、下拉面板
+--duration-slow: 600ms;   // 轮播淡入淡出、指示器
+--duration-slower: 900ms; // 轮播图片缩放、文字落位
 ```
 
 ---
@@ -178,11 +180,12 @@ themes/inaline-theme/
 │   │   ├── _header.scss           # Header（§6）
 │   │   ├── _hero.scss             # Hero（§7.2–§7.6）
 │   │   ├── _post.scss             # 文章卡片 / 分页 / 详情 / 标签（§7.7）
+│   │   ├── _carousel.scss         # 首页轮播图（§7.10）
 │   │   ├── _sidebar.scss          # 两栏骨架 + 侧栏（§7.8）
 │   │   └── _footer.scss           # 页脚（§7.9）
 │   ├── js/
 │   │   ├── main.js                # 全局：主题、Header 滚动态、页脚运行时长、复制
-│   │   └── pages/home.js          # 首页：一言打字机 + 背景切换
+│   │   └── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
 │   ├── images/cover/              # cover1–3.jpg，Hero 背景与卡片兜底同池
 │   └── fonts/HYTangMeiRen55W.woff2
 └── layouts/
@@ -195,6 +198,8 @@ themes/inaline-theme/
         ├── icon.html              # 主题自绘 SVG 图标（引号 + 社交品牌）
         ├── page-background.html   # 首页整页背景（§7.1）
         ├── hero.html              # Hero 内容（§7.2–§7.6）
+        ├── carousel.html          # 首页轮播图容器与条目解析（§7.10）
+        ├── carousel-body.html     # 轮播卡片文字区（§7.10）
         ├── cover-pool.html        # 封面图池（§7.1 / §7.7）
         ├── post-cover.html        # 单篇文章封面解析（§7.7 / §7.8）
         ├── post-card.html         # 文章卡片（§7.7）
@@ -288,7 +293,7 @@ themes/inaline-theme/
 | 面板 | `--header-bg` + `blur(--header-blur)`，`--radius-md`，`--shadow-dropdown`，无描边，最小宽度 112px，内边距 `--space-1` |
 | 动画 | 二级：`opacity` + `translateY(8px → 0)`；三级：`translateX(8px → 0)`；`--duration-base` |
 | 子项 | 内边距 `--space-2 --space-3`；悬停实心填充 `--color-primary` + `--color-on-primary`，填充由 `::before` 从 `scale(.3)` 生长到 `scale(1)` |
-| 子项发光 | 保留 `--glow-inset`（挂在填充层）与 `--glow-text`；不加外光晕，避免溢出面板 |
+| 子项发光 | 无。不加内高光 / 文字辉光 / 外光晕，避免溢出面板 |
 | 展开指示 | 二级箭头旋转 180°，三级箭头旋转 90° |
 
 ### 6.5 导航配置
@@ -334,7 +339,7 @@ menu:
 
 - 按钮内图标 `0.875rem`（FA 字形比 MDI 满，整体收一档）。
 - 主题图标纯 CSS 切换：`.icon-when-light` / `.icon-when-dark` 按 `data-theme` 显隐。
-- 悬停：`::before` 由中心生长出主题色实心填充，图标转白并加 `--glow-text`；辉光比填充晚 80ms。不加内高光与外光晕。
+- 悬停：`::before` 由中心生长出主题色实心填充，图标转白；不加发光、内高光与外光晕。
 - `prefers-reduced-motion` 下取消生长过渡，填充直接显示。
 
 ### 6.7 首页顶部态
@@ -364,7 +369,7 @@ menu:
 
 ## 7. 首页
 
-首页自上而下：整页固定背景 → Hero（作者徽章 + 一言卡片 + 下滚箭头）→ 两栏内容（文章列表 + 右侧栏）→ 页脚。
+首页自上而下：整页固定背景 → Hero（作者徽章 + 一言卡片 + 下滚箭头）→ 两栏内容（文章列表顶部的轮播图 + 文章列表 + 右侧栏）→ 页脚。轮播图只在第一页渲染（§7.10）。
 `params.description` 不在页面渲染，只作为 `<meta name="description">` 的来源。
 
 ### 7.1 整页背景 ✅
@@ -471,7 +476,9 @@ menu:
 | 可点区 | 仅标题与封面。封面链接 `tabindex="-1"` + `aria-hidden="true"`（标题链接的视觉重复） |
 | 整卡点击 | **不做**。覆盖层会接走全部指针事件，标题与摘要无法选中 / 复制 |
 | 置顶角标 | `pinned: true` → 白底圆角标签 + `fa-thumbs-up` + "置顶"；贴封面外侧上角（交替卡镜像），`pointer-events: none`；`--badge-*` 两主题同值 |
-| 分页 | 按 `pagination.pagerSize`（10）；`上一页 / 1 2 3 / 下一页`；总数不超过一页时不渲染 |
+| 分页 | 按 `pagination.pagerSize`（10）；左右箭头 + `1 2 3` 页码；页数多时只显示首尾页与当前页前后各一页，中间用 `…` 收拢；总数不超过一页时不渲染 |
+| 分页边界 | 首页不渲染上一页箭头，末页不渲染下一页箭头（不做置灰态） |
+| 分页悬停 | 仅可点链接改变文字颜色，不改变背景色；当前页无悬停反馈 |
 
 ### 7.8 两栏布局与右侧栏 ✅
 
@@ -546,6 +553,24 @@ menu:
 
 分隔符 `|` 使用 `.footer-sep`（`opacity: .45`），链接与数字取主题色，悬停转纯白。
 
+### 7.10 首页轮播图 ✅
+
+位于首页文章列表顶部，仅 `Paginator.PageNumber == 1` 渲染；分区页 / 标签页不出现。
+
+| 项 | 规格 |
+| --- | --- |
+| 配置 | `params.carousel`：`enable`、`autoplay`、`interval`、`items` |
+| 条目引用 | `slug`：查找 `posts` 下文章，自动取标题 / 摘要 / 日期 / 封面 / 链接 |
+| 条目手动 | `title` / `summary` / `date` / `image` / `url`，可与 `slug` 混排 |
+| 图片 | `image` 支持网络 URL 与 assets 路径；未配 / 解析失败回退封面池（与文章卡片同池） |
+| 卡片 | 统一为整图背景：图片铺满，底部线性渐变压暗，日期 / 标题 / 摘要压在底部；标题为链接时悬停加下划线 |
+| 尺寸 | 与主栏同宽；桌面高度取 `--carousel-height`（270px，与侧栏 profile 卡等高，首行底边对齐）；≤1080px 侧栏隐藏后恢复 `aspect-ratio: 3 / 1` + `min-height: 220px`；`--radius-lg` + `--shadow-sm` |
+| 切换 | 右侧竖向圆形指示器；未选中 12px 白色圆点（无阴影 / 描边），选中拉长为 32px（两个圆点 + 间距），高度 / 颜色过渡 `--duration-slow` |
+| 过渡 | 幻灯片交叉淡入淡出 `--duration-slow`；图片从 `scale(1.1)` 缓落到 1（`--duration-slower`），文字延迟 100ms 向上落位 |
+| 自动轮播 | `autoplay: true` 时按 `interval`（默认 6000ms）切换；悬停 / 焦点进入 / 页面隐藏时暂停 |
+| 降级 | `prefers-reduced-motion` 下不自动播放，取消淡入 / 缩放 / 位移与指示器过渡 |
+| 可访问性 | 非当前幻灯片 `inert` + `aria-hidden="true"`；指示器为 `button`，当前项 `aria-current="true"` |
+
 ---
 
 ## 8. 后续阶段计划 ⏳
@@ -589,6 +614,10 @@ menu:
 
 - [ ] 整页背景固定，滚动时图像不动；多张封面可用卡片左下角箭头循环切换。
 - [ ] `initial_cover: random` 时刷新会换图；无 JS 时仍有静态兜底。
+- [ ] 轮播图只在首页第一页显示，第二页 / 分区页 / 标签页不显示。
+- [ ] 轮播图与右侧 profile 卡等高，首行底边对齐；所有卡片为整图背景，文字压在底部。
+- [ ] 指示器竖排在右侧，选中项拉长为两个点位；点击可切换，自动轮播在悬停 / 聚焦时暂停。
+- [ ] split 与 background 两种样式按配置逐项生效；`slug` 引用与手动条目可混排。
 - [ ] 作者徽章与一言卡片作为整体垂直居中；无头像时整块不渲染。
 - [ ] 一言按「打字 → 停留 → 删除 → 换条」运行；悬停 / 键盘焦点时暂停并可续上；单条时打完停住。
 - [ ] 文章卡片图文交替、封面斜切、悬停反馈正常；标题与封面可点，文字可选中。

@@ -132,10 +132,8 @@
   // 浮层阴影：紧贴层勾勒边缘 + 大范围层营造抬升，无描边时也能看清边界
   --shadow-dropdown: 0 2px 8px rgba(0, 0, 0, .06), 0 10px 28px rgba(0, 0, 0, .10);
 
-  // 悬停发光：配合实心主题色填充使用（两种主题下取值相同，故不进 dark-tokens）
-  --glow-inset: inset 0 0 10px rgba(255, 255, 255, .25); // 内高光，让填充块"亮起来"（仅二级菜单子项，挂在其填充层上）
-  --glow-text: 0 0 6px rgba(255, 255, 255, .55);         // 文字/图标自身辉光
-  --glow-halo: 0 0 12px rgba(250, 93, 25, .45);          // 外围光晕（v3.6 起失去引用，保留待用）
+  // 发光（两种主题下取值相同，故不进 dark-tokens）
+  --glow-halo: 0 0 12px rgba(250, 93, 25, .45); // 外围光晕（当前无引用，预留）
 
   // Hero 作者名称的白色辉光（§7.6）：名字压在封面照片上，光晕让白字从背景里"亮"出来。
   // 与 --color-over-hero 同类——它坐在照片上而不是页面底色上，两种主题下取值相同，故不进 dark-tokens。
@@ -146,6 +144,7 @@
   --container-width: 1200px; // Header 与两栏布局容器（列表页内容区已用上，见 §7.8）
   --content-width: 42rem;    // 单栏内容宽度（文章详情等单栏页面用）
   --sidebar-width: 280px;    // 右侧栏宽度：定宽，主栏吃剩余宽度（§7.8）
+  --carousel-height: 270px;  // 首页轮播图高度：与侧栏 profile 卡等高，首行底边对齐（§7.10）
   --header-height: 56px;
   --header-blur: 20px;       // Header 与下拉面板共用的毛玻璃强度（两者须同档，见 §6.3）
 
@@ -155,8 +154,11 @@
 
   // 动效
   --ease: cubic-bezier(.4, 0, .2, 1);
+  --ease-out: cubic-bezier(.22, 1, .36, 1); // 慢起快收：轮播图缩放 / 文字落位
   --duration-fast: 150ms;
   --duration-base: 250ms;
+  --duration-slow: 600ms;
+  --duration-slower: 900ms;
 }
 
 // 用户显式选择系统字体时
