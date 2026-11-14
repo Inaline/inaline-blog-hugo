@@ -12,7 +12,7 @@
   var HOLD = 2800;           // 整句打完后停留展示的时间
   var DELETE_INTERVAL = 45;  // 删除时每字间隔（比打字快，不拖沓）
   var RESTART_DELAY = 500;   // 删完到打出下一句首字的间隔
-  var START_DELAY = 600;     // 进场延迟：模板里的静态首条先亮一下再开打
+  var START_DELAY = 1100;    // 进场延迟：等卡片落位（800ms 入场 + 140ms 延迟）后再开打
   var PUNCT_RE = /[，。！？；：、…,.!?;:]/;
 
   function initHeroQuote() {

@@ -159,6 +159,7 @@
   --duration-base: 250ms;
   --duration-slow: 600ms;
   --duration-slower: 900ms;
+  --duration-reveal: 800ms; // 页面进场 / 滚动进场：比组件切换再长一档，位移更从容
 }
 
 // 用户显式选择系统字体时

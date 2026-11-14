@@ -160,6 +160,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --duration-base: 250ms;   // 位移、下拉面板
 --duration-slow: 600ms;   // 轮播淡入淡出、指示器
 --duration-slower: 900ms; // 轮播图片缩放、文字落位
+--duration-reveal: 800ms; // 页面进场 / 滚动进场
 ```
 
 ---
@@ -182,9 +183,10 @@ themes/inaline-theme/
 │   │   ├── _post.scss             # 文章卡片 / 分页 / 详情 / 标签（§7.7）
 │   │   ├── _carousel.scss         # 首页轮播图（§7.10）
 │   │   ├── _sidebar.scss          # 两栏骨架 + 侧栏（§7.8）
-│   │   └── _footer.scss           # 页脚（§7.9）
+│   │   ├── _footer.scss           # 页脚（§7.9）
+│   │   └── _motion.scss           # 进入 / 滚动进场动效（§5.3）
 │   ├── js/
-│   │   ├── main.js                # 全局：主题、Header 滚动态、页脚运行时长、复制
+│   │   ├── main.js                # 全局：主题、Header 滚动态、页脚运行时长、复制、进场动效
 │   │   └── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
 │   ├── images/cover/              # cover1–3.jpg，Hero 背景与卡片兜底同池
 │   └── fonts/HYTangMeiRen55W.woff2
@@ -227,7 +229,7 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、Header 滚动态、页脚运行时长、剪贴板复制）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、Header 滚动态、页脚运行时长、剪贴板复制、页面进入 / 滚动进场动效）。
 - `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前只有 `home.js`）。
 - 每个模块写成幂等 `init()`，事件用 `dataset.bound` 防重复绑定；后续接入 Swup 时在 `page:view` 再次调用同一 `init()` 即可。
 - 全局入口暴露为 `window.inalineInit`，首页入口暴露为 `window.inalinePageInit`。
@@ -252,6 +254,31 @@ themes/inaline-theme/
 
 架构已预留 `data-font="system"`，设置面板后续实现。
 
+### 5.3 页面进入与滚动动效 ✅
+
+动效只是增强，不承担可见性：无 JS、`IntersectionObserver` 不可用或用户开启 `prefers-reduced-motion` 时**不加任何动画类**，内容按原样显示。
+
+**入场（CSS）**
+
+| 组件 | 行为 |
+| --- | --- |
+| Header | `.header-inner` 从上方 8px 淡入落位，`--duration-reveal`；动内层，避免占用 `.site-header` 的 `transform`（滚动显隐要用） |
+| Hero 徽章 | `.hero-profile` 淡入 + 上移 24px，`--duration-reveal`，延迟 60ms |
+| Hero 一言卡片 | `.hero-quote` 同款，`--duration-reveal`，延迟 140ms；`home.js` 的打字机顺延到 1100ms 后才开打 |
+| Hero 下滚箭头 | 图标淡入 `--duration-reveal`，延迟 260ms；外层跳动动画不变 |
+
+**滚动进场（JS + CSS）**
+
+| 项 | 规格 |
+| --- | --- |
+| 入口 | `main.js` 的 `initReveal()`，幂等；在 `window.inalineInit` 中一并复用 |
+| 目标 | `.page-header`、`.page-content`、`.term-list`、`.carousel`、`.post-list > .post-card`、`.sidebar > .sidebar-card`、`.pager`、`.post-header`、`.post-content`、`.site-footer` |
+| 样式 | `.reveal` → `opacity: 0`；`.is-visible` 播放 `reveal-in`：`--duration-reveal`、`--ease-out`、`opacity 0 → 1`、`translate 24px → 0`，`animation-fill-mode: both` |
+| 首屏 | `getBoundingClientRect()` 判断已在视口内的元素，按 DOM 顺序每项 +50ms（上限 300ms）直接进场 |
+| 滚动 | 其余元素交给 `IntersectionObserver`：`rootMargin: 0 0 -8% 0`、`threshold: 0`，进场后立即 `unobserve`；同一批进场的元素按 40ms 依次错开（上限 200ms） |
+| 冲突规避 | 用 `animation` 而非 `transition`，不覆盖卡片自身的悬停过渡；位移走独立 `translate` 属性，与 `.post-card:hover` 的 `transform` 叠加而非互相覆盖 |
+| 兜底 | 观察器创建失败时立即显示全部待进场元素；键盘焦点进入未进场容器时先亮起；打印样式强制显示 |
+
 ---
 
 ## 6. Header 设计规格 ✅
@@ -262,6 +289,7 @@ themes/inaline-theme/
   用 `fixed` 而非 `sticky`，首页整页背景和 Hero 才能从 `y=0` 铺满并钻到 Header 底下。
 - 背景 `--header-bg` + `backdrop-filter: blur(--header-blur)`；用 `--shadow-header` 分层，不用分割线。
 - 内部三栏 Grid：`grid-template-columns: 1fr auto 1fr`，容器 `--container-width`，左右内边距 `--space-5`。中间导航绝对居中，不因左右宽度不等而偏移。
+- 进场：`.header-inner` 从上方 8px 淡入落位，`--duration-reveal`（§5.3）；`prefers-reduced-motion` 下直接显示。
 - 滚动态：滚动超过 8px 加 `.is-scrolled`，阴影升为 `--shadow-md`。
 - 显隐：向下滚动且离开顶部安全区（Header 高度 + 24px）后加 `.is-hidden`（`translateY(-100%)`）收起；向上滚动立即展开；顶部安全区内恒展开；键盘焦点进入 Header 时强制展开。位移小于 8px 不判定方向。
 
@@ -401,6 +429,7 @@ menu:
 | 位置 | `left: 50%; bottom: --space-6`，48×48，图标 `fa-chevron-down` @ `1.75rem` |
 | 颜色 | `--color-over-hero`，静态填充 |
 | 动画 | `hero-arrow-bounce` 2s 无限循环，`translateY(0 → 12px)` 与 `opacity` 同步 |
+| 进场 | 图标 `hero-arrow-in` 淡入 `--duration-reveal`，延迟 260ms；不打断跳动 |
 | 缓动 | 逐帧声明：下行 `cubic-bezier(.55,.55,.75,1)`，回程 `cubic-bezier(.25,0,.45,.45)`（下行的镜像） |
 | 透明度 | 最高点 `1`，最低点 `.7` |
 | 层级 | `z-index: 1`，在压暗遮罩之上 |
@@ -430,6 +459,7 @@ menu:
 | 项 | 规格 |
 | --- | --- |
 | 配置 | `params.hero.hitokoto`：字符串列表；不配置则整张卡片不渲染 |
+| 进场 | 淡入 + 上移 24px，`--duration-reveal`，延迟 140ms；打字机顺延到 1100ms 后开打（§5.3） |
 | 尺寸 | `width: max-content`，`min-width: 680px`，`max-width: 75vw`；`min-height: 140px`；内边距 `--space-8` 上下、`--space-8 + --space-4` 左右 |
 | 外观 | `background: --hero-card-bg` + `backdrop-filter: blur(--hero-card-blur)`；`--radius-xl`；无描边、无投影 |
 | 引号 | 左上 / 右下各一个，同一 SVG 旋转 180°，`2rem`，`--color-over-hero` @ `opacity: .35`，内缩 `--space-5` |
@@ -449,6 +479,7 @@ menu:
 | 项 | 规格 |
 | --- | --- |
 | 位置 | `.hero-profile` 是 `.hero-stage` 的第一个子项，与卡片间距 `--space-5`；整组（徽章 + 卡片）垂直居中 |
+| 进场 | 淡入 + 上移 24px，`--duration-reveal`，延迟 60ms，比卡片早半步落位（§5.3） |
 | 块高 | `height: --hero-avatar-size`（72px），钉住外接框，避免名称行盒的留白把整组压低 |
 | 配置 | `params.hero.avatar`：网络 URL 原样引用；本地 assets 路径走 `resources.Get`；留空则整块不渲染（名称也不渲染） |
 | 头像 | `--hero-avatar-size` 圆形，`object-fit: cover`，2px 半透明白圈；悬停顺时针转一圈，移出逆时针转回（`transition` 500ms，`reduced-motion` 下不转） |
@@ -567,8 +598,10 @@ menu:
 | 尺寸 | 与主栏同宽；桌面高度取 `--carousel-height`（270px，与侧栏 profile 卡等高，首行底边对齐）；≤1080px 侧栏隐藏后恢复 `aspect-ratio: 3 / 1` + `min-height: 220px`；`--radius-lg` + `--shadow-sm` |
 | 切换 | 右侧竖向圆形指示器；未选中 12px 白色圆点（无阴影 / 描边），选中拉长为 32px（两个圆点 + 间距），高度 / 颜色过渡 `--duration-slow` |
 | 过渡 | 幻灯片交叉淡入淡出 `--duration-slow`；图片从 `scale(1.1)` 缓落到 1（`--duration-slower`），文字延迟 100ms 向上落位 |
+| 悬停 | 鼠标移入 / 键盘焦点进入时，当前图片放大到 `1.04` 并加 `blur(2px)`，`--duration-base`；与文章封面同一档缩放 |
+| 悬停分层 | 缩放 / 模糊挂在外层 `.carousel-bg-wrap`，换片的 `scale(1.1 → 1)` 挂在 `.carousel-bg`，两段 `transform` 互不覆盖 |
 | 自动轮播 | `autoplay: true` 时按 `interval`（默认 6000ms）切换；悬停 / 焦点进入 / 页面隐藏时暂停 |
-| 降级 | `prefers-reduced-motion` 下不自动播放，取消淡入 / 缩放 / 位移与指示器过渡 |
+| 降级 | `prefers-reduced-motion` 下不自动播放，取消淡入 / 缩放 / 位移 / 悬停反馈与指示器过渡 |
 | 可访问性 | 非当前幻灯片 `inert` + `aria-hidden="true"`；指示器为 `button`，当前项 `aria-current="true"` |
 
 ---
@@ -597,13 +630,16 @@ menu:
 - [ ] 样式产物为单个 `main.min.<hash>.css`，无分散 CSS 请求。
 - [ ] 颜色、尺寸、阴影、动效全部来自 `_tokens.scss`，组件内无硬编码。
 - [ ] 亮 / 暗主题切换正常，刷新后保持；首次访问跟随系统且无闪烁。
-- [ ] `prefers-reduced-motion` 下关闭打字机、箭头跳动、卡片位移、背景交叉淡入、Header 生长填充。
+- [ ] 进入页面时 Header、Hero 徽章 / 卡片依次进场；滚动时各区块淡入上移，首屏元素按顺序错峰。
+- [ ] `prefers-reduced-motion` 下关闭打字机、箭头跳动、卡片位移、背景交叉淡入、Header 生长填充、页面进场 / 滚动进场与轮播悬停缩放。
+- [ ] 禁用 JS 或 `IntersectionObserver` 不可用时，所有内容仍立即可见，不留下 `opacity: 0` 的空白块。
 - [ ] 键盘可完整操作导航、下拉菜单、卡片链接；装饰图标均 `aria-hidden="true"`。
 - [ ] 控制台无报错。
 
 ### Header
 
 - [ ] 固定顶部，滚动后阴影加深；向下滚动收起、向上滚动展开；键盘焦点进入时强制展开。
+- [ ] 页面载入时 Header 内容从上方轻轻落位，不出现硬闪。
 - [ ] 导航悬停：图标与文字变主题色，3px 胶囊下划线从左向右生长。
 - [ ] 「更多」悬停 / 聚焦展开二级菜单，移出 / 失焦收起；更深层级向右展开。
 - [ ] 首页未滚动时 Header 全透明、无毛玻璃、无阴影、前景转白；滚动后恢复常驻样式。
@@ -617,8 +653,9 @@ menu:
 - [ ] 轮播图只在首页第一页显示，第二页 / 分区页 / 标签页不显示。
 - [ ] 轮播图与右侧 profile 卡等高，首行底边对齐；所有卡片为整图背景，文字压在底部。
 - [ ] 指示器竖排在右侧，选中项拉长为两个点位；点击可切换，自动轮播在悬停 / 聚焦时暂停。
-- [ ] split 与 background 两种样式按配置逐项生效；`slug` 引用与手动条目可混排。
-- [ ] 作者徽章与一言卡片作为整体垂直居中；无头像时整块不渲染。
+- [ ] 轮播图悬停 / 键盘焦点进入时当前图片轻微放大并模糊，移出后复原；换片缩放不受影响。
+- [ ] `slug` 引用与手动条目可混排，两种写法都取到正确的标题 / 摘要 / 图片 / 链接。
+- [ ] 作者徽章与一言卡片作为整体垂直居中进场；无头像时整块不渲染；打字在卡片落位后才开始。
 - [ ] 一言按「打字 → 停留 → 删除 → 换条」运行；悬停 / 键盘焦点时暂停并可续上；单条时打完停住。
 - [ ] 文章卡片图文交替、封面斜切、悬停反馈正常；标题与封面可点，文字可选中。
 - [ ] 置顶文章显示角标；分页在超过一页时出现。

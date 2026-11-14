@@ -1,0 +1,62 @@
+// ---------------------------------------------------------------------------
+// 页面进入 / 滚动动效（§5.3）
+//
+// main.js 的 initReveal() 给目标元素加 .reveal，进视口时再加 .is-visible：
+// 淡入 + 轻微上移。无 JS、IntersectionObserver 不可用或用户开启"减少动态效果"
+// 时不会加类，内容始终按原样显示——动效只是增强，不承担可见性。
+//
+// 用 animation 而不是 transition：不会覆盖 .post-card 等组件自己的 transition；
+// 位移用独立的 translate 属性，与卡片悬停的 transform 各走各路，互不打架。
+// ---------------------------------------------------------------------------
+
+.reveal {
+  opacity: 0;
+}
+
+.reveal.is-visible {
+  animation-name: reveal-in;
+  animation-duration: var(--duration-reveal);
+  animation-timing-function: var(--ease-out);
+  // 首屏元素由 JS 写 --reveal-delay 做错峰；滚动进场的元素不延迟
+  animation-delay: var(--reveal-delay, 0ms);
+  animation-fill-mode: both;
+}
+
+// 键盘 Tab 提前跳到尚未进场的链接时，先让容器亮出来，
+// 别让焦点停在看不见的按钮上；观察器随后仍会正常补上动画
+.reveal:focus-within {
+  opacity: 1;
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+  }
+
+  .reveal.is-visible {
+    animation: none;
+  }
+}
+
+// 打印时不要留下尚未滚到、因而还没进场的隐藏块
+@media print {
+  .reveal {
+    opacity: 1 !important;
+  }
+
+  .reveal.is-visible {
+    animation: none !important;
+  }
+}

@@ -43,6 +43,26 @@
 
 // --- 整图背景 ---
 
+// 背景图外层只负责"悬停放大 + 模糊"，图片自身只负责换片时的 1.1 → 1。
+// 两层分开的原因：两段动画都要写 transform，写在同一元素上会互相覆盖，
+// 悬停缩放会被 900ms 的落位动画拖住，回不到 250ms 的即时手感。
+.carousel-bg-wrap {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transition: transform var(--duration-base) var(--ease),
+              filter var(--duration-base) var(--ease);
+}
+
+// 悬停与键盘焦点进入时与文章卡片封面同一档（.post-card-cover:hover img 也是 1.04），
+// 保持"照片在框里呼吸"的同一套语言。模糊只要一点：整卡是一张照片，
+// 压得太狠会让人以为图没加载完；放大 1.04 同时把 2px 模糊吃掉的那圈边缘补回来
+.carousel:hover .carousel-slide.is-active .carousel-bg-wrap,
+.carousel:focus-within .carousel-slide.is-active .carousel-bg-wrap {
+  transform: scale(1.04);
+  filter: blur(2px);
+}
+
 .carousel-bg {
   position: absolute;
   inset: 0;
@@ -187,8 +207,16 @@
 @media (prefers-reduced-motion: reduce) {
   .carousel-slide,
   .carousel-slide .carousel-body,
+  .carousel-bg-wrap,
   .carousel-bg,
   .carousel-dot {
     transition: none;
+  }
+
+  // 悬停缩放 / 模糊会让人以为画面在动，整卡保持静止
+  .carousel:hover .carousel-slide.is-active .carousel-bg-wrap,
+  .carousel:focus-within .carousel-slide.is-active .carousel-bg-wrap {
+    transform: none;
+    filter: none;
   }
 }

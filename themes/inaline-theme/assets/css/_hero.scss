@@ -37,6 +37,30 @@
   gap: var(--space-5);
 }
 
+// --- 进场：徽章先落，卡片随后浮上来 ---
+// 与页面内容的滚动进场（§5.3）同一套语言：淡入 + 24px 上移。
+// 卡片比徽章晚 80ms，让眼睛先认人、再读话；home.js 的打字机也相应推迟到
+// 这一段落位之后才开打，免得"卡片还在动、字已经开始长"。
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.hero-profile {
+  animation: hero-enter var(--duration-reveal) var(--ease-out) 60ms both;
+}
+
+.hero-quote {
+  animation: hero-enter var(--duration-reveal) var(--ease-out) 140ms both;
+}
+
 // --- 中央一言玻璃卡片（§7.5）---
 
 .hero-quote {
@@ -230,9 +254,22 @@
   color: var(--color-over-hero);
 }
 
-// 兜底可读性：封面图若是浅色调，纯白箭头会糊进背景
+// 兜底可读性：封面图若是浅色调，纯白箭头会糊进背景。
+// 进场淡入挂在图标上：外层 <a> 的 animation 已被上下跳动占用，
+// 图标自己淡入不打断弹跳，也让首屏底部不至于突然冒出一个箭头
 .hero-arrow i {
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .35));
+  animation: hero-arrow-in var(--duration-reveal) var(--ease-out) 260ms both;
+}
+
+@keyframes hero-arrow-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 // 位移与透明度绑在同一个动画上：跳到最高点（动画起点）时纯白不透明，
@@ -274,6 +311,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .hero-arrow {
+    animation: none;
+  }
+
+  // 徽章与卡片直接显示，不做进场位移
+  .hero-profile,
+  .hero-quote,
+  .hero-arrow i {
     animation: none;
   }
 

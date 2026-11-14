@@ -95,7 +95,7 @@
                  aria-roledescription="幻灯片"
                  aria-label="第 {{ add $i 1 }} 张，共 {{ len $entries }} 张"
                  aria-hidden="{{ if eq $i 0 }}false{{ else }}true{{ end }}"{{ if ne $i 0 }} inert{{ end }}>
-          {{ with $e.image }}<img class="carousel-bg" src="{{ . }}" alt="" loading="{{ if eq $i 0 }}eager{{ else }}lazy{{ end }}">{{ end }}
+          {{ with $e.image }}<div class="carousel-bg-wrap"><img class="carousel-bg" src="{{ . }}" alt="" loading="{{ if eq $i 0 }}eager{{ else }}lazy{{ end }}"></div>{{ end }}
           {{ partial "carousel-body.html" $e }}
         </article>
       {{ end }}

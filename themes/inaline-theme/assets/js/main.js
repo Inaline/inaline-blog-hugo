@@ -146,11 +146,83 @@
     });
   }
 
+  /**
+   * 页面进入 / 滚动动效（DESIGN.md §5.3）：组件进入视口时淡入上移。
+   * 只是视觉增强——减少动态效果、没有 IntersectionObserver、JS 失效时
+   * 都不加 .reveal，内容始终按原样显示。
+   */
+  function initReveal() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!('IntersectionObserver' in window)) return;
+
+    var selector = [
+      '.page-header',
+      '.page-content',
+      '.term-list',
+      '.carousel',
+      '.post-list > .post-card',
+      '.sidebar > .sidebar-card',
+      '.pager',
+      '.post-header',
+      '.post-content',
+      '.site-footer'
+    ].join(',');
+
+    var nodes = document.querySelectorAll(selector);
+    if (!nodes.length) return;
+
+    var pending = [];
+    var initialIndex = 0;
+
+    Array.prototype.forEach.call(nodes, function (el) {
+      if (el.dataset.revealBound === 'true') return;
+      el.dataset.revealBound = 'true';
+      el.classList.add('reveal');
+
+      // 首屏内已有的元素直接错峰进场，不必等观察器；
+      // 首页 Hero 占满首屏，下面的轮播图与卡片会落到下面的观察分支
+      var rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        el.style.setProperty('--reveal-delay', Math.min(initialIndex * 50, 300) + 'ms');
+        el.classList.add('is-visible');
+        initialIndex++;
+        return;
+      }
+
+      pending.push(el);
+    });
+
+    if (!pending.length) return;
+
+    var io;
+    try {
+      io = new IntersectionObserver(function (entries) {
+        // 同一批进场的元素依次错开半拍（如首页轮播图 + 首张卡片 + 侧栏同时露头）；
+        // 慢慢滚动、每次只进一个时没有延迟
+        var order = 0;
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.style.setProperty('--reveal-delay', Math.min(order * 40, 200) + 'ms');
+          entry.target.classList.add('is-visible');
+          io.unobserve(entry.target);
+          order++;
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0 });
+    } catch (e) {
+      // 观察器创建失败时宁可不动，也不能把内容留在 opacity: 0
+      pending.forEach(function (el) { el.classList.add('is-visible'); });
+      return;
+    }
+
+    pending.forEach(function (el) { io.observe(el); });
+  }
+
   function init() {
     initThemeToggle();
     initHeaderScroll();
     initFooterUptime();
     initSocialCopy();
+    initReveal();
   }
 
   init();
