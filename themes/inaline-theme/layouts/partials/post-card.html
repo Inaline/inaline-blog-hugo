@@ -21,10 +21,11 @@
 {{/* 图文交替（§7.7）：奇数条图在左、偶数条图在右。index 从 0 起，
      所以"偶数条"落在 index 为奇数上——判断条件看着反，是对的 */}}
 {{ $flip := eq (mod $index 2) 1 }}
-<article class="post-card{{ if $flip }} post-card--flip{{ end }}">
-  {{/* 封面：鼠标点它开文章（§7.7 只留标题与封面两个可点区，不做整卡点击——
-       铺满卡片的覆盖层会把指针全接走，标题与摘要就选不中、复制不了了）。
-       但它仍只是标题链接的视觉重复，故照旧摘出可访问性树与 Tab 序：
+{{/* 整卡可点（§7.7）：目标地址写在 data-card-href 上，main.js 用点击监听跳转。
+     不铺覆盖层——覆盖层会把指针全接走，标题与摘要就选不中、复制不了了。
+     卡片本身不进 Tab 序，键盘用户仍走标题链接，不多停一次 */}}
+<article class="post-card{{ if $flip }} post-card--flip{{ end }}" data-card-href="{{ $page.RelPermalink }}">
+  {{/* 封面是整卡可点的视觉重复，故摘出可访问性树与 Tab 序：
        读屏不念第二遍、键盘不多停一次，键盘用户走标题链接，功能一点不少 */}}
   <a class="post-card-cover" href="{{ $page.RelPermalink }}" tabindex="-1" aria-hidden="true">
     {{ with $cover }}<img src="{{ . }}" alt="" loading="lazy" width="300" height="200">{{ end }}

@@ -1,0 +1,172 @@
+// ---------------------------------------------------------------------------
+// 文章页（DESIGN.md §8）
+//
+// 结构：顶部通栏大图（标题区叠在图上）→ 左侧正文卡片 + 右侧栏（复用首页侧栏，§7.8）。
+// 大图从 y=0 起铺，Header 在页面顶部转为透明态（§6.7）。
+// ---------------------------------------------------------------------------
+
+// --- 顶部大图 ---
+
+.post-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  // 常规屏幕上按视口宽度伸缩；标题区在窄屏变高时允许把大图一起撑高，文字不越界
+  min-height: var(--post-hero-height);
+  overflow: hidden;
+  // 图片解码完成前的兜底底色，避免闪白
+  background: var(--color-surface);
+}
+
+.post-hero-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// 两层压暗：顶部保证 fixed Header 的白字可读；底部为标题 / 信息 / 分类标签铺深底。
+// 标题区贴着底部，所以底部遮罩比顶部重
+.post-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image:
+    linear-gradient(to bottom, var(--post-hero-scrim-top) 0%, transparent 28%),
+    linear-gradient(to top,
+      var(--post-hero-scrim-bottom) 0%,
+      var(--post-hero-scrim-top) 58%,
+      transparent 100%);
+  pointer-events: none;
+}
+
+// --- 叠在 hero 上的标题区 ---
+
+.post-page .post-hero .post-header {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  // 顶部给 fixed Header 让位；底部留出比之前更多的空间，文字整体往上提
+  padding-top: calc(var(--header-height) + var(--space-2));
+  padding-bottom: calc(var(--space-8) + var(--space-4));
+  text-align: center;
+  color: var(--color-over-hero);
+}
+
+.post-page .post-title {
+  // 标题是页面主视觉，比列表卡片高两档；窄屏由 clamp 自动收回
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.35;
+  margin-bottom: var(--space-3);
+  color: var(--color-over-hero);
+  // 长标题折成两行时尽量让两行长度均衡
+  text-wrap: balance;
+}
+
+.post-page .post-hero .post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  color: var(--color-over-hero-soft);
+  font-size: 0.9375rem;
+}
+
+.post-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+
+  i {
+    font-size: 0.875rem;
+  }
+}
+
+// 信息分隔线：独立元素，颜色 / 高度与文字一致；左右间距由 .post-meta 的 gap 提供
+.post-meta-sep {
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: 1em;
+  background: var(--color-over-hero-soft);
+}
+
+// --- 分类 / 标签 ---
+
+// 只做文字链接，不再用胶囊：压在照片上，悬停提亮 + 下划线。
+// 每组前放一枚组图标（分类 = 文件夹，标签 = tags），不写“分类 / 标签”文字
+.post-taxonomies {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-1) var(--space-5);
+  font-size: 0.875rem;
+}
+
+.post-taxonomies-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  > i {
+    color: var(--color-over-hero-soft);
+    font-size: 0.8125rem;
+    opacity: .8;
+  }
+}
+
+.post-category,
+.post-tag {
+  display: inline;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  color: var(--color-over-hero-soft);
+  font-size: inherit;
+  line-height: inherit;
+  transition: color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-over-hero);
+    text-decoration: underline;
+  }
+}
+
+// --- 正文与侧栏 ---
+
+// 大图与下方两栏之间的呼吸
+.post-page .layout {
+  padding-top: var(--space-6);
+}
+
+// 正文卡片：与侧栏卡同一套白面 / 阴影 / 圆角，不再平铺在页面底色上。
+// 宽度跟首页文章列表的主栏一致：容器宽 - 左右内边距 - 栏间距 - 侧栏
+.post-page .post-content {
+  max-width: calc(var(--container-width) - var(--space-5) * 2 - var(--space-5) - var(--sidebar-width));
+  margin: 0 auto;
+  padding: var(--space-6);
+  background: var(--color-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+// 卡片自己的内边距负责留白，最后一个块不要再拖一条外边距下来
+.post-page .post-content > :last-child {
+  margin-bottom: 0;
+}
+
+// --- 减少动态效果 ---
+
+@media (prefers-reduced-motion: reduce) {
+  .post-category,
+  .post-tag {
+    transition: none;
+  }
+}

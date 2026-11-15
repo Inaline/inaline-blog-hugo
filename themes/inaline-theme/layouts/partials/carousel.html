@@ -6,6 +6,7 @@
   - items：每项可写 slug 引用文章，也可手动填 title / summary / date / image / url
 
   所有卡片统一为整图背景：图片铺满，底部渐变压暗，日期 / 标题 / 摘要压在底部。
+  有 url 的条目整卡可点：卡片挂 data-card-href，由 main.js 的点击监听跳转。
   slug 解析不到、缺少标题、图片资源找不到时构建期告警并跳过 / 回退；
   整块没有可用条目时不渲染。
 */}}
@@ -91,7 +92,7 @@
     <section class="carousel" data-carousel data-autoplay="{{ $autoplay }}" data-interval="{{ $interval }}" aria-roledescription="轮播图" aria-label="推荐文章">
       {{ range $i, $e := $entries }}
         <article class="carousel-slide{{ if eq $i 0 }} is-active{{ end }}"
-                 data-carousel-slide
+                 data-carousel-slide{{ with $e.url }} data-card-href="{{ . }}"{{ end }}
                  aria-roledescription="幻灯片"
                  aria-label="第 {{ add $i 1 }} 张，共 {{ len $entries }} 张"
                  aria-hidden="{{ if eq $i 0 }}false{{ else }}true{{ end }}"{{ if ne $i 0 }} inert{{ end }}>

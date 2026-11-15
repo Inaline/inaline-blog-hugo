@@ -76,6 +76,11 @@ img {
   padding-top: 0;
 }
 
+// 文章页：顶部大图同样从 y=0 起铺，钻到 fixed Header 底下（§8）
+.main--post {
+  padding-top: 0;
+}
+
 // Hero 之后的首页内容，与 Hero 拉开距离
 .hero + .container {
   padding-top: var(--space-6);
@@ -93,7 +98,7 @@ img {
   padding: 0 var(--space-5);
 }
 
-// 两栏页面（首页 / 分区 / 标签词条）改用全站容器宽度：与 Header 左右对齐，见 §7.8
+// 两栏页面（首页 / 分区 / 标签词条 / 文章页正文）改用全站容器宽度：与 Header 左右对齐，见 §7.8 / §8
 .container--wide {
   max-width: var(--container-width);
 }

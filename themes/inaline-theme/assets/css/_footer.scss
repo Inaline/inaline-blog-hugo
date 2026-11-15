@@ -8,6 +8,9 @@
 // 亮色模式下若翻成浅色，"和正文区分、更突出"的意图当场就没了。
 // 所以这里消费的都是跨主题恒定的令牌（--footer-scrim / --color-over-hero*），
 // 与 --badge-bg / --glow-* 同一类（见 _tokens.scss 的说明）。
+//
+// 文章页例外：页脚下方没有整页背景图，body.has-post-hero 下取消底色与模糊，
+// 改用常规文字色（见文件末尾）。
 // ---------------------------------------------------------------------------
 
 .site-footer {
@@ -57,4 +60,19 @@
 .footer-num,
 .footer-site {
   color: var(--color-primary);
+}
+
+// ---------------------------------------------------------------------------
+// 文章页：页脚下面是页面底色，没有整页背景图，不需要深色玻璃遮罩。
+// 回到透明底 + 常规文字色；链接悬停用主题色加深（深色底上的"转白"在这里会消失）
+// ---------------------------------------------------------------------------
+body.has-post-hero .site-footer {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--color-text-muted);
+
+  .footer-link:hover {
+    color: var(--color-primary-hover);
+  }
 }

@@ -94,6 +94,46 @@
   }
 
   /**
+   * 整卡可点：文章卡片与轮播图卡片把目标地址写在 data-card-href 上，
+   * 点击卡片的空白处 / 文字区即跳转，不再只能点标题和缩略图。
+   *
+   * 用点击监听而不是铺满卡片的覆盖层：覆盖层会接走全部指针事件，
+   * 标题与摘要就再也选不中、复制不了（§7.7）。因此这里也要放过
+   * "拖选文字后的那次 click"——选择非空说明用户是在复制，不是要打开文章。
+   * 卡片本身不进 Tab 序，键盘用户仍走标题链接。
+   */
+  function initClickableCards() {
+    // 选区是否落在卡片内：只有"在卡上拖选"才拦住跳转；
+    // 页面上别处的旧选区不应该让这张卡点不动
+    function selectionInside(el) {
+      var sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !sel.rangeCount) return false;
+      var range = sel.getRangeAt(0);
+      if (range.intersectsNode) return range.intersectsNode(el);
+      return el.contains(sel.anchorNode) || el.contains(sel.focusNode);
+    }
+
+    var cards = document.querySelectorAll('[data-card-href]');
+
+    Array.prototype.forEach.call(cards, function (card) {
+      if (card.dataset.cardClickBound === 'true') return;
+      card.dataset.cardClickBound = 'true';
+
+      card.addEventListener('click', function (e) {
+        var href = card.dataset.cardHref;
+        if (!href || e.defaultPrevented || e.button !== 0) return;
+        // 带修饰键的点击不接管：留给用户按平台习惯操作（需要新标签页时走标题链接）
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        // 卡片里的链接 / 按钮自己处理，避免盖掉它们的原生行为
+        if (e.target.closest('a, button, input, textarea, select, label')) return;
+        // 刚在卡片上拖选完文字：用户是在选中 / 复制，不是要打开文章
+        if (selectionInside(card)) return;
+        window.location.href = href;
+      });
+    });
+  }
+
+  /**
    * 侧栏联系方式里的 copy 类按钮（微信这种没有网页地址的）：点击复制到剪贴板，
    * 并弹一个"已复制"气泡。气泡只在真的复制成功后才出——它是承诺，不是反馈音
    */
@@ -221,6 +261,7 @@
     initThemeToggle();
     initHeaderScroll();
     initFooterUptime();
+    initClickableCards();
     initSocialCopy();
     initReveal();
   }

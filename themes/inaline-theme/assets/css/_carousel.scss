@@ -32,13 +32,22 @@
   display: block;
   opacity: 0;
   visibility: hidden;
+  // 交叉淡出期间 visibility 仍按 visible 参与过渡，只有当前片接指针，
+  // 避免点到正在退场的旧卡片（它的链接还是上一张的）
+  pointer-events: none;
   transition: opacity var(--duration-slow) var(--ease),
               visibility var(--duration-slow);
+}
+
+// 有链接的条目整卡可点（§7.10）；目标地址挂在 data-card-href 上，由 main.js 点击监听跳转
+.carousel-slide[data-card-href] {
+  cursor: pointer;
 }
 
 .carousel-slide.is-active {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 // --- 整图背景 ---
@@ -56,9 +65,11 @@
 
 // 悬停与键盘焦点进入时与文章卡片封面同一档（.post-card-cover:hover img 也是 1.04），
 // 保持"照片在框里呼吸"的同一套语言。模糊只要一点：整卡是一张照片，
-// 压得太狠会让人以为图没加载完；放大 1.04 同时把 2px 模糊吃掉的那圈边缘补回来
+// 压得太狠会让人以为图没加载完；放大 1.04 同时把 2px 模糊吃掉的那圈边缘补回来。
+// 焦点只认 :focus-visible：鼠标点击指示器也会把焦点留在按钮上（Chrome / Firefox 的行为），
+// 用 :focus-within 的话移开鼠标后整卡会一直停在放大态
 .carousel:hover .carousel-slide.is-active .carousel-bg-wrap,
-.carousel:focus-within .carousel-slide.is-active .carousel-bg-wrap {
+.carousel:has(:focus-visible) .carousel-slide.is-active .carousel-bg-wrap {
   transform: scale(1.04);
   filter: blur(2px);
 }
@@ -215,7 +226,7 @@
 
   // 悬停缩放 / 模糊会让人以为画面在动，整卡保持静止
   .carousel:hover .carousel-slide.is-active .carousel-bg-wrap,
-  .carousel:focus-within .carousel-slide.is-active .carousel-bg-wrap {
+  .carousel:has(:focus-visible) .carousel-slide.is-active .carousel-bg-wrap {
     transform: none;
     filter: none;
   }

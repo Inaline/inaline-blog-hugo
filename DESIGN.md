@@ -13,7 +13,7 @@
 | --- | --- |
 | 站点语言 | 简体中文 |
 | 主题色 | `#FA5D19` |
-| 布局基调 | 两栏（左侧文章 + 右侧栏），首页为整页封面背景 + 通栏 Hero |
+| 布局基调 | 列表页两栏（文章列表 + 右侧栏）；文章页为顶部大图（标题区叠在图上）+ 两栏正文卡片；首页为整页封面背景 + 通栏 Hero |
 | 响应式 | ⏳ 统一在后续阶段实现；当前只有两栏 → 单栏的断点降级 |
 | 技术形态 | Hugo 静态生成（SSR），无前端框架 |
 
@@ -45,7 +45,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 - 所有颜色、尺寸、阴影、动效参数只从 `_tokens.scss` 的 CSS 自定义属性取值，组件里不写死。
 - 全站 `a:hover` 的特异度是 `(0,1,1)`。凡是把 `<a>` 当按钮或装饰用、且不希望它变主题色的地方，必须显式写一条 `:hover` 覆盖（如 `.hero-arrow:hover`）。
 - `prefers-reduced-motion` 的覆写块必须放在对应文件末尾，并显式列出 `:hover` 变体：媒体查询不提升特异度，只能靠源顺序压过组件规则。
-- 不允许 `<a>` 嵌套 `<a>`；文章卡片只保留标题与封面两个可点区（见 §7.7）。
+- 不允许 `<a>` 嵌套 `<a>`；文章卡片整卡可点，用 `data-card-href` + 点击监听实现，不铺覆盖层（见 §7.7）。
 
 ---
 
@@ -64,6 +64,8 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --color-on-primary:     #FFFFFF;                  // 主题色实心填充上的前景色
 --color-over-hero:      #FFFFFF;                  // 封面图之上的前景色
 --color-over-hero-soft: rgba(255, 255, 255, .85); // 略灰一档的前景（顶部态 Header、页脚）
+--post-hero-scrim-top:   rgba(0, 0, 0, .45);      // 文章页大图顶部压暗（Header 白字兜底）
+--post-hero-scrim-bottom: rgba(0, 0, 0, .72);     // 文章页大图底部深底（标题区）
 --footer-scrim:         rgba(26, 26, 26, .48);    // 页脚深色毛玻璃底
 --footer-blur:          3px;
 --badge-bg:             #FFFFFF;                  // 置顶角标底色
@@ -78,7 +80,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 ```
 
 > `--brand-github` 是唯一例外：近黑色在暗色卡片上会消失，暗色下翻为 `#FFFFFF`。
-> 压在照片 / 深色上的色块（`--color-over-hero*`、`--footer-scrim`、`--badge-*`、`--glow-name`）
+> 压在照片 / 深色上的色块（`--color-over-hero*`、`--post-hero-*`、`--footer-scrim`、`--badge-*`、`--glow-name`）
 > 不跟主题翻色——它们坐在图片上，与页面底色无关。
 
 ### 3.2 中性色
@@ -147,6 +149,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --content-width: 42rem;     // 单栏内容宽度（文章详情等）
 --sidebar-width: 280px;
 --carousel-height: 270px;   // 首页轮播图，与侧栏 profile 卡等高
+--post-hero-height: clamp(240px, 30vw, 380px); // 文章页顶部大图：按视口宽度伸缩，不随窗口高度变化
 --header-height: 56px;
 --header-blur: 20px;
 
@@ -180,19 +183,21 @@ themes/inaline-theme/
 │   │   ├── _page-bg.scss          # 首页整页背景（§7.1）
 │   │   ├── _header.scss           # Header（§6）
 │   │   ├── _hero.scss             # Hero（§7.2–§7.6）
-│   │   ├── _post.scss             # 文章卡片 / 分页 / 详情 / 标签（§7.7）
+│   │   ├── _post.scss             # 文章卡片 / 分页 / 标签 / 正文基础排版（§7.7）
+│   │   ├── _article.scss          # 文章页：顶部大图 / 标题区 / 正文两栏（§8）
 │   │   ├── _carousel.scss         # 首页轮播图（§7.10）
 │   │   ├── _sidebar.scss          # 两栏骨架 + 侧栏（§7.8）
 │   │   ├── _footer.scss           # 页脚（§7.9）
 │   │   └── _motion.scss           # 进入 / 滚动进场动效（§5.3）
 │   ├── js/
-│   │   ├── main.js                # 全局：主题、Header 滚动态、页脚运行时长、复制、进场动效
+│   │   ├── main.js                # 全局：主题、Header 滚动态、页脚运行时长、整卡跳转、复制、进场动效
 │   │   └── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
 │   ├── images/cover/              # cover1–3.jpg，Hero 背景与卡片兜底同池
 │   └── fonts/HYTangMeiRen55W.woff2
 └── layouts/
     ├── baseof.html
     ├── home.html / page.html / section.html / taxonomy.html / term.html
+    ├── posts/page.html            # 文章页（§8，覆盖通用 page.html）
     └── partials/
         ├── head.html              # meta、主题内联脚本、字体、CSS
         ├── header.html            # Header 外壳
@@ -229,7 +234,7 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、Header 滚动态、页脚运行时长、剪贴板复制、页面进入 / 滚动进场动效）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、页面进入 / 滚动进场动效）。
 - `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前只有 `home.js`）。
 - 每个模块写成幂等 `init()`，事件用 `dataset.bound` 防重复绑定；后续接入 Swup 时在 `page:view` 再次调用同一 `init()` 即可。
 - 全局入口暴露为 `window.inalineInit`，首页入口暴露为 `window.inalinePageInit`。
@@ -370,11 +375,11 @@ menu:
 - 悬停：`::before` 由中心生长出主题色实心填充，图标转白；不加发光、内高光与外光晕。
 - `prefers-reduced-motion` 下取消生长过渡，填充直接显示。
 
-### 6.7 首页顶部态
+### 6.7 首页 / 文章页顶部态
 
-首页未滚动时 Header 完全让位给封面图；滚动后自动恢复常驻样式。
+首页与带顶部大图的文章页未滚动时，Header 完全让位给封面图；滚动后自动恢复常驻样式。
 
-| 属性 | 顶部态（未滚动） | 滚动后 / 内页 |
+| 属性 | 顶部态（未滚动） | 滚动后 / 无封面内页 |
 | --- | --- | --- |
 | 背景 | `transparent` | `--header-bg` |
 | 毛玻璃 | 关闭 | `blur(--header-blur)` |
@@ -384,7 +389,7 @@ menu:
 | 导航项悬停 | `--color-over-hero`，下划线仍为主题色 | `--color-primary` |
 | 图标按钮悬停 | 主题色填充 + 白图标 + 辉光 | 同左 |
 
-由 `body.has-hero`（仅在首页由 `baseof.html` 添加）限定；滚动后 `.is-scrolled` 生效，`:not()` 失配即还原。
+由 `body.has-hero`（首页）与 `body.has-post-hero`（文章页）限定，两者均由 `baseof.html` 添加；滚动后 `.is-scrolled` 生效，`:not()` 失配即还原。
 
 ### 6.8 Header JS
 
@@ -504,8 +509,8 @@ menu:
 | 标题 | `1.5rem`；悬停变 `--color-primary` |
 | 摘要 | `or .Description .Summary` → `plainify` + `truncate 120`，CSS `line-clamp: 2` |
 | 封面配置 | front matter `cover`：网络 URL 或 assets 路径；未配置则从封面池按 `index` 轮换 |
-| 可点区 | 仅标题与封面。封面链接 `tabindex="-1"` + `aria-hidden="true"`（标题链接的视觉重复） |
-| 整卡点击 | **不做**。覆盖层会接走全部指针事件，标题与摘要无法选中 / 复制 |
+| 可点区 | 整卡可点：标题与封面仍是真链接（封面链接 `tabindex="-1"` + `aria-hidden="true"`，标题链接的视觉重复）；卡片其余区域由 `data-card-href` + 点击监听跳转 |
+| 整卡点击 | 不铺覆盖层：覆盖层会接走全部指针事件，标题与摘要无法选中 / 复制。点击监听放过拖选文字后的那次 click，卡片文字保持可选中；带修饰键的点击不接管，新标签页走标题链接 |
 | 置顶角标 | `pinned: true` → 白底圆角标签 + `fa-thumbs-up` + "置顶"；贴封面外侧上角（交替卡镜像），`pointer-events: none`；`--badge-*` 两主题同值 |
 | 分页 | 按 `pagination.pagerSize`（10）；左右箭头 + `1 2 3` 页码；页数多时只显示首尾页与当前页前后各一页，中间用 `…` 收拢；总数不超过一页时不渲染 |
 | 分页边界 | 首页不渲染上一页箭头，末页不渲染下一页箭头（不做置灰态） |
@@ -571,7 +576,9 @@ menu:
 
 ### 7.9 页脚 ✅
 
-深色毛玻璃条：`--footer-scrim` + `backdrop-filter: blur(--footer-blur) saturate(1.08)`，白字 `--color-over-hero-soft`，`0.875rem / 1.6`，居中，上下 `--space-6`。全站唯一不随主题翻色的深色块。
+深色毛玻璃条：`--footer-scrim` + `backdrop-filter: blur(--footer-blur) saturate(1.08)`，白字 `--color-over-hero-soft`，`0.875rem / 1.6`，居中，上下 `--space-6`。除文章页外，全站唯一不随主题翻色的深色块。
+
+文章页（`body.has-post-hero`）的页脚下方没有整页背景图，因此不铺遮罩：透明底、取消毛玻璃，文字改用 `--color-text-muted`，链接悬停改为 `--color-primary-hover`。
 
 六行自上而下全部可选，任一行留空 / 关闭即不渲染：
 
@@ -595,71 +602,54 @@ menu:
 | 条目手动 | `title` / `summary` / `date` / `image` / `url`，可与 `slug` 混排 |
 | 图片 | `image` 支持网络 URL 与 assets 路径；未配 / 解析失败回退封面池（与文章卡片同池） |
 | 卡片 | 统一为整图背景：图片铺满，底部线性渐变压暗，日期 / 标题 / 摘要压在底部；标题为链接时悬停加下划线 |
+| 点击 | 有 `url` 的条目整卡可点（`data-card-href` + 点击监听）；指示器与标题链接保留原生行为，拖选文字不跳转 |
 | 尺寸 | 与主栏同宽；桌面高度取 `--carousel-height`（270px，与侧栏 profile 卡等高，首行底边对齐）；≤1080px 侧栏隐藏后恢复 `aspect-ratio: 3 / 1` + `min-height: 220px`；`--radius-lg` + `--shadow-sm` |
 | 切换 | 右侧竖向圆形指示器；未选中 12px 白色圆点（无阴影 / 描边），选中拉长为 32px（两个圆点 + 间距），高度 / 颜色过渡 `--duration-slow` |
 | 过渡 | 幻灯片交叉淡入淡出 `--duration-slow`；图片从 `scale(1.1)` 缓落到 1（`--duration-slower`），文字延迟 100ms 向上落位 |
-| 悬停 | 鼠标移入 / 键盘焦点进入时，当前图片放大到 `1.04` 并加 `blur(2px)`，`--duration-base`；与文章封面同一档缩放 |
+| 悬停 | 鼠标移入 / 键盘焦点进入（`:focus-visible`）时，当前图片放大到 `1.04` 并加 `blur(2px)`，`--duration-base`；与文章封面同一档缩放。鼠标点击指示器留下的焦点不算，移开鼠标即复原 |
 | 悬停分层 | 缩放 / 模糊挂在外层 `.carousel-bg-wrap`，换片的 `scale(1.1 → 1)` 挂在 `.carousel-bg`，两段 `transform` 互不覆盖 |
-| 自动轮播 | `autoplay: true` 时按 `interval`（默认 6000ms）切换；悬停 / 焦点进入 / 页面隐藏时暂停 |
+| 自动轮播 | `autoplay: true` 时按 `interval`（默认 6000ms）切换；悬停 / 键盘焦点进入 / 页面隐藏时暂停（鼠标点击指示器留下的焦点不算） |
 | 降级 | `prefers-reduced-motion` 下不自动播放，取消淡入 / 缩放 / 位移 / 悬停反馈与指示器过渡 |
 | 可访问性 | 非当前幻灯片 `inert` + `aria-hidden="true"`；指示器为 `button`，当前项 `aria-current="true"` |
 
 ---
 
-## 8. 后续阶段计划 ⏳
+## 8. 文章页 ✅
 
-| 阶段 | 内容 | 关键待定项 |
-| --- | --- | --- |
-| 文章详情 | 目录 TOC、代码高亮主题、上一篇 / 下一篇、版权声明 | 目录生成方式、代码主题 |
-| 归档 / 标签 | 归档时间线、标签云样式 | 时间线分组粒度 |
-| 动态页 `/moments/` | 短文本时间线 | content 类型与 front matter |
-| 友链页 `/links/` | 友链卡片网格 | `data/links.yaml` 数据结构 |
-| 搜索 | 搜索面板 + 搜索引擎 | Pagefind / Fuse.js 选型 |
-| 评论与统计 | Waline 接入，回填文章阅读量 / 评论量与页脚统计 | 服务端部署、`data-*` 挂钩已预留 |
-| Swup.js | 页面切换动画、生命周期复用 | 与现有 `init()` 约定的对接 |
-| 响应式 | 断点体系、移动端抽屉导航、侧栏折叠 | 各断点下的布局重排 |
-| 侧栏组件 | 公告 | 配置结构与 `enable` 开关 |
-| 工程优化 | Dart Sass 迁移、字体子集化 | 迁移时机、子集字符集 |
+文章页模板为 `layouts/posts/page.html`，覆盖通用 `page.html`；关于页等其他普通页面不受影响。
 
----
+自上而下：顶部通栏大图（居中标题区叠在图上）→ 两栏正文（左侧正文卡片 + 右侧栏）。侧栏直接复用首页组件（§7.8），文章页专属侧栏后续再拆。
 
-## 9. 验收清单
+### 8.1 顶部大图
 
-### 全局
+| 项 | 规格 |
+| --- | --- |
+| 容器 | `.post-hero`：`position: relative`，flex 列、`justify-content: flex-end`；`min-height: --post-hero-height`（`clamp(240px, 30vw, 380px)`），按视口宽度伸缩、不随窗口高度变化；窄屏标题区变高时允许大图一起撑高 |
+| 图片 | 复用 `post-cover.html`：front matter 的 `cover` 优先，未配置 / 解析失败回退封面池；绝对定位铺满，`object-fit: cover`，`fetchpriority="high"` |
+| 压暗 | `::after` 双层渐变：顶部 `--post-hero-scrim-top` → 28% 处透明（Header 白字兜底）；底部 `--post-hero-scrim-bottom` → 58% 处过渡到 `--post-hero-scrim-top` → 顶部透明，为标题区铺深底 |
+| 起点 | 大图从 y=0 起铺。`baseof.html` 给文章页 `<main>` 加 `.main--post`（`padding-top: 0`） |
 
-- [ ] 样式产物为单个 `main.min.<hash>.css`，无分散 CSS 请求。
-- [ ] 颜色、尺寸、阴影、动效全部来自 `_tokens.scss`，组件内无硬编码。
-- [ ] 亮 / 暗主题切换正常，刷新后保持；首次访问跟随系统且无闪烁。
-- [ ] 进入页面时 Header、Hero 徽章 / 卡片依次进场；滚动时各区块淡入上移，首屏元素按顺序错峰。
-- [ ] `prefers-reduced-motion` 下关闭打字机、箭头跳动、卡片位移、背景交叉淡入、Header 生长填充、页面进场 / 滚动进场与轮播悬停缩放。
-- [ ] 禁用 JS 或 `IntersectionObserver` 不可用时，所有内容仍立即可见，不留下 `opacity: 0` 的空白块。
-- [ ] 键盘可完整操作导航、下拉菜单、卡片链接；装饰图标均 `aria-hidden="true"`。
-- [ ] 控制台无报错。
+### 8.2 标题区（叠在大图上）
 
-### Header
+- `.post-header` 仍用 `.container`（`--content-width`）居中；顶部内边距 `calc(--header-height + --space-2)` 给 fixed Header 让位，底部 `calc(--space-8 + --space-4)`，整体比贴底时上提一档。
+- 标题 `clamp(1.75rem, 4vw, 2.5rem)`，白色、`text-wrap: balance`；不再加文字投影，靠大图遮罩保证可读。
+- 基本信息：图标 + 文案「发布于：…」「阅读时长：…」「字数：…」，横排、居中换行，颜色 `--color-over-hero-soft`；相邻信息之间用独立的 `.post-meta-sep` 竖线元素（1px 宽，颜色 / 高度与文字一致，左右间距由 `.post-meta` 的 `--space-2` gap 提供，`aria-hidden`）。阅读时长沿用文章卡片算法（正文去空白字符数 ÷ 400，向上取整、下限 1 分钟），字数取同一字符数。
+- 分类与标签同排居中，均为纯文字链接：每组前放一枚组图标（分类 `fa-folder-open`、标签 `fa-tags`，`aria-hidden`，不写文字标签）；链接颜色 `--color-over-hero-soft`，标签保留 `#` 前缀，悬停提亮并加下划线；无对应术语时整组不渲染。
 
-- [ ] 固定顶部，滚动后阴影加深；向下滚动收起、向上滚动展开；键盘焦点进入时强制展开。
-- [ ] 页面载入时 Header 内容从上方轻轻落位，不出现硬闪。
-- [ ] 导航悬停：图标与文字变主题色，3px 胶囊下划线从左向右生长。
-- [ ] 「更多」悬停 / 聚焦展开二级菜单，移出 / 失焦收起；更深层级向右展开。
-- [ ] 首页未滚动时 Header 全透明、无毛玻璃、无阴影、前景转白；滚动后恢复常驻样式。
-- [ ] 导航的名称 / 链接 / 图标 / 层级全部改配置即可生效。
-- [ ] 搜索按钮有悬停反馈，点击无反应（当前仅 UI）。
+### 8.3 正文两栏
 
-### 首页
+- 容器复用 `.container--wide` + `.layout`（与首页文章列表同一套宽度），上方留 `--space-6`；主栏桌面宽度与首页文章列表一致（1200 − 48 内边距 − 24 栏间距 − 280 侧栏 = 848）。
+- 正文 `.post-content` 本身就是一张卡片：`--color-elevated` + `--shadow-sm` + `--radius-lg`，内边距 `--space-6`，视觉语言与侧栏 `.sidebar-card` 一致；卡片宽度对齐首页文章列表的 848px，窄屏时居中收窄。
+- 复用 `.layout` / `.layout-main` / `partial "sidebar.html"`；`≤1080px` 时随 `.layout` 一起撤掉侧栏，正文卡片居中。
+- 正文元素的基础排版沿用 `_post.scss` 的 `.post-content`；正文图片加 `max-width: 100%`，避免原图撑破内容列。
 
-- [ ] 整页背景固定，滚动时图像不动；多张封面可用卡片左下角箭头循环切换。
-- [ ] `initial_cover: random` 时刷新会换图；无 JS 时仍有静态兜底。
-- [ ] 轮播图只在首页第一页显示，第二页 / 分区页 / 标签页不显示。
-- [ ] 轮播图与右侧 profile 卡等高，首行底边对齐；所有卡片为整图背景，文字压在底部。
-- [ ] 指示器竖排在右侧，选中项拉长为两个点位；点击可切换，自动轮播在悬停 / 聚焦时暂停。
-- [ ] 轮播图悬停 / 键盘焦点进入时当前图片轻微放大并模糊，移出后复原；换片缩放不受影响。
-- [ ] `slug` 引用与手动条目可混排，两种写法都取到正确的标题 / 摘要 / 图片 / 链接。
-- [ ] 作者徽章与一言卡片作为整体垂直居中进场；无头像时整块不渲染；打字在卡片落位后才开始。
-- [ ] 一言按「打字 → 停留 → 删除 → 换条」运行；悬停 / 键盘焦点时暂停并可续上；单条时打完停住。
-- [ ] 文章卡片图文交替、封面斜切、悬停反馈正常；标题与封面可点，文字可选中。
-- [ ] 置顶文章显示角标；分页在超过一页时出现。
-- [ ] 两栏在窄于 1080px 时降为单栏并隐藏侧栏。
-- [ ] 近期评论卡显示圆形头像；用户名在左、相对时间在右；超过 7 天的评论显示日期。
-- [ ] 分类卡按文章数降序显示"名称 + 数量"，标签云为可换行胶囊；没有对应术语时卡片不渲染。
-- [ ] 页脚六行按配置显隐，运行时长逐秒走动，外链新标签页打开。
+### 8.4 Header 顶部态
+
+文章页带 `body.has-post-hero`，顶部 Header 与首页一致：透明、无毛玻璃、无阴影、白字；滚动超过 8px 加 `.is-scrolled` 后恢复常驻样式（§6.7）。
+
+### 8.5 待补充 ⏳
+
+- 正文元素细节：标题层级、列表 / 任务列表、脚注、定义列表、`details` / `figure`、宽表格横向滚动、代码块工具栏。
+- 目录（TOC）、上一篇 / 下一篇、版权声明。
+- 文章页专属侧栏（当前复用首页侧栏）。
+- 移动端断点与顶部大图高度微调。

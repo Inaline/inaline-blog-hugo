@@ -3,13 +3,14 @@
 <head>
   {{ partial "head.html" . }}
 </head>
-<body{{ if .IsHome }} class="has-hero"{{ end }}>
+{{ $postHero := and .IsPage (eq .Type "posts") }}
+<body{{ if .IsHome }} class="has-hero"{{ else if $postHero }} class="has-post-hero"{{ end }}>
   {{/* 首页整页背景。必须是 body 的第一个子元素——它靠负 z-index 落到"画布之上、
        内容之下"，中间隔一个带 transform / filter / opacity 的祖先就会被困住。
        将来要铺到全站，删掉这个 if 即可。 */}}
   {{ if .IsHome }}{{ partial "page-background.html" . }}{{ end }}
   {{ partial "header.html" . }}
-  <main class="main{{ if .IsHome }} main--home{{ end }}">
+  <main class="main{{ if .IsHome }} main--home{{ else if $postHero }} main--post{{ end }}">
     {{ block "main" . }}{{ end }}
   </main>
   {{ partial "footer.html" . }}

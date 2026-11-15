@@ -37,6 +37,8 @@
   box-shadow: var(--shadow-sm);
   // 置顶角标（.post-card-badge）的定位基准——它贴的是**卡片**的边，不是封面的边
   position: relative;
+  // 整卡可点（§7.7）：文字仍可拖选，点击监听会放过拖选后的那一次 click
+  cursor: pointer;
   transition: box-shadow var(--duration-base) var(--ease),
               transform var(--duration-base) var(--ease);
 }
@@ -50,9 +52,9 @@
   transform: translateY(-2px) scale(1.01);
 }
 
-// ⚠️ 不做整卡点击（v3.30 加过、v3.32 撤掉）：铺满卡片的空 <a> 会把指针全接走，
-// 标题与摘要就再也选不中、复制不了，而"复制文章标题"是列表页的常见动作。
-// 现在只有标题与封面两个可点区，卡片其余部分保持普通文本。
+// 整卡跳转由卡片的 data-card-href + main.js 的点击监听完成（§7.7）。
+// 不铺覆盖层：空 <a> 会把指针全接走，标题与摘要就再也选不中、复制不了，
+// 而"复制文章标题"是列表页的常见动作。
 
 // 封面：比例定死（3:2），图位不随图片来源的尺寸变化——真封面与兜底图混排时列表仍然齐。
 // 宽度按两栏布局的主栏（§7.8）取 300px，文字列还剩 500px 上下（约 31 个汉字一行）
@@ -87,8 +89,8 @@
   transition: transform var(--duration-base) var(--ease);
 }
 
-// 悬停反馈挂在**封面链接自己**身上，不再挂卡片：整卡点击撤掉后，"停哪都放大"
-// 会暗示整张卡可点，而实际只有标题与封面能点（同下面标题那条的取舍）
+// 封面缩放只在指针落到封面自己身上时触发，保留"照片在框里呼吸"的局部手感；
+// 整卡抬起由 .post-card:hover 的阴影与位移负责
 .post-card-cover:hover img {
   // 图只放大一点点：溢出被 .post-card-cover 裁掉，看起来是"照片在框里呼吸"
   transform: scale(1.04);
@@ -181,9 +183,8 @@
   transition: color var(--duration-fast) var(--ease);
 }
 
-// 标题的悬停反馈挂在**标题链接自己**身上。v3.30 曾把它挪到卡片上，前提是覆盖层
-// 盖住了标题、指针碰不到那个 <a>；v3.32 撤掉覆盖层后这个前提没了，挂回 <a> 才对——
-// 整卡可点时才该"停哪都亮"，现在可点的只有标题和封面，那样反而在骗人
+// 标题变色只挂在标题链接上：整卡可点后也不扩大到 .post-card:hover，
+// 避免指针扫过任意位置时整行标题一起跳色，仍保留"指到链接才亮"的精确反馈
 .post-card-title a:hover {
   color: var(--color-primary);
 }
@@ -366,6 +367,9 @@ body.has-hero .pager-ellipsis {
   }
 
   img {
+    // 正文里的封面图可能比内容列宽，先钉住上限，高度按比例走
+    max-width: 100%;
+    height: auto;
     border-radius: var(--radius-sm);
   }
 

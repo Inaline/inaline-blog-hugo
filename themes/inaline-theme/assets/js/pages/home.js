@@ -15,6 +15,18 @@
   var START_DELAY = 1100;    // 进场延迟：等卡片落位（800ms 入场 + 140ms 延迟）后再开打
   var PUNCT_RE = /[，。！？；：、…,.!?;:]/;
 
+  // 焦点条件只认"键盘焦点"：鼠标点击按钮同样会产生焦点（Chrome / Firefox
+  // 的行为），点完再移开鼠标，焦点还留在按钮上——若把这种焦点也计入暂停 /
+  // 悬停态，打字机与轮播图就永远不恢复。:focus-visible 是浏览器的"这焦点
+  // 是键盘给的"判定；老浏览器不支持该伪类（matches 抛错）时退回"焦点即生效"
+  function isKeyboardFocus(el) {
+    try {
+      return el.matches(':focus-visible');
+    } catch (e) {
+      return true;
+    }
+  }
+
   function initHeroQuote() {
     var box = document.querySelector('.hero-quote');
     var textEl = box && box.querySelector('.hero-quote-typed');
@@ -73,18 +85,6 @@
       pending = { fn: fn, left: ms, id: 0, started: 0 };
       if (!paused) startPending();
     };
-
-    // 焦点条件只认"键盘焦点"：鼠标点击按钮同样会产生焦点（Chrome / Firefox
-    // 的行为），点完再移开鼠标，焦点还留在按钮上——若把这种焦点也计入暂停，
-    // 打字机就永远不恢复。:focus-visible 是浏览器的"这焦点是键盘给的"判定；
-    // 老浏览器不支持该伪类（matches 抛错）时退回"焦点即暂停"
-    function isKeyboardFocus(el) {
-      try {
-        return el.matches(':focus-visible');
-      } catch (e) {
-        return true;
-      }
-    }
 
     box.addEventListener('mouseenter', function () { hovering = true; updatePause(); });
     box.addEventListener('mouseleave', function () { hovering = false; updatePause(); });
@@ -191,7 +191,8 @@
 
   // -------------------------------------------------------------------------
   // 文章列表顶部轮播图（§7.10）：点击右侧指示器切换；可选自动轮播
-  // 鼠标悬停 / 键盘焦点进入时暂停，移开 / 失焦后恢复
+  // 鼠标悬停 / 键盘焦点进入时暂停，移开 / 失焦后恢复。
+  // 鼠标点击指示器留下的焦点不算暂停，否则移开鼠标后轮播图永远停住
   // -------------------------------------------------------------------------
 
   function initCarousel() {
@@ -218,6 +219,8 @@
 
       var timer = null;
       var paused = false;
+      var hovering = false;
+      var keyboardFocus = false;
 
       function show(target) {
         var next = ((target % slides.length) + slides.length) % slides.length;
@@ -262,6 +265,19 @@
         }, interval);
       }
 
+      // 悬停与键盘焦点分开记：任一条件成立即暂停，全都撤销才恢复。
+      // 不合并成一个布尔值，否则鼠标移出会盖掉仍在轮播图内的键盘焦点
+      function updatePause() {
+        var shouldPause = hovering || keyboardFocus;
+        if (shouldPause === paused) return;
+        paused = shouldPause;
+        if (paused) {
+          stop();
+        } else {
+          schedule();
+        }
+      }
+
       Array.prototype.forEach.call(dots, function (dot, n) {
         dot.addEventListener('click', function () {
           show(n);
@@ -269,14 +285,17 @@
         });
       });
 
-      root.addEventListener('mouseenter', function () { paused = true; stop(); });
-      root.addEventListener('mouseleave', function () { paused = false; schedule(); });
-      root.addEventListener('focusin', function () { paused = true; stop(); });
+      root.addEventListener('mouseenter', function () { hovering = true; updatePause(); });
+      root.addEventListener('mouseleave', function () { hovering = false; updatePause(); });
+      root.addEventListener('focusin', function (e) {
+        keyboardFocus = !!(e.target && isKeyboardFocus(e.target));
+        updatePause();
+      });
       root.addEventListener('focusout', function (e) {
-        if (!root.contains(e.relatedTarget)) {
-          paused = false;
-          schedule();
-        }
+        // 焦点还在轮播图内时交给下一次 focusin 判定，避免换节点时先恢复再暂停
+        if (e.relatedTarget && root.contains(e.relatedTarget)) return;
+        keyboardFocus = false;
+        updatePause();
       });
       document.addEventListener('visibilitychange', function () {
         if (document.hidden) {
