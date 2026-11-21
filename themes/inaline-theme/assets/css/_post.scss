@@ -12,6 +12,11 @@
   color: var(--color-text-muted);
 }
 
+// 分区页的自定义内容与下方文章列表留一档间距
+.page-content.markdown {
+  margin-bottom: var(--space-6);
+}
+
 // --- 文章列表：卡片（§7.7）---
 
 // 条目之间只靠间距分开，不在卡片上再画分割线——与 Header"阴影替代分割线"同一套语言
@@ -355,72 +360,8 @@ body.has-hero .pager-ellipsis {
   margin-bottom: var(--space-6);
 }
 
-.post-content {
-  > :first-child {
-    margin-top: 0;
-  }
-
-  h2,
-  h3 {
-    margin-top: 2em;
-    margin-bottom: 0.75em;
-  }
-
-  img {
-    // 正文里的封面图可能比内容列宽，先钉住上限，高度按比例走
-    max-width: 100%;
-    height: auto;
-    border-radius: var(--radius-sm);
-  }
-
-  blockquote {
-    margin: 1.5em 0;
-    padding: 0.25em 1em;
-    border-left: 3px solid var(--color-border);
-    color: var(--color-text-muted);
-  }
-
-  pre {
-    overflow-x: auto;
-    padding: 1em;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
-    font-size: 0.875rem;
-    line-height: 1.6;
-  }
-
-  code {
-    font-family: var(--font-mono);
-    font-size: 0.875em;
-  }
-
-  // 行内代码：代码块内的不受影响
-  :not(pre) > code {
-    background: var(--color-surface);
-    padding: 0.15em 0.4em;
-    border-radius: var(--radius-sm);
-  }
-
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1.5em 0;
-  }
-
-  th,
-  td {
-    border: 1px solid var(--color-border);
-    padding: 0.5em 0.75em;
-    text-align: left;
-  }
-
-  hr {
-    border: 0;
-    border-top: 1px solid var(--color-border);
-    margin: 2em 0;
-  }
-}
+// 正文内容元素（标题 / 段落 / 列表 / 代码 / 表格……）的排版统一在
+// _markdown.scss（§9），作用域是内容容器上的 .markdown 类。
 
 // ---------------------------------------------------------------------------
 // 动效降级：必须留在文件末尾——同特异度的规则写在它后面会整段盖掉它（DESIGN.md §2.2）

@@ -1,0 +1,32 @@
+{{/*
+  侧栏 · 目录（DESIGN.md §8.5）
+
+  只在文章页渲染，由 sidebar.html 排在博主信息卡之后（文章页侧栏只有这两张卡）。标题树取自
+  .Fragments.Headings（Hugo 构建时生成 id），经 toc-flat.html 过滤成 h2–h3，
+  再由 toc-list.html 递归渲染；标题数少于 min_headings 时整卡不渲染。
+
+  交互（assets/js/pages/post.js）：当前项高亮、阅读进度、折叠按钮、
+  滚动时展开当前分支并收起其他分支、目录过长时自动居中当前项。
+  配置见 hugo.yaml 的 params.sidebar.toc；enable 关掉或整块删掉则整卡不渲染。
+*/}}
+{{ $s := default dict site.Params.sidebar }}
+{{ $t := default dict $s.toc }}
+
+{{ if $t.enable }}
+  {{ $title := or $t.title "文章目录" }}
+  {{ $min := $t.min_headings | default 2 }}
+  {{ $headings := partial "toc-flat.html" .Fragments.Headings }}
+
+  {{ if ge (len $headings) $min }}
+  <div class="sidebar-card sidebar-toc">
+    <h2 class="sidebar-title">
+      <i class="fa-solid fa-list-ul" aria-hidden="true"></i>
+      <span>{{ $title }}</span>
+      <span class="toc-progress" aria-hidden="true">0%</span>
+    </h2>
+    <nav class="article-toc" aria-label="{{ $title }}">
+      {{ partial "toc-list.html" (dict "items" $headings "class" "toc-list") }}
+    </nav>
+  </div>
+  {{ end }}
+{{ end }}

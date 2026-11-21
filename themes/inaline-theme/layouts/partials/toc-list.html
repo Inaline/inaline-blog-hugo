@@ -1,0 +1,45 @@
+{{/*
+  递归渲染目录列表（§8.5）。参数：
+    items —— 线性标题列表（toc-flat.html 的返回值）
+    class —— 当前层 <ul> 的类名（顶层 toc-list，子层 toc-sub-list expanded）
+
+  子列表按"后续标题层级更深"判断，并只收集到下一个同级 / 更浅标题之前。
+  有子项的条目把折叠按钮放在链接之后（行尾最右侧），子列表挂在 <li> 末尾，
+  CSS 用 .expanded 控制 max-height / opacity，JS 只切换 class。
+*/}}
+{{- $items := .items -}}
+{{- $class := .class | default "toc-list" -}}
+{{- $n := len $items -}}
+
+{{/* 当前层只渲染最浅的那一级；更深的条目交给父项的递归子列表 */}}
+{{- $base := 7 -}}
+{{- range $items -}}
+  {{- if lt .Level $base -}}{{- $base = .Level -}}{{- end -}}
+{{- end -}}
+
+<ul class="{{ $class }}">
+  {{- range $i, $h := $items -}}
+    {{- if eq $h.Level $base -}}
+      {{- $next := add $i 1 -}}
+      {{- $hasChildren := and (lt $next $n) (gt (index $items $next).Level $h.Level) -}}
+      <li class="toc-item toc-level-{{ $h.Level }}{{ if $hasChildren }} has-children{{ end }}">
+        <a class="toc-link" href="#{{ $h.ID }}">{{ $h.Title | plainify }}</a>
+        {{- if $hasChildren -}}
+          <button type="button" class="toc-item-toggle" aria-expanded="true" aria-label="折叠子目录">
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+        {{- end -}}
+        {{- if $hasChildren -}}
+          {{- $end := $n -}}
+          {{- range $j, $x := $items -}}
+            {{- if and (gt $j $i) (le $x.Level $h.Level) (eq $end $n) -}}
+              {{- $end = $j -}}
+            {{- end -}}
+          {{- end -}}
+          {{- $children := first (sub $end $next) (after $next $items) -}}
+          {{ partial "toc-list.html" (dict "items" $children "class" "toc-sub-list expanded") }}
+        {{- end -}}
+      </li>
+    {{- end -}}
+  {{- end -}}
+</ul>

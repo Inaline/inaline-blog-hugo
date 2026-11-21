@@ -1,0 +1,652 @@
+// ---------------------------------------------------------------------------
+// Markdown 正文排版（DESIGN.md §9）
+//
+// 作用域：所有带 .markdown 的内容容器——文章正文、普通页面、分区页内容。
+// 容器自身的卡片 / 宽度 / 栅格由 _article.scss、_post.scss 负责，这里只管
+// 内容元素本身。颜色、间距、圆角、动效全部取自 _tokens.scss。
+// ---------------------------------------------------------------------------
+
+// 可复用的链接样式：Markdown 正文与文章信息卡共用（§8.6 / §9.3）。
+// 点状下划线挂在链接自身的背景上，两个伪元素分别留给前置 fa-link
+// 与行尾外链图标；悬停的实心背景会自然覆盖背景图。
+@mixin md-link {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  padding: 0 .18em;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  text-decoration: none;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  // 1px 圆点、4px 间距，贴在链接盒底部；用 muted 色保持轻量
+  background-image: radial-gradient(circle, var(--color-text-muted) 1px, transparent 1px);
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  background-size: 4px 2px;
+  transition: color var(--duration-fast) var(--ease),
+              background-color var(--duration-fast) var(--ease);
+
+  // 前置 fa-link：提示"这里是一个链接"
+  &::before {
+    content: "\f0c1";
+    margin-right: .18em;
+    color: var(--color-text-muted);
+    font-family: "Font Awesome 6 Free";
+    font-size: .75em;
+    font-weight: 900;
+    line-height: 1;
+    opacity: .7;
+    transition: color var(--duration-fast) var(--ease),
+                opacity var(--duration-fast) var(--ease);
+  }
+
+  // 行尾外链图标，对应参考站的 open-in-new
+  &::after {
+    content: "\f08e";
+    margin-left: .18em;
+    color: var(--color-text-muted);
+    font-family: "Font Awesome 6 Free";
+    font-size: .75em;
+    font-weight: 900;
+    line-height: 1;
+    opacity: .7;
+    transition: color var(--duration-fast) var(--ease),
+                opacity var(--duration-fast) var(--ease);
+  }
+
+  &:hover {
+    // shorthand 会一并清掉点状下划线的背景图
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+
+    &::before,
+    &::after {
+      color: var(--color-on-primary);
+      opacity: 1;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.markdown {
+  color: var(--color-text);
+  font-size: 1rem;
+  // 长文阅读比全局 1.75 再松一点，中文段落更透气
+  line-height: 1.9;
+  // 长英文串 / URL 不撑破内容列；必要时才断
+  overflow-wrap: break-word;
+
+  // 首尾块的外边距交给容器内边距，避免卡片上下多出一截
+  > :first-child { margin-top: 0; }
+
+  > :last-child { margin-bottom: 0; }
+
+  // --- 段落与行内元素 -------------------------------------------------------
+
+  p {
+    margin: 0 0 1.1em;
+    // 避免段末孤字；不支持该属性的浏览器直接忽略
+    text-wrap: pretty;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  em {
+    font-style: italic;
+  }
+
+  del {
+    color: var(--color-text-muted);
+    text-decoration-thickness: 1px;
+  }
+
+  mark {
+    padding: 0 .15em;
+    border-radius: 2px;
+    background: var(--color-primary-soft);
+    color: var(--color-text);
+  }
+
+  sup,
+  sub {
+    position: relative;
+    font-size: .75em;
+    line-height: 0;
+    vertical-align: baseline;
+  }
+
+  sup { top: -.5em; }
+
+  sub { bottom: -.25em; }
+
+  abbr[title] {
+    text-decoration: underline dotted;
+    text-underline-offset: .2em;
+    cursor: help;
+  }
+
+  kbd {
+    display: inline-block;
+    padding: .1em .45em;
+    border: 1px solid var(--color-border);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: .8125em;
+    line-height: 1.4;
+  }
+
+  // 正文链接（参考 inaline.net）：文字色 + 点状下划线 + 前后图标；
+  // 悬停时整颗铺主题色、文字与图标转白，点状线被实心背景覆盖
+  a {
+    @include md-link;
+  }
+
+  // 图片链接不加下划线与图标，避免装饰叠在图上
+  a:has(> img) {
+    display: inline;
+    padding: 0;
+    background: none;
+
+    &::before,
+    &::after { display: none; }
+
+    &:hover { background: none; }
+  }
+
+  // --- 标题 ----------------------------------------------------------------
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-text);
+    font-weight: 500;
+    line-height: 1.35;
+    text-wrap: balance;
+    // 目录 / 页内锚点的落点让开 fixed Header
+    scroll-margin-top: calc(var(--header-height) + var(--space-4));
+
+    // 标题里的链接跟随标题色，不叠下划线 / 图标 / 悬停底色
+    a {
+      display: inline;
+      padding: 0;
+      color: inherit;
+      background: none;
+      line-height: inherit;
+      text-decoration: none;
+
+      &::before,
+      &::after { display: none; }
+
+      &:hover {
+        color: var(--color-primary);
+        background: none;
+      }
+    }
+  }
+
+  h1 {
+    margin: var(--space-8) 0 var(--space-4);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 1.875rem;
+  }
+
+  // h2 左侧的短竖线是章节的视觉锚点；h3 起只靠字号和间距分层
+  h2 {
+    position: relative;
+    margin: var(--space-8) 0 var(--space-3);
+    padding-left: var(--space-4);
+    font-size: 1.5rem;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: .16em;
+      left: 0;
+      width: 3px;
+      height: 1em;
+      border-radius: 999px;
+      background: var(--color-primary);
+    }
+  }
+
+  h3 {
+    margin: var(--space-6) 0 var(--space-2);
+    font-size: 1.25rem;
+  }
+
+  h4 {
+    margin: var(--space-5) 0 var(--space-2);
+    font-size: 1.125rem;
+  }
+
+  h5 {
+    margin: var(--space-5) 0 var(--space-2);
+    font-size: 1rem;
+  }
+
+  h6 {
+    margin: var(--space-4) 0 var(--space-2);
+    color: var(--color-text-muted);
+    font-size: .9375rem;
+  }
+
+  // --- 列表 ----------------------------------------------------------------
+
+  ul,
+  ol {
+    margin: 0 0 1.1em;
+    padding-left: 1.6em;
+  }
+
+  li {
+    // 列表项里的段落不要撑出过大的行距
+    > p { margin-bottom: .5em; }
+
+    + li { margin-top: .25em; }
+
+    > ul,
+    > ol {
+      margin-top: .25em;
+      margin-bottom: .25em;
+    }
+  }
+
+  // 项目符号 / 序号取主题色，作为正文里的轻点缀
+  ul > li::marker,
+  ol > li::marker {
+    color: var(--color-primary);
+  }
+
+  ol > li::marker {
+    font-variant-numeric: tabular-nums;
+  }
+
+  // 任务列表：Goldmark 只输出裸 checkbox，这里去掉父项圆点并对齐
+  li:has(> input[type="checkbox"]) {
+    list-style: none;
+  }
+
+  li > input[type="checkbox"] {
+    margin: 0 var(--space-1) 0 0;
+    accent-color: var(--color-primary);
+    vertical-align: -.08em;
+  }
+
+  // --- 引用 ----------------------------------------------------------------
+
+  blockquote {
+    margin: 1.5em 0;
+    padding: var(--space-3) var(--space-4);
+    border-left: 3px solid var(--color-primary);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+
+    > :first-child { margin-top: 0; }
+
+    > :last-child { margin-bottom: 0; }
+
+    // 嵌套引用：降级成细灰边 + 透明底，别一层层加重
+    blockquote {
+      margin: var(--space-3) 0;
+      border-left-color: var(--color-border);
+      background: transparent;
+    }
+  }
+
+  // --- 代码 ----------------------------------------------------------------
+
+  code {
+    font-family: var(--font-mono);
+    font-size: .875em;
+    overflow-wrap: anywhere;
+  }
+
+  // 行内代码：浅底板 + 一条描边，和正文拉开一档
+  :not(pre) > code {
+    padding: .15em .4em;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  // 代码块：Chroma 的内联样式负责深色底与 token 配色（noClasses: true），
+  // 这里只补内边距、圆角与横向滚动
+  .highlight {
+    margin: 1.5em 0;
+  }
+
+  pre {
+    margin: 1.5em 0;
+    padding: var(--space-4) var(--space-5);
+    overflow-x: auto;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    font-family: var(--font-mono);
+    font-size: .875rem;
+    line-height: 1.7;
+    tab-size: 4;
+    scrollbar-width: thin;
+    // 代码块是深色底，滚动条固定用半透明白，不随主题翻色
+    scrollbar-color: rgba(255, 255, 255, .25) transparent;
+  }
+
+  .highlight pre {
+    margin: 0;
+  }
+
+  pre code {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+    overflow-wrap: normal;
+    white-space: pre;
+  }
+
+  // --- 表格 ----------------------------------------------------------------
+
+  // display: block + overflow-x: auto：宽表格在自身区域内横向滚动，
+  // 不把卡片撑宽（与 GitHub Markdown 同一套做法）
+  table {
+    display: block;
+    width: 100%;
+    margin: 1.5em 0;
+    overflow-x: auto;
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: .9375rem;
+    line-height: 1.6;
+  }
+
+  caption {
+    padding-bottom: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    text-align: left;
+  }
+
+  th,
+  td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+    font-variant-numeric: tabular-nums;
+  }
+
+  th {
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  tbody tr:nth-child(even) {
+    background: var(--color-bg);
+  }
+
+  tbody tr:hover {
+    background: var(--color-surface);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  // --- 图片与图注 ----------------------------------------------------------
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+  }
+
+  // 独占一段的图片（含图片链接）居中成块；与文字同段的图片保持行内
+  p > img:only-child,
+  p > a:only-child > img:only-child {
+    display: block;
+    margin: 1.5em auto;
+  }
+
+  p > a:only-child:has(> img:only-child) {
+    display: block;
+  }
+
+  figure {
+    margin: 1.5em 0;
+    text-align: center;
+  }
+
+  figure img {
+    display: block;
+    margin: 0 auto;
+  }
+
+  figcaption {
+    margin-top: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: .8125rem;
+    line-height: 1.6;
+  }
+
+  // --- 分隔线 --------------------------------------------------------------
+
+  hr {
+    height: 1px;
+    margin: 2.5em 0;
+    border: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-border) 12%,
+      var(--color-border) 88%,
+      transparent
+    );
+  }
+
+  // --- 脚注 ----------------------------------------------------------------
+
+  .footnotes {
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: .875rem;
+    line-height: 1.7;
+
+    // 容器顶部已经有一条分割线，Goldmark 自带的 <hr> 不再重复
+    > hr { display: none; }
+
+    ol {
+      margin: 0;
+      padding-left: 1.4em;
+    }
+
+    li + li { margin-top: var(--space-2); }
+
+    p { margin-bottom: .35em; }
+
+    // 脚注序号比正文列表弱一档
+    ol > li::marker { color: var(--color-text-muted); }
+  }
+
+  .footnote-ref {
+    display: inline;
+    padding: 0 .15em;
+    background: none;
+    color: var(--color-primary);
+    font-weight: 600;
+    line-height: inherit;
+    text-decoration: none;
+
+    &::before,
+    &::after { display: none; }
+
+    &:hover {
+      color: var(--color-primary-hover);
+      background: none;
+    }
+  }
+
+  .footnote-backref {
+    display: inline;
+    margin-left: var(--space-1);
+    padding: 0;
+    background: none;
+    line-height: inherit;
+    text-decoration: none;
+
+    &::before,
+    &::after { display: none; }
+
+    &:hover { background: none; }
+  }
+
+  // --- 定义列表 ------------------------------------------------------------
+
+  dl {
+    margin: 1.5em 0;
+  }
+
+  dt {
+    margin-top: var(--space-4);
+    font-weight: 600;
+  }
+
+  dt:first-child {
+    margin-top: 0;
+  }
+
+  dd {
+    margin: var(--space-1) 0 0 var(--space-5);
+    color: var(--color-text-muted);
+  }
+
+  // --- 折叠块 --------------------------------------------------------------
+
+  details {
+    margin: 1.5em 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    overflow: hidden;
+  }
+
+  summary {
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-text);
+    font-weight: 500;
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease);
+
+    &::marker { color: var(--color-primary); }
+
+    &:hover { color: var(--color-primary); }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+    }
+  }
+
+  details[open] > summary {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  details > :not(summary) {
+    margin-left: var(--space-4);
+    margin-right: var(--space-4);
+  }
+
+  details > :first-of-type:not(summary) {
+    margin-top: var(--space-3);
+  }
+
+  details > :last-child:not(summary) {
+    margin-bottom: var(--space-4);
+  }
+
+  // --- 打印 ----------------------------------------------------------------
+
+  @media print {
+    a {
+      display: inline;
+      padding: 0;
+      color: inherit;
+      background: none;
+      text-decoration: underline;
+    }
+
+    a::before,
+    a::after {
+      display: none;
+    }
+
+    pre,
+    blockquote,
+    table,
+    figure,
+    details {
+      break-inside: avoid;
+    }
+
+    h1,
+    h2,
+    h3 {
+      break-after: avoid;
+    }
+  }
+}
+
+// 文章信息卡内的链接沿用同一套样式（§8.6）
+.article-meta a {
+  @include md-link;
+}
+
+@media print {
+  .article-meta a {
+    display: inline;
+    padding: 0;
+    color: inherit;
+    background: none;
+    text-decoration: underline;
+  }
+
+  .article-meta a::before,
+  .article-meta a::after {
+    display: none;
+  }
+}
+
+// 减少动态效果：本文件只有链接与折叠标题的颜色过渡
+@media (prefers-reduced-motion: reduce) {
+  .markdown a,
+  .markdown a::before,
+  .markdown a::after,
+  .article-meta a,
+  .article-meta a::before,
+  .article-meta a::after,
+  .markdown summary {
+    transition: none;
+  }
+}

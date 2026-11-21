@@ -1,0 +1,21 @@
+{{/*
+  把 .Fragments.Headings 的标题树压平成 h2–h3 的线性列表（§8.5）。
+
+  .Fragments.Headings 是"页面全部标题"的嵌套树，且不受
+  markup.tableOfContents 的 startLevel / endLevel 限制；目录只取两级，
+  所以这里先按 Level 过滤，再把每一层的 .Headings 递归压平。返回的切片
+  保持文档顺序，供 toc-list.html 按层级渲染成嵌套列表。
+*/}}
+{{- $out := slice -}}
+{{- range . -}}
+  {{- if and (ge .Level 2) (le .Level 3) -}}
+    {{- $out = $out | append . -}}
+  {{- end -}}
+  {{- with .Headings -}}
+    {{/* 逐个追加：append 直接传切片时，同类型切片会被当成一个元素塞进来 */}}
+    {{- range partial "toc-flat.html" . -}}
+      {{- $out = $out | append . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $out -}}

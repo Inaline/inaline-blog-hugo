@@ -54,13 +54,20 @@
     </header>
   </div>
 
-  <div class="container container--wide layout">
+  <div class="container container--wide layout layout--post">
     <div class="layout-main">
       <div class="post-content">
-        {{ .Content }}
+        <div class="markdown">{{ .Content }}</div>
+        {{ partial "article-meta.html" . }}
       </div>
     </div>
     {{ partial "sidebar.html" . }}
   </div>
 </article>
+{{ end }}
+
+{{ define "page-scripts" }}
+  {{/* 目录滚动高亮（§8.5） */}}
+  {{ $js := resources.Get "js/pages/post.js" | minify | fingerprint }}
+  <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 {{ end }}

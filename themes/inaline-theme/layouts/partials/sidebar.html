@@ -2,13 +2,20 @@
   右侧栏（DESIGN.md §7.8）
 
   一个组件一张 .sidebar-card，自上而下堆叠（间距 = .sidebar 的 gap）。
-  已落地：博主信息卡、最新文章、近期评论、分类、标签。公告后续接着往这里加，
+  文章页只保留「博主信息卡 → 目录」两张卡（§8.5）；首页 / 分区页 / 词条页
+  继续用博主卡 + 最新文章 / 近期评论 / 分类 / 标签，不渲染目录。
   每个组件自带 enable 开关（见 hugo.yaml 的 params.sidebar）。
 */}}
 <aside class="sidebar" aria-label="侧栏">
-  {{ partial "sidebar-profile.html" . }}
-  {{ partial "sidebar-latest.html" . }}
-  {{ partial "sidebar-comments.html" . }}
-  {{ partial "sidebar-categories.html" . }}
-  {{ partial "sidebar-tags.html" . }}
+  {{ if and .IsPage (eq .Type "posts") }}
+    {{/* 目录排在博主卡之后：滚过 Header 下沿后吸顶，伴随整篇文章（§8.5） */}}
+    {{ partial "sidebar-profile.html" . }}
+    {{ partial "sidebar-toc.html" . }}
+  {{ else }}
+    {{ partial "sidebar-profile.html" . }}
+    {{ partial "sidebar-latest.html" . }}
+    {{ partial "sidebar-comments.html" . }}
+    {{ partial "sidebar-categories.html" . }}
+    {{ partial "sidebar-tags.html" . }}
+  {{ end }}
 </aside>

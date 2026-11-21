@@ -35,7 +35,7 @@
   // 品牌色
   --color-primary: #FA5D19;
   --color-primary-hover: #E14E0E;
-  --color-primary-soft: rgba(250, 93, 25, 0.10); // 弱强调底色（当前无引用，预留）
+  --color-primary-soft: rgba(250, 93, 25, 0.10); // 弱强调底色（Markdown mark 高亮等）
   --color-on-primary: #FFFFFF; // 主题色实心填充上的前景色（两种主题下都是白）
   --color-over-hero: #FFFFFF;   // Hero 封面图之上的前景色：封面图为深色调，须用白字
   --color-over-hero-soft: rgba(255, 255, 255, .85); // 同上，略灰一档（首页顶部态 Header 静止时、页脚正文）
@@ -149,6 +149,9 @@
   --content-width: 42rem;    // 正文列宽度（文章页正文及单栏页面，见 §8）
   --sidebar-width: 280px;    // 右侧栏宽度：定宽，主栏吃剩余宽度（§7.8）
   --carousel-height: 270px;  // 首页轮播图高度：与侧栏 profile 卡等高，首行底边对齐（§7.10）
+  // 目录（§8.5）：列表滚动区上限 / 子目录展开动画的 max-height 上限
+  --toc-body-max-height: min(500px, 55vh);
+  --toc-sub-max-height: 500px;
   --post-hero-height: clamp(240px, 30vw, 380px); // 文章页顶部大图高度：按视口宽度伸缩，不随窗口高度变化（§8）
   --header-height: 56px;
   --header-blur: 20px;       // Header 与下拉面板共用的毛玻璃强度（两者须同档，见 §6.3）

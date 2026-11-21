@@ -1,0 +1,53 @@
+{{/*
+  文章末尾信息卡（DESIGN.md §8.6）
+
+  放在文章正文卡片内部、正文之后，视觉上是一块内嵌的浅色面板。
+  内容：文章标题、固定链接、作者 / 发布于 / 更新于 / 许可协议。
+  许可协议来自 params.article_meta.license；不配置时显示"保留所有权利"。
+*/}}
+{{ $meta := default dict site.Params.article_meta }}
+{{ $license := default dict $meta.license }}
+{{ $author := or .Params.author site.Params.author "—" }}
+<aside class="article-meta" aria-label="文章信息">
+  <p class="article-meta-title">{{ .Title }}</p>
+
+  <p class="article-meta-url">
+    <a href="{{ .Permalink }}" target="_blank" rel="noopener noreferrer">{{ .Permalink }}</a>
+  </p>
+
+  <dl class="article-meta-stats">
+    <div class="article-meta-stat">
+      <dt class="article-meta-label">作者</dt>
+      <dd class="article-meta-value">{{ $author }}</dd>
+    </div>
+
+    <div class="article-meta-stat">
+      <dt class="article-meta-label">发布于</dt>
+      <dd class="article-meta-value">
+        {{ if .Date.IsZero }}—{{ else }}<time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time>{{ end }}
+      </dd>
+    </div>
+
+    <div class="article-meta-stat">
+      <dt class="article-meta-label">更新于</dt>
+      <dd class="article-meta-value">
+        {{ if .Lastmod.IsZero }}—{{ else }}<time datetime="{{ .Lastmod.Format "2006-01-02" }}">{{ .Lastmod.Format "2006-01-02" }}</time>{{ end }}
+      </dd>
+    </div>
+
+    <div class="article-meta-stat">
+      <dt class="article-meta-label">许可协议</dt>
+      <dd class="article-meta-value">
+        {{ with $license.name }}
+          {{ with $license.url }}
+            <a href="{{ . }}" target="_blank" rel="noopener noreferrer">{{ $license.name }}</a>
+          {{ else }}
+            {{ $license.name }}
+          {{ end }}
+        {{ else }}
+          保留所有权利
+        {{ end }}
+      </dd>
+    </div>
+  </dl>
+</aside>

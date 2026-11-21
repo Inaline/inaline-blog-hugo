@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // 两栏布局骨架 + 右侧栏
-// 见 DESIGN.md §7.8。侧栏已落地博主信息卡、最新文章与近期评论，公告 / 标签云后续接着填——
-// 每个组件一张 .sidebar-card。
+// 见 DESIGN.md §7.8。侧栏已落地目录（仅文章页，§8.5）、博主信息卡、最新文章、
+// 近期评论、分类、标签，公告后续接着填——每个组件一张 .sidebar-card。
 // ---------------------------------------------------------------------------
 
 // 主栏吃剩余宽度、侧栏定宽。minmax(0, 1fr) 而非 1fr：栅格列的 min-width
@@ -11,7 +11,8 @@
   grid-template-columns: minmax(0, 1fr) var(--sidebar-width);
   // 栏间距：两栏靠 --color-bg 的灰底与白卡已经分得很开，32px 显得疏远，收到 24px
   gap: var(--space-5);
-  // 侧栏不被主栏拉高：占位卡保持自身高度，日后加 sticky 也才有意义
+  // 首页 / 列表页侧栏不被主栏拉高，保持自身高度；
+  // 文章页由 .layout--post 把侧栏拉满，给目录 sticky 留出行程（§8.5）
   align-items: start;
 }
 
@@ -25,6 +26,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+}
+
+// 文章页（§8.5）：侧栏被拉满主栏高度，目录 sticky 才有一整篇文章的行程可走。
+// 首页 / 列表页保持 align-items: start，侧栏不被主栏拉高（见 .layout）
+.layout--post .sidebar {
+  align-self: stretch;
 }
 
 // 占位卡：与文章卡片同一套语言（白面 + 阴影 + 圆角），先把侧栏的节奏撑出来
@@ -503,13 +510,172 @@
   opacity: 0.7;
 }
 
+// ---------------------------------------------------------------------------
+// 目录（.sidebar-toc）
+//
+// 仅文章页出现，排在博主信息卡之后（§8.5）。卡片吸顶；标题行右侧是阅读进度，
+// 列表区独立滚动，标题不跟着滚走。当前项为主题色实心块；父级左侧的
+// chevron 折叠子目录，.expanded / .collapsed 由 post.js 维护。
+// ---------------------------------------------------------------------------
+
+.sidebar-toc {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-4));
+  // 吸顶时后面的侧栏卡片会从下面经过，把目录卡抬到它们上面
+  z-index: 1;
+  // 与 Header 的收起 / 展开同步位移（Header 自己也用 --duration-base）
+  transition: top var(--duration-base) var(--ease);
+}
+
+// Header 向下滚动收起时，目录跟着上移一个 Header 高度，
+// 不让顶部空出一整条没有内容的区域；Header 展开即回到原位。
+// 用 :has 直接读 Header 的状态，不必再让 JS 维护第二份开关
+body:has(.site-header.is-hidden) .sidebar-toc {
+  top: var(--space-4);
+}
+
+// 标题行 = 图标 + 文案 + 进度；进度靠右，等宽数字避免百分比左右跳动
+.sidebar-toc .sidebar-title {
+  margin-bottom: var(--space-3);
+}
+
+.toc-progress {
+  margin-left: auto;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+// 列表区独立滚动：长目录不把卡片撑出视口，标题与进度始终可见
+.article-toc {
+  max-height: var(--toc-body-max-height);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.toc-list,
+.toc-sub-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toc-item {
+  margin: var(--space-1) 0;
+}
+
+// 子目录默认展开（.expanded）；折叠时 max-height 归零 + 透明。
+// 子项缩进一档，层级不只靠字号与颜色区分
+.toc-sub-list {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  padding-left: calc(var(--space-4) + var(--space-1));
+  transition: max-height var(--duration-base) var(--ease),
+              opacity var(--duration-base) var(--ease);
+
+  &.expanded {
+    max-height: var(--toc-sub-max-height);
+    opacity: 1;
+  }
+}
+
+// 折叠按钮贴在行尾：按钮只占图标大小，不并入链接的点击区域。
+// 图标缩到 0.625rem，但按钮外框保留 24px，点击 / 触屏目标不至于太小
+.toc-item-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-5);
+  height: var(--space-5);
+  margin-left: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 0.625rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform var(--duration-base) var(--ease),
+              color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-primary);
+  }
+
+  // 折叠时箭头朝右
+  &.collapsed {
+    transform: rotate(-90deg);
+  }
+
+  &:focus-visible {
+    border-radius: var(--radius-sm);
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.toc-link {
+  display: block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  // 长标题不撑破卡片，允许在任意位置折行
+  overflow-wrap: anywhere;
+  transition: background-color var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+
+  &:hover {
+    background: var(--color-bg);
+    color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  // 当前章节：主题色实心块。源序在 :hover 之后，悬停时不回退成浅底
+  &.is-active {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+}
+
+// 有子项的条目改成两列 flex：链接吃满剩余宽度，chevron 贴行尾；
+// 子列表用 flex-basis 100% 独占下一行，仍在链接下方展开
+.toc-item.has-children {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.toc-item.has-children > .toc-link {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toc-item.has-children > .toc-sub-list {
+  flex: 0 0 100%;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .social-link,
   .latest-item,
   .comment-name,
   .category-item,
   .category-name,
-  .tag-chip {
+  .tag-chip,
+  .toc-link,
+  .toc-item-toggle,
+  .toc-sub-list,
+  .sidebar-toc {
     transition: none;
   }
 
