@@ -6,9 +6,13 @@
 // 内容元素本身。颜色、间距、圆角、动效全部取自 _tokens.scss。
 // ---------------------------------------------------------------------------
 
+// 标题前四角星（§9.2）：图形走 mask，颜色由 background-color 取令牌，
+// 同一份图形即可按标题层级上不同颜色
+$heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA1MTIgNTEyJz48cGF0aCBkPSdNMjU4LjYgMGMtMS43IDAtMy40LjEtNS4xLjVDMTY4IDE3IDExNS42IDEwMi4zIDEzMC41IDE4OS4zYzIuOSAxNyA4LjQgMzIuOSAxNS45IDQ3LjRMMzIgMjI0aC0yLjZDMTMuMiAyMjQgMCAyMzcuMiAwIDI1My40YzAgMS43LjEgMy40LjUgNS4xQzE3IDM0NCAxMDIuMyAzOTYuNCAxODkuMyAzODEuNWMxNy0yLjkgMzIuOS04LjQgNDcuNC0xNS45TDIyNCA0ODB2Mi42YzAgMTYuMiAxMy4yIDI5LjQgMjkuNCAyOS40YzEuNyAwIDMuNC0uMSA1LjEtLjVjODUuNS0xNi41IDEzNy45LTEwMS44IDEyMy0xODguOGMtMi45LTE3LTguNC0zMi45LTE1LjktNDcuNEw0ODAgMjg4aDIuNmMxNi4yIDAgMjkuNC0xMy4yIDI5LjQtMjkuNGMwLTEuNy0uMS0zLjQtLjUtNS4xYy0xNi41LTg1LjUtMTAxLjgtMTM3LjktMTg4LjgtMTIzYy0xNyAyLjktMzIuOSA4LjQtNDcuNCAxNS45TDI4OCAzMnYtMi42QzI4OCAxMy4yIDI3NC44IDAgMjU4LjYgME0yNTYgMjI0YTMyIDMyIDAgMSAxIDAgNjRhMzIgMzIgMCAxIDEgMC02NCcvPjwvc3ZnPg==");
+
 // 可复用的链接样式：Markdown 正文与文章信息卡共用（§8.6 / §9.3）。
-// 点状下划线挂在链接自身的背景上，两个伪元素分别留给前置 fa-link
-// 与行尾外链图标；悬停的实心背景会自然覆盖背景图。
+// 点状下划线挂在链接自身的背景上，伪元素只留给行尾外链图标；
+// 悬停的实心背景会自然覆盖背景图。链接过长时允许跨行断开。
 @mixin md-link {
   position: relative;
   display: inline-block;
@@ -18,7 +22,9 @@
   color: var(--color-text);
   text-decoration: none;
   line-height: 1.6;
-  overflow-wrap: anywhere;
+  // 长链接允许跨行，避免撑破内容列 / 卡片
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   // 1px 圆点、4px 间距，贴在链接盒底部；用 muted 色保持轻量
   background-image: radial-gradient(circle, var(--color-text-muted) 1px, transparent 1px);
   background-repeat: repeat-x;
@@ -26,20 +32,6 @@
   background-size: 4px 2px;
   transition: color var(--duration-fast) var(--ease),
               background-color var(--duration-fast) var(--ease);
-
-  // 前置 fa-link：提示"这里是一个链接"
-  &::before {
-    content: "\f0c1";
-    margin-right: .18em;
-    color: var(--color-text-muted);
-    font-family: "Font Awesome 6 Free";
-    font-size: .75em;
-    font-weight: 900;
-    line-height: 1;
-    opacity: .7;
-    transition: color var(--duration-fast) var(--ease),
-                opacity var(--duration-fast) var(--ease);
-  }
 
   // 行尾外链图标，对应参考站的 open-in-new
   &::after {
@@ -60,7 +52,6 @@
     background: var(--color-primary);
     color: var(--color-on-primary);
 
-    &::before,
     &::after {
       color: var(--color-on-primary);
       opacity: 1;
@@ -86,6 +77,13 @@
 
   > :last-child { margin-bottom: 0; }
 
+  // 选中文本：主题色文字 + 主题色淡底（§9.1）
+  &::selection,
+  ::selection {
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+  }
+
   // --- 段落与行内元素 -------------------------------------------------------
 
   p {
@@ -96,6 +94,8 @@
 
   strong {
     font-weight: 600;
+    // 下缘一条 30% 高的主题色荧光条，像记号笔扫过；整行宽度、不重复
+    background: linear-gradient(var(--color-primary-highlight), var(--color-primary-highlight)) bottom / 100% 30% no-repeat;
   }
 
   em {
@@ -145,7 +145,7 @@
     line-height: 1.4;
   }
 
-  // 正文链接（参考 inaline.net）：文字色 + 点状下划线 + 前后图标；
+  // 正文链接（参考 inaline.net）：文字色 + 点状下划线 + 行尾外链图标；
   // 悬停时整颗铺主题色、文字与图标转白，点状线被实心背景覆盖
   a {
     @include md-link;
@@ -177,6 +177,26 @@
     text-wrap: balance;
     // 目录 / 页内锚点的落点让开 fixed Header
     scroll-margin-top: calc(var(--header-height) + var(--space-4));
+    // 鼠标移入时整条标题带四角星一起右移，移出回位
+    transition: transform var(--duration-base) var(--ease);
+
+    &:hover {
+      transform: translateX(var(--space-2));
+    }
+
+    // 标题前的四角星：遮罩取形、背景色取层级色，逆时针匀速旋转
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      margin-right: .4em;
+      vertical-align: -.1em;
+      background-color: var(--heading-mark, var(--color-primary));
+      -webkit-mask: $heading-mark center / contain no-repeat;
+      mask: $heading-mark center / contain no-repeat;
+      animation: heading-mark-spin 6s linear infinite;
+    }
 
     // 标题里的链接跟随标题色，不叠下划线 / 图标 / 悬停底色
     a {
@@ -198,47 +218,40 @@
   }
 
   h1 {
+    --heading-mark: var(--color-heading-mark-1);
     margin: var(--space-8) 0 var(--space-4);
     padding-bottom: var(--space-2);
     border-bottom: 1px solid var(--color-border);
     font-size: 1.875rem;
   }
 
-  // h2 左侧的短竖线是章节的视觉锚点；h3 起只靠字号和间距分层
+  // 四角星的颜色随层级递进；图形本身由公共 ::before 绘制
   h2 {
-    position: relative;
+    --heading-mark: var(--color-heading-mark-2);
     margin: var(--space-8) 0 var(--space-3);
-    padding-left: var(--space-4);
     font-size: 1.5rem;
-
-    &::before {
-      content: "";
-      position: absolute;
-      top: .16em;
-      left: 0;
-      width: 3px;
-      height: 1em;
-      border-radius: 999px;
-      background: var(--color-primary);
-    }
   }
 
   h3 {
+    --heading-mark: var(--color-heading-mark-3);
     margin: var(--space-6) 0 var(--space-2);
     font-size: 1.25rem;
   }
 
   h4 {
+    --heading-mark: var(--color-heading-mark-4);
     margin: var(--space-5) 0 var(--space-2);
     font-size: 1.125rem;
   }
 
   h5 {
+    --heading-mark: var(--color-heading-mark-5);
     margin: var(--space-5) 0 var(--space-2);
     font-size: 1rem;
   }
 
   h6 {
+    --heading-mark: var(--color-heading-mark-6);
     margin: var(--space-4) 0 var(--space-2);
     color: var(--color-text-muted);
     font-size: .9375rem;
@@ -291,20 +304,25 @@
   blockquote {
     margin: 1.5em 0;
     padding: var(--space-3) var(--space-4);
+    // 竖线始终是主题色；嵌套层级只靠背景深浅区分
     border-left: 3px solid var(--color-primary);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    background: var(--color-surface);
+    background: var(--color-quote-bg-1);
     color: var(--color-text-muted);
 
     > :first-child { margin-top: 0; }
 
     > :last-child { margin-bottom: 0; }
 
-    // 嵌套引用：降级成细灰边 + 透明底，别一层层加重
+    // 嵌套引用：半透明底色叠在父级上，再按层级换更深的令牌，
+    // 视觉上由浅到深，一眼能看出嵌套关系
     blockquote {
       margin: var(--space-3) 0;
-      border-left-color: var(--color-border);
-      background: transparent;
+      background: var(--color-quote-bg-2);
+
+      blockquote {
+        background: var(--color-quote-bg-3);
+      }
     }
   }
 
@@ -325,8 +343,9 @@
     color: var(--color-text);
   }
 
-  // 代码块：Chroma 的内联样式负责深色底与 token 配色（noClasses: true），
-  // 这里只补内边距、圆角与横向滚动
+  // 代码块：Chroma 只输出类名（noClasses: false），亮 / 暗两套 token 配色
+  // 由 _chroma.scss 负责；外壳由 render-codeblock.html 包成 macOS 窗口（§9.4），
+  // 这里补内边距与横向滚动
   .highlight {
     margin: 1.5em 0;
   }
@@ -344,8 +363,8 @@
     line-height: 1.7;
     tab-size: 4;
     scrollbar-width: thin;
-    // 代码块是深色底，滚动条固定用半透明白，不随主题翻色
-    scrollbar-color: rgba(255, 255, 255, .25) transparent;
+    // 滚动条跟着亮 / 暗窗口走
+    scrollbar-color: var(--code-scrollbar) transparent;
   }
 
   .highlight pre {
@@ -363,15 +382,326 @@
     white-space: pre;
   }
 
+  // --- macOS 风格代码窗口（§9.4） ------------------------------------------
+  //
+  // 渲染钩子负责把 <div class="highlight"> 包进 .code-window。
+  // 窗口条与代码区跟着主题走：亮色 #F0F0F0 条 + 白色代码区，
+  // 暗色 Darcula 工具栏色 #3C3F41 + #2B2B2B 代码区；交通灯两套主题共用。
+
+  .code-window {
+    margin: 1.5em 0;
+    overflow: hidden;
+    border: 1px solid var(--code-window-border);
+    border-radius: var(--radius-md);
+    background: var(--code-window-bg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .code-window-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 2.25rem;
+    padding: 0 var(--space-4);
+    background: var(--code-window-bar);
+    border-bottom: 1px solid var(--code-window-border);
+  }
+
+  // 左侧：交通灯 + 语言名，二者成组贴在窗口条左端
+  .code-window-left {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .code-window-dots {
+    display: inline-flex;
+    gap: 8px;
+
+    i {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+
+      &:nth-child(1) { background: var(--code-dot-red); }
+      &:nth-child(2) { background: var(--code-dot-yellow); }
+      &:nth-child(3) { background: var(--code-dot-green); }
+    }
+  }
+
+  // 右侧只剩换行 / 复制 / 折叠三个操作按钮
+  .code-window-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .code-window-lang {
+    color: var(--code-window-fg);
+    font-family: var(--font-mono);
+    font-size: .75rem;
+    letter-spacing: .04em;
+  }
+
+  // 窗口条右侧的换行 / 复制 / 折叠按钮：无边框图标按钮；无 JS 时保持 hidden，
+  // 由 main.js 露出并绑定。hidden 属性只有 UA 的 display: none，
+  // 会被下面的 display: inline-flex 压过，所以补一条 [hidden] 兜底
+  .code-window-wrap,
+  .code-window-copy,
+  .code-window-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--code-window-fg);
+    font-size: .8125rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease);
+
+    &[hidden] {
+      display: none;
+    }
+
+    &:hover {
+      color: var(--code-window-fg-strong);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  // 标题栏折叠开关：收起时箭头朝下（表示展开），展开时朝上（表示收起）
+  .code-window-toggle i {
+    transition: transform var(--duration-base) var(--ease);
+  }
+
+  .code-window:not(.is-collapsed) .code-window-toggle i {
+    transform: rotate(180deg);
+  }
+
+  // 自动换行：表格里的数字列无法与折行后的代码逐行对齐，先隐藏；
+  // 再用 CSS counter 把行号画在每个源码行开头（伪元素不进复制文本），
+  // 代码作为 flex 项折行，续行与代码列左边缘对齐
+  .code-window.is-wrapped .code-window-body {
+    overflow-x: hidden;
+  }
+
+  .code-window.is-wrapped .lntd:first-child {
+    display: none;
+  }
+
+  .code-window.is-wrapped .lntd:last-child pre {
+    padding-left: var(--space-5);
+  }
+
+  .code-window.is-wrapped .lntd:last-child code {
+    counter-reset: code-line;
+  }
+
+  .code-window.is-wrapped .lntd:last-child .line {
+    counter-increment: code-line;
+  }
+
+  // 行号槽宽度按最大行号位数计算（main.js 写入 --code-line-digits），
+  // 用 ch 对齐等宽数字，不再固定预留 2em 造成大片空白
+  .code-window.is-wrapped .lntd:last-child .line::before {
+    content: counter(code-line);
+    flex: none;
+    width: calc(var(--code-line-digits, 2) * 1ch);
+    margin-right: var(--space-3);
+    color: var(--code-window-line);
+    text-align: right;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .code-window.is-wrapped .lntd:last-child .cl {
+    flex: 1;
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .code-window-wrap[aria-pressed="true"] {
+    color: var(--color-primary);
+  }
+
+  // 长代码折叠开关：代码区下方居中的圆形箭头；收起时朝下，展开时朝上
+  .code-window-fold {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-1) 0;
+    background: var(--code-window-bg);
+
+    // hidden 属性只有 UA 的 display: none，会被上面的 display: flex 压过。
+    // 补一条更高特异度的规则，≤12 行的短代码块才能真正藏住折叠条
+    // （main.js 对短代码块提前返回，折叠条保持模板里的 hidden 状态）
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .code-window-fold-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--code-window-fg);
+    font-size: .875rem;
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease),
+                background-color var(--duration-fast) var(--ease);
+
+    i {
+      transition: transform var(--duration-base) var(--ease);
+    }
+
+    &:hover {
+      color: var(--code-window-fg-strong);
+      background: var(--code-window-bar);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  .code-window:not(.is-collapsed) .code-window-fold-btn i {
+    transform: rotate(180deg);
+  }
+
+  // 横向滚动放在主体上：表格按最长行自然撑宽，主体负责滚动，
+  // 行号列再用 sticky 吸在左侧，滚代码时行号不会跟着消失
+  .code-window-body {
+    position: relative;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--code-scrollbar) transparent;
+  }
+
+  // 折叠：只露出前 18rem 的代码，底部渐隐到窗口底色。
+  // 纵向裁掉多余行，但横向滚动保留——收起状态也能看长行
+  .code-window.is-collapsed .code-window-body {
+    max-height: 18rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .code-window.is-collapsed .code-window-body::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 4rem;
+    background: linear-gradient(to bottom, transparent, var(--code-window-bg));
+    pointer-events: none;
+  }
+
+  // Chroma 行号（lineNos: true）走表格布局：数字列按内容收窄，
+  // 代码列按最长行撑开，超宽部分由 .code-window-body 横向滚动。
+  // 行号表也会命中 Markdown 的全局 table 规则，所以这里把布局还原成
+  // 表格、清掉外边距，并取消 tr:nth-child / tr:hover 的底色——
+  // 否则鼠标移入代码区时整行会被 Markdown 表格的悬停色染一层
+  .code-window .lntable {
+    display: table;
+    width: 100%;
+    margin: 0;
+    overflow: visible;
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .code-window .lntable tr,
+  .code-window .lntable tr:nth-child(even),
+  .code-window .lntable tr:hover,
+  .code-window .lntable td {
+    background: transparent;
+  }
+
+  // 行号列：按内容收窄，横向滚动时吸在左侧；
+  // 底色必须与代码区一致，否则滚过去的代码会从数字下面透出来
+  .code-window .lntd:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    width: 1%;
+    background: var(--code-window-bg);
+  }
+
+  // 两个 pre 各管一条边：数字列靠左留白、代码列靠右留白；
+  // 数字列右侧留出间距，代码列不再重复加左内边距
+  .code-window .lntd:first-child pre {
+    padding: var(--space-4) var(--space-3) var(--space-4) var(--space-5);
+    text-align: right;
+  }
+
+  .code-window .lntd:last-child pre {
+    padding: var(--space-4) var(--space-5) var(--space-4) 0;
+  }
+
+  // 行号取消 Chroma 默认的内外边距，颜色跟主题走
+  .code-window .chroma .lnt {
+    margin: 0;
+    padding: 0;
+    color: var(--code-window-line);
+  }
+
+  // 行号内联模式（lineNumbersInTable: false 时）同样右对齐、不参与选中
+  .code-window .chroma .ln {
+    display: inline-block;
+    min-width: 2em;
+    margin-right: var(--space-3);
+    padding: 0;
+    color: var(--code-window-line);
+    text-align: right;
+  }
+
+  // 高亮块本体不再自带外边距 / 圆角 / 阴影，统一交给窗口
+  .code-window .highlight,
+  .code-window pre {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  // 底色必须让给外层 .chroma：通用 .markdown pre 的 --color-surface
+  // 选择器权重更高，会盖掉 Chroma 的亮 / 暗背景（亮白 / Darcula #2B2B2B）
+  .code-window pre {
+    background: transparent;
+  }
+
   // --- 表格 ----------------------------------------------------------------
 
-  // display: block + overflow-x: auto：宽表格在自身区域内横向滚动，
-  // 不把卡片撑宽（与 GitHub Markdown 同一套做法）
-  table {
-    display: block;
-    width: 100%;
+  // 渲染钩子（render-table.html）把表格包进 .table-scroll：
+  // 表格默认吃满父级宽度，内容超宽时由包装层横向滚动，不把卡片撑宽
+  .table-scroll {
     margin: 1.5em 0;
     overflow-x: auto;
+
+    > table {
+      margin: 0;
+    }
+  }
+
+  table {
+    width: 100%;
+    margin: 1.5em 0;
     border-collapse: collapse;
     border-spacing: 0;
     font-size: .9375rem;
@@ -403,10 +733,6 @@
 
   tbody tr:nth-child(even) {
     background: var(--color-bg);
-  }
-
-  tbody tr:hover {
-    background: var(--color-surface);
   }
 
   tbody tr:last-child td {
@@ -451,17 +777,34 @@
 
   // --- 分隔线 --------------------------------------------------------------
 
+  // 参考 Fomal 的写法：2px 虚线 + 雪花图标，悬停时图标从左向右移动。
+  // 颜色换成本站令牌：线用专用虚线色，图标用主题色
   hr {
-    height: 1px;
-    margin: 2.5em 0;
+    position: relative;
+    width: calc(100% - 4px);
+    height: 0;
+    margin: var(--space-7) auto;
     border: 0;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--color-border) 12%,
-      var(--color-border) 88%,
-      transparent
-    );
+    border-top: 2px dashed var(--color-hr-line);
+    overflow: visible;
+
+    &::before {
+      content: "\f2dc";
+      position: absolute;
+      top: -10px;
+      left: 5%;
+      z-index: 1;
+      color: var(--color-primary);
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1;
+      transition: left 1s ease-in-out;
+    }
+
+    &:hover::before {
+      left: calc(95% - 20px);
+    }
   }
 
   // --- 脚注 ----------------------------------------------------------------
@@ -586,6 +929,25 @@
     margin-bottom: var(--space-4);
   }
 
+  // --- 数学公式 ------------------------------------------------------------
+  // transform.ToMath 在构建时输出 MathML（§9.6），无前端脚本。
+  // 输出外层带一层 <span class="katex">：块级公式把它也转成块容器，
+  // 内部的 math 才能按正文宽度居中
+  .katex:has(> math[display="block"]) {
+    display: block;
+  }
+
+  // 块级公式收缩到内容宽度后居中，过宽时自身横向滚动，不撑破正文列
+  math[display="block"] {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin: 1.5em auto;
+    padding: var(--space-1) 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
   // --- 打印 ----------------------------------------------------------------
 
   @media print {
@@ -615,7 +977,36 @@
     h3 {
       break-after: avoid;
     }
+
+    // 打印不抓半圈：停在 0° 的初始姿态
+    h1::before,
+    h2::before,
+    h3::before,
+    h4::before,
+    h5::before,
+    h6::before {
+      animation: none !important;
+    }
+
+    // 打印时展开被折叠的代码，并隐藏切换按钮
+    .code-window.is-collapsed .code-window-body {
+      max-height: none;
+      overflow: visible;
+    }
+
+    .code-window.is-collapsed .code-window-body::after,
+    .code-window-wrap,
+    .code-window-copy,
+    .code-window-toggle,
+    .code-window-fold {
+      display: none;
+    }
   }
+}
+
+// 标题前四角星的逆时针旋转（§9.2）
+@keyframes heading-mark-spin {
+  to { transform: rotate(-360deg); }
 }
 
 // 文章信息卡内的链接沿用同一套样式（§8.6）
@@ -633,12 +1024,13 @@
   }
 
   .article-meta a::before,
-  .article-meta a::after {
+  .article-meta a::after,
+  .article-meta-link-icon {
     display: none;
   }
 }
 
-// 减少动态效果：本文件只有链接与折叠标题的颜色过渡
+// 减少动态效果：链接与折叠标题只保留颜色过渡，标题四角星停转
 @media (prefers-reduced-motion: reduce) {
   .markdown a,
   .markdown a::before,
@@ -646,7 +1038,43 @@
   .article-meta a,
   .article-meta a::before,
   .article-meta a::after,
-  .markdown summary {
+  .markdown summary,
+  .markdown hr::before {
+    transition: none;
+  }
+
+  // 分割线图标不再随悬停移动
+  .markdown hr:hover::before {
+    left: 5%;
+  }
+
+  .markdown h1::before,
+  .markdown h2::before,
+  .markdown h3::before,
+  .markdown h4::before,
+  .markdown h5::before,
+  .markdown h6::before {
+    animation: none;
+  }
+
+  // 标题的悬停位移也属于前庭敏感人群需要避免的动效
+  .markdown h1,
+  .markdown h2,
+  .markdown h3,
+  .markdown h4,
+  .markdown h5,
+  .markdown h6 {
+    transition: none;
+
+    &:hover { transform: none; }
+  }
+
+  .code-window-wrap,
+  .code-window-copy,
+  .code-window-toggle,
+  .code-window-toggle i,
+  .code-window-fold-btn,
+  .code-window-fold-btn i {
     transition: none;
   }
 }

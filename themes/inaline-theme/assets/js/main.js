@@ -133,6 +133,30 @@
     });
   }
 
+  /** 复制文本：局域网 http 访问不是安全上下文，没有 clipboard API，用隐藏 textarea 兜底 */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-100px'; // 别让它把页面撑出滚动条
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch (e) {
+        ok = false;
+      }
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+
   /**
    * 侧栏联系方式里的 copy 类按钮（微信这种没有网页地址的）：点击复制到剪贴板，
    * 并弹一个"已复制"气泡。气泡只在真的复制成功后才出——它是承诺，不是反馈音
@@ -140,30 +164,6 @@
   function initSocialCopy() {
     var links = document.querySelectorAll('.social-link[data-copy]');
     if (!links.length) return;
-
-    function copyText(text) {
-      // 局域网 http 访问不是安全上下文，没有 clipboard API，用隐藏 textarea 兜底
-      if (navigator.clipboard && window.isSecureContext) {
-        return navigator.clipboard.writeText(text);
-      }
-      return new Promise(function (resolve, reject) {
-        var ta = document.createElement('textarea');
-        ta.value = text;
-        ta.setAttribute('readonly', '');
-        ta.style.position = 'fixed';
-        ta.style.top = '-100px'; // 别让它把页面撑出滚动条
-        document.body.appendChild(ta);
-        ta.select();
-        var ok = false;
-        try {
-          ok = document.execCommand('copy');
-        } catch (e) {
-          ok = false;
-        }
-        document.body.removeChild(ta);
-        ok ? resolve() : reject(new Error('copy failed'));
-      });
-    }
 
     function flash(el) {
       el.classList.add('is-copied');
@@ -181,6 +181,114 @@
           flash(el);
         }).catch(function () {
           /* 复制失败（浏览器不给权限）：不弹气泡，假装什么都没发生 */
+        });
+      });
+    });
+  }
+
+  /**
+   * 代码窗口（DESIGN.md §9.4）：
+   *  - 窗口条右侧的"复制"按钮把代码写进剪贴板，成功后短暂显示"已复制"；
+   *  - 行数超过阈值的代码块默认收起，代码区下方的居中箭头负责展开 / 收起。
+   *
+   * 按 Chroma 的 .line 数量判断长度，而不是像素高度——等宽字体是
+   * font-display: swap，加载完成前后高度会变，行数不受影响。
+   */
+  function initCodeWindows() {
+    var LINE_LIMIT = 12;
+
+    var windows = document.querySelectorAll('.code-window');
+
+    Array.prototype.forEach.call(windows, function (win) {
+      if (win.dataset.codeWindowBound === 'true') return;
+      win.dataset.codeWindowBound = 'true';
+
+      var body = win.querySelector('.code-window-body');
+      if (!body) return;
+
+      // 行号列只是视觉辅助：拿掉它的 Tab 停靠点与朗读
+      var numberCell = body.querySelector('.lntd:first-child');
+      if (numberCell) numberCell.setAttribute('aria-hidden', 'true');
+      var numberPre = numberCell && numberCell.querySelector('pre');
+      if (numberPre) numberPre.removeAttribute('tabindex');
+
+      // 复制：行号在另一列，必须取代码列，不能取 body 里第一个 <code>
+      var code = body.querySelector('code[data-lang]') ||
+                 body.querySelector('.lntd:last-child code') ||
+                 body.querySelector('code');
+      var copy = win.querySelector('.code-window-copy');
+      if (copy && code) {
+        var copyIcon = copy.querySelector('i');
+        copy.hidden = false;
+        copy.addEventListener('click', function () {
+          copyText(code.textContent).then(function () {
+            copy.setAttribute('aria-label', '已复制');
+            if (copyIcon) copyIcon.className = 'fa-solid fa-check';
+            clearTimeout(copy.copyTimer);
+            copy.copyTimer = setTimeout(function () {
+              copy.setAttribute('aria-label', '复制代码');
+              if (copyIcon) copyIcon.className = 'fa-regular fa-copy';
+            }, 1600);
+          }).catch(function () {
+            /* 复制失败（浏览器不给权限）：不打扰用户 */
+          });
+        });
+      }
+
+      var lines = body.querySelectorAll('.chroma .line').length;
+      if (!lines) {
+        // 理论上高亮结果总有 .line；兜底按换行数算，别让折叠整块失灵
+        lines = code ? code.textContent.split('\n').length : 0;
+      }
+
+      // 折行模式的行号槽按最大行号位数收窄，避免固定宽度留白过大
+      win.style.setProperty('--code-line-digits', String(lines).length);
+
+      // 自动换行开关：只在代码横向溢出时露出；等宽字体就绪后重测一次，
+      // 字体切换会改变代码宽度。按钮一旦露出就保留，方便切回不换行
+      var wrap = win.querySelector('.code-window-wrap');
+      if (wrap) {
+        var showWrap = function () {
+          if (body.scrollWidth > body.clientWidth + 1) wrap.hidden = false;
+        };
+        showWrap();
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(showWrap);
+        } else {
+          window.addEventListener('load', showWrap, { once: true });
+        }
+        wrap.addEventListener('click', function () {
+          var wrapped = win.classList.toggle('is-wrapped');
+          wrap.setAttribute('aria-pressed', String(wrapped));
+          wrap.setAttribute('aria-label', wrapped ? '关闭自动换行' : '开启自动换行');
+        });
+      }
+
+      var fold = win.querySelector('.code-window-fold');
+      var foldBtn = win.querySelector('.code-window-fold-btn');
+      var barToggle = win.querySelector('.code-window-toggle');
+      if (!fold || !foldBtn) return;
+      if (lines <= LINE_LIMIT) return;
+
+      // 底部折叠条与标题栏开关共用一套状态，点任意一个都同步另一处
+      var toggles = [foldBtn];
+      if (barToggle) toggles.push(barToggle);
+
+      function setCollapsed(collapsed) {
+        win.classList.toggle('is-collapsed', collapsed);
+        toggles.forEach(function (btn) {
+          btn.setAttribute('aria-expanded', String(!collapsed));
+          btn.setAttribute('aria-label', collapsed ? '展开代码' : '收起代码');
+        });
+      }
+
+      fold.hidden = false;
+      if (barToggle) barToggle.hidden = false;
+      setCollapsed(true);
+
+      toggles.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          setCollapsed(!win.classList.contains('is-collapsed'));
         });
       });
     });
@@ -263,6 +371,7 @@
     initFooterUptime();
     initClickableCards();
     initSocialCopy();
+    initCodeWindows();
     initReveal();
   }
 

@@ -14,6 +14,15 @@
   --color-text: #E6E7E9;
   --color-text-muted: #9AA1AC;
   --color-border: #2C313A;
+
+  // 代码窗口（§9.4）：暗色窗口配 JetBrains Dark（Darcula）的 #2B2B2B
+  --code-window-bg: #2B2B2B;
+  --code-window-bar: #3C3F41; // Darcula 工具栏色，与 #2B2B2B 代码区拉开一档
+  --code-window-border: rgba(255, 255, 255, .10);
+  --code-window-fg: rgba(255, 255, 255, .55);
+  --code-window-fg-strong: rgba(255, 255, 255, .85);
+  --code-window-line: #606366;
+  --code-scrollbar: rgba(255, 255, 255, .25);
   --header-bg: rgba(22, 24, 29, 0.6);
   --hero-card-bg: rgba(16, 18, 22, 0.4); // Hero 一言卡片玻璃底（§7.5）：仅暗色加深色底
   --page-scrim: rgba(0, 0, 0, .35); // 首页整页背景压暗遮罩：暗色下把封面压下去，夜里不刺眼
@@ -36,6 +45,22 @@
   --color-primary: #FA5D19;
   --color-primary-hover: #E14E0E;
   --color-primary-soft: rgba(250, 93, 25, 0.10); // 弱强调底色（Markdown mark 高亮等）
+  --color-primary-highlight: rgba(250, 93, 25, 0.30); // 加粗文本下缘的荧光条（§9）
+  --color-hr-line: rgba(250, 93, 25, 0.38); // 分割线虚线（§9.4）：比 primary-soft 深，2px 虚线才看得清
+  // Markdown 标题前四角星的层级色（§9.2）。亮暗主题共用——取中间调，
+  // 图形小、纯装饰，在两种底色上都要看得清
+  --color-heading-mark-1: #FA5D19; // h1 主题橙
+  --color-heading-mark-2: #8F2FDF; // h2 紫
+  --color-heading-mark-3: #3B82F6; // h3 蓝
+  --color-heading-mark-4: #10B981; // h4 绿
+  --color-heading-mark-5: #EC4899; // h5 粉
+  --color-heading-mark-6: #94A3B8; // h6 灰
+
+  // Markdown 引用块背景（§9.4）：按嵌套层级由浅到深。
+  // 竖线始终用主题色，只有底色逐级加深；半透明叠在父级底色上，自然更深
+  --color-quote-bg-1: rgba(250, 93, 25, .10);
+  --color-quote-bg-2: rgba(250, 93, 25, .12);
+  --color-quote-bg-3: rgba(250, 93, 25, .14);
   --color-on-primary: #FFFFFF; // 主题色实心填充上的前景色（两种主题下都是白）
   --color-over-hero: #FFFFFF;   // Hero 封面图之上的前景色：封面图为深色调，须用白字
   --color-over-hero-soft: rgba(255, 255, 255, .85); // 同上，略灰一档（首页顶部态 Header 静止时、页脚正文）
@@ -87,6 +112,22 @@
   --badge-bg: #FFFFFF;
   --badge-fg: #1F2328; // 与 --color-text 同值但语义不同：这是"照片上的字"，暗色下不能翻成浅色
 
+  // 代码窗口（§9.4）：亮色窗口配 JetBrains Light 的白色代码区（见 _chroma-light.scss），
+  // 窗口条用 #F0F0F0，与白色代码区拉开一档色差；暗色值见 dark-tokens。
+  // --code-window-bg 必须与对应 Chroma 样式的 .chroma 背景一致，
+  // 否则窗口条 / 折叠渐隐与代码区会出现色差
+  --code-window-bg: #FFFFFF;
+  --code-window-bar: #F0F0F0;
+  --code-window-border: rgba(0, 0, 0, .10);
+  --code-window-fg: rgba(0, 0, 0, .55);
+  --code-window-fg-strong: rgba(0, 0, 0, .8);
+  --code-window-line: #A8A8A8;
+  --code-scrollbar: rgba(0, 0, 0, .25);
+  // 交通灯三色与主题无关，暗色下不翻
+  --code-dot-red: #FF5F57;
+  --code-dot-yellow: #FEBC2E;
+  --code-dot-green: #28C840;
+
   // 中性色（亮色）：页面浅灰、白卡浮起
   // 底色转中性灰（v3.28）：底板跟着去色，两个大色块挨在一起，留一丝蓝调都会被看出来
   --color-bg: #F5F5F5;       // 页面底色：比抬升层低一档，卡片轮廓先由底色画出来
@@ -101,7 +142,7 @@
   --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --font-handwriting: "HYTangMeiRen", var(--font-system);
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+  --font-mono: "JetBrainsLxgwNerdMono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
 
   // 字体应用层级：默认全站手写体；

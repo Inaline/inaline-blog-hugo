@@ -1,0 +1,84 @@
+/* JetBrains Light 风格配色（DESIGN.md §9.4）
+ *
+ * 参照 IntelliJ IDEA 默认亮色方案的标志性颜色：
+ *   关键字 #0033B3 / 字符串 #067D17 / 数字 #1750EB
+ *   注释 #8C8C8C / 方法 #00627A / 字段 #871094
+ * 背景取 JetBrains Light 的 #FFFFFF，与 #F0F0F0 窗口条拉开一档色差。
+ *
+ * Chroma 只输出类名（noClasses: false），类目与 _chroma-dark.scss 对齐；
+ * 暗色那份由 hugo gen chromastyles 生成，这份是按 JetBrains 配色手写的。
+ */
+
+/* Background */ .bg { background-color:#FFFFFF; }
+/* PreWrapper */ .chroma { color:#000000;background-color:#FFFFFF;-webkit-text-size-adjust:none; }
+/* Error */ .chroma .err { color:#FFFFFF;background-color:#D80000 }
+/* LineLink */ .chroma .lnlinks { outline:none;text-decoration:none;color:inherit }
+/* LineTableTD */ .chroma .lntd { vertical-align:top;padding:0;margin:0;border:0; }
+/* LineTable */ .chroma .lntable { border-spacing:0;padding:0;margin:0;border:0; }
+/* LineHighlight */ .chroma .hl { background-color:#E6F0FF }
+/* LineNumbersTable */ .chroma .lnt { white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#A8A8A8 }
+/* LineNumbers */ .chroma .ln { white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#A8A8A8 }
+/* Line */ .chroma .line { display:flex; }
+/* Keyword */ .chroma .k { color:#0033B3 }
+/* KeywordConstant */ .chroma .kc { color:#0033B3 }
+/* KeywordDeclaration */ .chroma .kd { color:#0033B3 }
+/* KeywordNamespace */ .chroma .kn { color:#0033B3 }
+/* KeywordPseudo */ .chroma .kp { color:#0033B3 }
+/* KeywordReserved */ .chroma .kr { color:#0033B3 }
+/* KeywordType */ .chroma .kt { color:#0033B3 }
+/* NameAttribute */ .chroma .na { color:#871094 }
+/* NameClass */ .chroma .nc { color:#000000 }
+/* NameConstant */ .chroma .no { color:#871094 }
+/* NameDecorator */ .chroma .nd { color:#871094 }
+/* NameEntity */ .chroma .ni { color:#0033B3 }
+/* NameLabel */ .chroma .nl { color:#000000;font-weight:bold }
+/* NameNamespace */ .chroma .nn { color:#000000 }
+/* NameOther */ .chroma .nx { color:#000000 }
+/* NameTag */ .chroma .nt { color:#0033B3 }
+/* NameBuiltin */ .chroma .nb { color:#0033B3 }
+/* NameBuiltinPseudo */ .chroma .bp { color:#000000 }
+/* NameVariable */ .chroma .nv { color:#000000 }
+/* NameVariableClass */ .chroma .vc { color:#871094 }
+/* NameVariableGlobal */ .chroma .vg { color:#871094 }
+/* NameVariableInstance */ .chroma .vi { color:#871094 }
+/* NameVariableMagic */ .chroma .vm { color:#871094 }
+/* NameFunction */ .chroma .nf { color:#00627A }
+/* NameFunctionMagic */ .chroma .fm { color:#00627A }
+/* LiteralString */ .chroma .s { color:#067D17 }
+/* LiteralStringAffix */ .chroma .sa { color:#067D17 }
+/* LiteralStringBacktick */ .chroma .sb { color:#067D17 }
+/* LiteralStringChar */ .chroma .sc { color:#067D17 }
+/* LiteralStringDelimiter */ .chroma .dl { color:#067D17 }
+/* LiteralStringDoc */ .chroma .sd { color:#8C8C8C }
+/* LiteralStringDouble */ .chroma .s2 { color:#067D17 }
+/* LiteralStringEscape */ .chroma .se { color:#0033B3 }
+/* LiteralStringHeredoc */ .chroma .sh { color:#067D17 }
+/* LiteralStringInterpol */ .chroma .si { color:#0033B3 }
+/* LiteralStringOther */ .chroma .sx { color:#067D17 }
+/* LiteralStringRegex */ .chroma .sr { color:#067D17 }
+/* LiteralStringSingle */ .chroma .s1 { color:#067D17 }
+/* LiteralStringSymbol */ .chroma .ss { color:#067D17 }
+/* LiteralNumber */ .chroma .m { color:#1750EB }
+/* LiteralNumberBin */ .chroma .mb { color:#1750EB }
+/* LiteralNumberFloat */ .chroma .mf { color:#1750EB }
+/* LiteralNumberHex */ .chroma .mh { color:#1750EB }
+/* LiteralNumberInteger */ .chroma .mi { color:#1750EB }
+/* LiteralNumberIntegerLong */ .chroma .il { color:#1750EB }
+/* LiteralNumberOct */ .chroma .mo { color:#1750EB }
+/* Operator */ .chroma .o { color:#000000 }
+/* OperatorWord */ .chroma .ow { color:#0033B3 }
+/* OperatorReserved */ .chroma .or { color:#0033B3 }
+/* Punctuation */ .chroma .p { color:#000000 }
+/* Comment */ .chroma .c { color:#8C8C8C }
+/* CommentHashbang */ .chroma .ch { color:#8C8C8C }
+/* CommentMultiline */ .chroma .cm { color:#8C8C8C }
+/* CommentSingle */ .chroma .c1 { color:#8C8C8C }
+/* CommentSpecial */ .chroma .cs { color:#8C8C8C }
+/* CommentPreproc */ .chroma .cp { color:#8C8C8C }
+/* CommentPreprocFile */ .chroma .cpf { color:#8C8C8C }
+/* GenericDeleted */ .chroma .gd { color:#A80000;background-color:#FFEBE9 }
+/* GenericEmph */ .chroma .ge { font-style:italic }
+/* GenericInserted */ .chroma .gi { color:#067D17;background-color:#E6FFEC }
+/* GenericOutput */ .chroma .go { color:#000000 }
+/* GenericUnderline */ .chroma .gl { text-decoration:underline }
+/* TextWhitespace */ .chroma .w { color:#FFFFFF }

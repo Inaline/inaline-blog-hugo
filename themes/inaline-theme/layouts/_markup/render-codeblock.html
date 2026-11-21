@@ -1,0 +1,39 @@
+{{/*
+  代码块渲染钩子（DESIGN.md §9.4）
+
+  把 Goldmark 的代码块包成 macOS 窗口：顶部窗口条（红黄绿三个圆点 + 语言名），
+  下方沿用 Hugo / Chroma 的高亮结果。高亮仍走 transform.HighlightCodeBlock，
+  以保留 noClasses、行号等配置；这里只加外壳，不碰 token 配色。
+
+  窗口条右侧是复制按钮；长代码的展开 / 收起按钮在代码区下方居中，
+  由 main.js 的 initCodeWindows() 决定是否露出并接管交互。
+*/}}
+{{- $highlight := transform.HighlightCodeBlock . -}}
+{{- $ordinal := .Ordinal -}}
+<div class="code-window">
+  <div class="code-window-bar">
+    <span class="code-window-left">
+      <span class="code-window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      {{- with .Type }}<span class="code-window-lang">{{ . }}</span>{{ end }}
+    </span>
+    <span class="code-window-tools">
+      <button type="button" class="code-window-wrap" aria-label="开启自动换行" aria-pressed="false" hidden>
+        <i class="fa-solid fa-level-down" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="code-window-copy" aria-label="复制代码" hidden>
+        <i class="fa-regular fa-copy" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="code-window-toggle" aria-controls="code-window-body-{{ $ordinal }}" aria-expanded="false" aria-label="展开代码" hidden>
+        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+      </button>
+    </span>
+  </div>
+  <div class="code-window-body" id="code-window-body-{{ $ordinal }}">
+    {{ $highlight.Wrapped }}
+  </div>
+  <div class="code-window-fold" hidden>
+    <button type="button" class="code-window-fold-btn" aria-controls="code-window-body-{{ $ordinal }}" aria-expanded="false" aria-label="展开代码">
+      <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>

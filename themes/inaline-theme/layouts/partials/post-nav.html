@@ -1,0 +1,39 @@
+{{/*
+  文章页底部的上一篇 / 下一篇（DESIGN.md §8.7）。
+
+  取 posts 分区内的相邻文章；有哪篇就渲染哪张卡，两篇都没有时整块不渲染。
+  整卡是一条链接：封面复用 post-cover.html（与文章卡片 / 顶部大图同池），
+  无 cover 时按序号从封面池取兜底图——相邻两卡分别用 1 / 2，
+  与顶部大图的 0 错开，两张兜底图不会撞在一起。
+*/}}
+{{ $prev := .PrevInSection }}
+{{ $next := .NextInSection }}
+{{ if or $prev $next }}
+  <nav class="post-nav{{ if not (and $prev $next) }} post-nav--single{{ end }}" aria-label="文章导航">
+    {{ with $prev }}
+      {{ $cover := partial "post-cover.html" (dict "page" . "index" 1) }}
+      <a class="post-nav-card post-nav-card--prev" href="{{ .RelPermalink }}">
+        {{ with $cover }}<img class="post-nav-bg" src="{{ . }}" alt="" loading="lazy" decoding="async">{{ end }}
+        <span class="post-nav-body">
+          <span class="post-nav-label">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>上一篇
+          </span>
+          <span class="post-nav-title">{{ .Title }}</span>
+        </span>
+      </a>
+    {{ end }}
+
+    {{ with $next }}
+      {{ $cover := partial "post-cover.html" (dict "page" . "index" 2) }}
+      <a class="post-nav-card post-nav-card--next" href="{{ .RelPermalink }}">
+        {{ with $cover }}<img class="post-nav-bg" src="{{ . }}" alt="" loading="lazy" decoding="async">{{ end }}
+        <span class="post-nav-body">
+          <span class="post-nav-label">
+            下一篇<i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          </span>
+          <span class="post-nav-title">{{ .Title }}</span>
+        </span>
+      </a>
+    {{ end }}
+  </nav>
+{{ end }}

@@ -22,9 +22,17 @@
 {{ with resources.Get "fonts/HYTangMeiRen55W.woff2" }}
 <link rel="preload" as="font" type="font/woff2" href="{{ .RelPermalink }}" crossorigin>
 {{ end }}
+{{/* 等宽字体体积大且只有代码页用得上，不做 preload；
+     调 RelPermalink 只为把它发布到 /fonts/，输出丢弃 */}}
+{{ with resources.Get "fonts/JetBrainsLxgwNerdMono-Regular.subset.woff2" }}
+  {{ $monoFontURL := .RelPermalink }}
+{{ end }}
 
 {{/* Font Awesome 6 Free（BootCDN）：全站字体图标；主题自绘 SVG 见 icon.html */}}
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+{{/* 数学公式由构建时的 transform.ToMath 直接输出 MathML（§9.6），
+     不需要前端 KaTeX / MathJax，也就没有额外样式或脚本 */}}
 
 {{/* 样式：SCSS 编译为单个 main.min.<hash>.css */}}
 {{ $opts := dict "outputStyle" "compressed" "transpiler" "libsass" }}

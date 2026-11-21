@@ -254,6 +254,44 @@ hello()
 const veryLongLine = "CommonMark 语法演示：这一行故意写得很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长，用来观察代码块在小屏幕上是否出现横向滚动条，以及滚动条本身的样式。";
 ```
 
+### 长代码块（自动折叠）
+
+超过 12 行的代码块会默认收起，点窗口条右侧的「展开」查看全部：
+
+```js
+// 一个用于演示长代码折叠的示例：把 Markdown 标题压平成目录
+function buildToc(root) {
+  const headings = root.querySelectorAll('h2, h3');
+  const toc = document.createElement('ol');
+
+  headings.forEach((heading) => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+
+    link.href = `#${heading.id}`;
+    link.textContent = heading.textContent;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    item.appendChild(link);
+
+    if (heading.tagName === 'H3') {
+      item.style.marginLeft = '1.5em';
+    }
+
+    toc.appendChild(item);
+  });
+
+  return toc;
+}
+
+const article = document.querySelector('.markdown');
+const toc = buildToc(article);
+document.querySelector('.article-toc')?.appendChild(toc);
+```
+
 ## 表格
 
 | 左对齐 | 居中 | 右对齐 |
@@ -278,6 +316,24 @@ const veryLongLine = "CommonMark 语法演示：这一行故意写得很长很�
 | 03 | 删除线 | `~~文字~~` | ~~文字~~ | Goldmark 扩展 |
 | 04 | 行内代码 | `` `代码` `` | `代码` | 反引号包裹 |
 | 05 | 链接 | `[文字](url)` | [文字](https://example.com/) | 行内链接 |
+
+## 数学公式
+
+下面的公式由 Hugo 在构建时渲染为 MathML，不依赖前端脚本。
+
+行内公式：$E = mc^2$。
+
+一元二次方程求根公式：
+
+$$
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+
+傅里叶变换公式：
+
+$$
+F(\omega) = \int_{-\infty}^{\infty} f(t)\, e^{-i\omega t} \, dt
+$$
 
 ## 脚注
 

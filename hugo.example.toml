@@ -322,11 +322,22 @@ hasCJKLanguage = true
 # 以下为 Hugo 自身的渲染设置，与主题无关，照搬即可
 # -----------------------------------------------------------------------------
 
-# 代码高亮的颜色走内联样式而非 class：主题没带 Chroma 样式表，
-# 关掉 noClasses 会让代码块失去配色
+# 代码高亮走 class：主题自带 Chroma 亮 / 暗两套样式（_chroma.scss），
+# 亮色默认生效，暗色在暗色模式下覆盖；行号由 Chroma 生成
 [markup.highlight]
-  noClasses = true
+  noClasses = false
+  lineNos = true
 
 # 允许 Markdown 里的原始 HTML（文章里嵌 <video>、自定义 div 等需要它）
 [markup.goldmark.renderer]
   unsafe = true
+
+# 数学公式：passthrough 让 $...$ / $$...$$ 原样保留，
+# 再由主题的 render-passthrough.html 在构建时渲染为 MathML（无前端 JS）
+[markup.goldmark.extensions.passthrough]
+  enable = true
+
+# 只启用 $ 系分隔符：\[...\] 会和正文里的转义方括号冲突
+[markup.goldmark.extensions.passthrough.delimiters]
+  block = [['$$', '$$']]
+  inline = [['$', '$']]

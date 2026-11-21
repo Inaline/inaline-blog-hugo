@@ -2,8 +2,8 @@
 // 字体声明
 //
 // 注意：字体由 head.html 通过 resources.Get 发布到 /fonts/ 下
-// （见 partials/head.html 的 preload 链接），本文件的相对路径依赖这一点。
-// 改动其一必须同步改动另一处。
+// （见 partials/head.html：手写体 preload，等宽体只发布不 preload），
+// 本文件的相对路径依赖这一点。改动其一必须同步改动另一处。
 //
 // 编译后样式表位于 /css/main.min.<hash>.css，故 ../fonts/ 指向 /fonts/。
 // ---------------------------------------------------------------------------
@@ -11,6 +11,18 @@
 @font-face {
   font-family: "HYTangMeiRen";
   src: url("../fonts/HYTangMeiRen55W.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+// 等宽字体：JetBrains Mono + 霞鹜文楷等宽 + Nerd Font 补丁的合并字体。
+// 只发布常用字子集版（约 4.4MB），完整版（约 10MB）不随主题分发。
+// 不做 preload：只有正文出现代码的页面才会由 CSS 触发下载。
+// 文件发布依赖 head.html 里的 resources.Get，改名时两处同步。
+@font-face {
+  font-family: "JetBrainsLxgwNerdMono";
+  src: url("../fonts/JetBrainsLxgwNerdMono-Regular.subset.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;

@@ -1,0 +1,25 @@
+// ---------------------------------------------------------------------------
+// Chroma 代码高亮配色（DESIGN.md §9.4）
+//
+// markup.highlight.noClasses = false：高亮只输出类名，亮 / 暗两套规则都来自
+// 这里，打进同一份 main.css。亮色默认生效；暗色在显式主题与系统深色兜底下
+// 覆盖，与 _tokens.scss 的暗色策略保持一致。
+//
+// 两套配色都按 IntelliJ IDEA 的默认方案手写在对应文件里，改色直接改颜色值：
+//   亮色 _chroma-light.scss —— JetBrains Light
+//   暗色 _chroma-dark.scss  —— JetBrains Dark（Darcula）
+// Chroma 没有内置这两套样式，所以不走 hugo gen chromastyles。
+// ---------------------------------------------------------------------------
+
+@import 'chroma-light';
+
+:root[data-theme="dark"] {
+  @import 'chroma-dark';
+}
+
+// 无 JS 时跟随系统深色（与 tokens 的兜底条件一致）
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @import 'chroma-dark';
+  }
+}

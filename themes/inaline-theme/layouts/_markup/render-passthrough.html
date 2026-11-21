@@ -1,0 +1,16 @@
+{{/*
+  数学公式渲染钩子（DESIGN.md §9.6）
+
+  构建时用 transform.ToMath 把 passthrough 保留的 LaTeX 渲染成 MathML，
+  页面输出即最终公式：不加载 KaTeX 前端脚本，也不依赖 CDN。
+  displayMode 按 .Type 区分行内 / 块级；渲染失败时告警并保留原始 LaTeX。
+*/}}
+{{- $opts := dict "output" "mathml" "displayMode" (eq .Type "block") -}}
+{{- with try (transform.ToMath .Inner $opts) -}}
+  {{- with .Err -}}
+    {{- warnf "公式渲染失败（transform.ToMath）：%s at %s" . $.Position -}}
+    {{- $.Inner -}}
+  {{- else -}}
+    {{- .Value -}}
+  {{- end -}}
+{{- end -}}

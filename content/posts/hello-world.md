@@ -41,6 +41,43 @@ func main() {
 }
 ```
 
+长代码块（超过 12 行会自动折叠，点窗口条右侧的「展开」查看全部）：
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"time"
+)
+
+type Post struct {
+	Title string    `json:"title"`
+	Date  time.Time `json:"date"`
+}
+
+func main() {
+	posts := []Post{
+		{Title: "你好，世界", Date: time.Now()},
+		{Title: "Hugo 目录结构", Date: time.Now()},
+		{Title: "Markdown 语法", Date: time.Now()},
+	}
+
+	http.HandleFunc("/api/posts", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if err := json.NewEncoder(w).Encode(posts); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	log.Println("listening on :8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
+
 ### 表格
 
 | 命令 | 说明 |

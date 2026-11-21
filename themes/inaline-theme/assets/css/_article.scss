@@ -160,13 +160,36 @@
 // --- 文章末尾信息卡（§8.6） ---
 
 // 内嵌在正文卡片末尾的浅色面板：参考 inaline.net 的 .article-meta-info：
-// 外边距 16px、内边距 20px、标题 16px/600、链接行 14px 且下方留 12px、
+// 内边距 20px、标题 16px/600、链接行 14px 且下方留 12px、
 // 标签 12px muted、值 14px 正文色
 .article-meta {
-  margin: var(--space-4);
+  position: relative;
+  // 右上角水印越出卡片的部分裁掉，只留卡片内的半枚徽标
+  overflow: hidden;
+  // 只留与正文之间的上外边距；左右 / 底部由 .post-content 的内边距兜住
+  margin: var(--space-4) 0 0;
   padding: calc(var(--space-4) + var(--space-1));
   background: var(--color-bg);
   border-radius: var(--radius-md);
+}
+
+// 右上角 CC 徽标水印：比卡片底色（--color-bg）更灰一档，铺在文字下方。
+// 放大后略微移出上 / 右边缘，再由卡片的 overflow: hidden 裁成贴角的半枚
+.article-meta-logo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10rem;
+  height: 10rem;
+  transform: translate(15%, -15%);
+  color: var(--color-border);
+  pointer-events: none;
+}
+
+// 文字层抬到水印之上（绝对定位元素默认会盖住行内文字）
+.article-meta > :not(.article-meta-logo) {
+  position: relative;
+  z-index: 1;
 }
 
 .article-meta-title {
@@ -177,11 +200,29 @@
   line-height: 1.5;
 }
 
+// 图标与链接并排：链接允许收缩，长 URL 才会在卡片内折行而不是把行撑宽
 .article-meta-url {
+  display: flex;
+  // 与 inline 布局一致：图标和链接第一行按基线对齐；
+  // 用 flex-start 会让图标贴着行盒顶部，看起来偏高
+  align-items: baseline;
   margin: 0 0 var(--space-3);
   color: var(--color-text-muted);
   font-size: 0.875rem;
   line-height: 1.6;
+}
+
+.article-meta-url a {
+  min-width: 0;
+}
+
+// 链接图标独立于 <a>：长 URL 折行时图标留在行首，也不跟着悬停胶囊变色
+.article-meta-link-icon {
+  flex: none;
+  margin-right: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: 0.875em;
+  opacity: .7;
 }
 
 // 无分割线：与参考站一致，标题 / 链接与统计区之间只靠间距分层
@@ -217,11 +258,142 @@
   }
 }
 
+// --- 上一篇 / 下一篇（§8.7） ---
+
+// 信息卡之后的整图卡片：左上一篇、右下一篇，只有一边时整行铺满。
+// 视觉语言沿用首页轮播图（§7.10）：照片铺满 + 白字压底，
+// 悬停放大 / 模糊也取同一档，两处"照片卡"读起来是同一套交互。
+.post-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+// 相邻文章只剩一边时，唯一的一张卡铺满整行
+.post-nav--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.post-nav-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  // 文字压底，上方留给照片；两张卡等高
+  justify-content: flex-end;
+  min-height: 140px;
+  overflow: hidden;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  // 图片解码前的兜底底色，避免闪白
+  background: var(--color-surface);
+  // 全局 a:hover 会转主题色，压在照片上的文字必须显式锁回白色（§2.2）
+  color: var(--color-over-hero);
+
+  &:hover {
+    color: var(--color-over-hero);
+  }
+}
+
+// 背景缩略图只负责悬停反馈；没有换片动画，不需要轮播图那样的两层结构
+.post-nav-bg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-base) var(--ease),
+              filter var(--duration-base) var(--ease);
+}
+
+// 与轮播图当前页同一档：放大 1.04 + 模糊 2px。
+// 模糊只作用在照片层，标题仍是清晰的
+.post-nav-card:hover .post-nav-bg,
+.post-nav-card:focus-visible .post-nav-bg {
+  transform: scale(1.04);
+  filter: blur(2px);
+}
+
+// 键盘焦点：整卡是一条链接，描边代替鼠标的悬停反馈
+.post-nav-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+// 整卡统一压暗：不用渐变，照片与文字处在同一层遮罩下，
+// 白字无论落在缩略图哪个位置都可读
+.post-nav-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  pointer-events: none;
+}
+
+.post-nav-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+// 下一篇靠右：方向与卡片位置一致，整套导航左右相向
+.post-nav-card--next {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.post-nav-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-over-hero-soft);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+
+  i {
+    font-size: 0.75rem;
+  }
+}
+
+.post-nav-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--color-over-hero);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+// 窄屏放不下两张横卡时改为上下排列，文字方向保持不变
+@media (max-width: 768px) {
+  .post-nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 // --- 减少动态效果 ---
 
 @media (prefers-reduced-motion: reduce) {
   .post-category,
   .post-tag {
     transition: none;
+  }
+
+  .post-nav-bg {
+    transition: none;
+  }
+
+  // 悬停缩放 / 模糊会让人以为画面在动，照片保持静止
+  .post-nav-card:hover .post-nav-bg,
+  .post-nav-card:focus-visible .post-nav-bg {
+    transform: none;
+    filter: none;
   }
 }

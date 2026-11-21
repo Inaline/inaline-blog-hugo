@@ -27,7 +27,8 @@
 | 样式 | SCSS（LibSass 编译） | 分文件编写，Hugo 资产管道编译为单个 `main.min.<hash>.css` |
 | 脚本 | 原生 JavaScript（ES6+） | 无框架、无构建工具链 |
 | 图标 | Font Awesome 6 Free 6.7.2 | BootCDN 全量引入；主题自绘 SVG 走 `icon.html` |
-| 字体 | 汉仪唐美人 `HYTangMeiRen55W` | 本地自托管 woff2，默认全站启用 |
+| 字体 | 汉仪唐美人 `HYTangMeiRen55W` + JetBrains Mono 系等宽体 | 本地自托管 woff2；正文默认手写体，代码使用等宽体 |
+| 公式 | Hugo `transform.ToMath` | 构建时渲染为 MathML，无前端 JS（§9.6） |
 | SPA | Swup.js | ⏳ 后续接入，当前不引入 |
 
 禁止引入 Bootstrap、jQuery 等大型框架。
@@ -53,7 +54,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 
 全部以 CSS 自定义属性定义在 `_tokens.scss`。暗色模式通过 `dark-tokens` mixin 覆写同名变量，组件样式不感知主题。
 
-### 3.1 品牌色与照片上的固定色
+### 3.1 品牌色与固定色
 
 以下令牌**不随主题翻色**，只在 `:root` 定义：
 
@@ -61,6 +62,22 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --color-primary:        #FA5D19;                  // 主题色
 --color-primary-hover:  #E14E0E;                  // 悬停加深
 --color-primary-soft:   rgba(250, 93, 25, .10);   // 弱强调底色（Markdown mark 高亮等）
+--color-primary-highlight: rgba(250, 93, 25, .30); // strong 下缘的荧光条（§9.3）
+--color-hr-line:          rgba(250, 93, 25, .38); // 分割线虚线（§9.4）
+
+// Markdown 标题前四角星的层级色（§9.2）：亮暗主题共用，纯装饰
+--color-heading-mark-1: #FA5D19;  // h1 橙
+--color-heading-mark-2: #8F2FDF;  // h2 紫
+--color-heading-mark-3: #3B82F6;  // h3 蓝
+--color-heading-mark-4: #10B981;  // h4 绿
+--color-heading-mark-5: #EC4899;  // h5 粉
+--color-heading-mark-6: #94A3B8;  // h6 灰
+
+// Markdown 引用块背景（§9.4）：按嵌套层级由浅到深，竖线始终用主题色
+--color-quote-bg-1: rgba(250, 93, 25, .10);  // 一级
+--color-quote-bg-2: rgba(250, 93, 25, .12);  // 二级
+--color-quote-bg-3: rgba(250, 93, 25, .14);  // 三级及更深
+
 --color-on-primary:     #FFFFFF;                  // 主题色实心填充上的前景色
 --color-over-hero:      #FFFFFF;                  // 封面图之上的前景色
 --color-over-hero-soft: rgba(255, 255, 255, .85); // 略灰一档的前景（顶部态 Header、页脚）
@@ -70,6 +87,9 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --footer-blur:          3px;
 --badge-bg:             #FFFFFF;                  // 置顶角标底色
 --badge-fg:             #1F2328;                  // 置顶角标字色
+--code-dot-red:         #FF5F57;                  // 代码窗口交通灯（§9.4）
+--code-dot-yellow:      #FEBC2E;
+--code-dot-green:       #28C840;
 ```
 
 社交图标品牌色（同样只在 `:root` 定义）：
@@ -83,7 +103,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 > 压在照片 / 深色上的色块（`--color-over-hero*`、`--post-hero-*`、`--footer-scrim`、`--badge-*`、`--glow-name`）
 > 不跟主题翻色——它们坐在图片上，与页面底色无关。
 
-### 3.2 中性色
+### 3.2 中性色与代码窗口
 
 | 变量 | 亮色 | 暗色 | 用途 |
 | --- | --- | --- | --- |
@@ -96,6 +116,13 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 | `--header-bg` | `rgba(255,255,255,.6)` | `rgba(22,24,29,.6)` | Header 与下拉面板 |
 | `--hero-card-bg` | `transparent` | `rgba(16,18,22,.4)` | Hero 玻璃卡底色 |
 | `--page-scrim` | `transparent` | `rgba(0,0,0,.35)` | 首页整页背景压暗 |
+| `--code-window-bg` | `#FFFFFF` | `#2B2B2B` | 代码窗口代码区底色（须与 Chroma `.chroma` 背景一致） |
+| `--code-window-bar` | `#F0F0F0` | `#3C3F41` | 代码窗口条底色 |
+| `--code-window-border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.10)` | 代码窗口描边 |
+| `--code-window-fg` | `rgba(0,0,0,.55)` | `rgba(255,255,255,.55)` | 窗口条次要文字 |
+| `--code-window-fg-strong` | `rgba(0,0,0,.8)` | `rgba(255,255,255,.85)` | 窗口条悬停文字 |
+| `--code-window-line` | `#A8A8A8` | `#606366` | 代码行号 |
+| `--code-scrollbar` | `rgba(0,0,0,.25)` | `rgba(255,255,255,.25)` | 代码区滚动条 |
 
 **层级语义**：`--color-surface` 是同级内容里的贴身底板，必须比页面底色和抬升层都深一档；
 `--color-elevated` 是离地的一层，亮色下为纯白，靠底色差与阴影分层。暗色下两者同值。
@@ -106,18 +133,20 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
                "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
 --font-handwriting: "HYTangMeiRen", var(--font-system);
---font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+--font-mono: "JetBrainsLxgwNerdMono", ui-monospace, SFMono-Regular, "SF Mono",
+             Menlo, Consolas, "Liberation Mono", monospace;
 
 --font-body:    var(--font-handwriting);
 --font-heading: var(--font-handwriting);
 --font-ui:      var(--font-handwriting);
 ```
 
-- 默认全站启用手写体；代码块 / 行内代码始终使用 `--font-mono`。
+- 默认全站启用手写体；代码块 / 行内代码始终使用 `--font-mono`（JetBrains Mono + 霞鹜文楷等宽 + Nerd Font 补丁的合并字体）。
 - ⏳ 预留 `:root[data-font="system"]` 切换回系统字体，设置面板后续实现。
-- 字体文件约 3.6 MB（全字集 CJK），已用 `preload` 提前下载。
-- ⏳ 根本优化是子集化（`pyftsubset`），未做前 3.6 MB 是首屏固定成本。
-- 发布路径：`head.html` 用 `resources.Get` 发布，`_fonts.scss` 以 `../fonts/...` 相对引用，改一处需同步另一处。
+- 手写体约 3.6 MB（全字集 CJK），用 `preload` 提前下载。
+- 等宽体只分发常用字子集版（约 4.4 MB），**不做 preload**：只有页面出现代码时才由 CSS 触发下载。
+- ⏳ 手写体的根本优化是子集化（`pyftsubset`），未做前 3.6 MB 是首屏固定成本。
+- 发布路径：`head.html` 用 `resources.Get` 发布（手写体额外输出 preload 链接），`_fonts.scss` 以 `../fonts/...` 相对引用，改一处需同步另一处。
 
 ### 3.4 尺寸、层级与动效
 
@@ -181,6 +210,9 @@ themes/inaline-theme/
 │   │   ├── main.scss              # 入口：@import 汇总
 │   │   ├── _tokens.scss           # 设计令牌（§3）
 │   │   ├── _fonts.scss            # @font-face
+│   │   ├── _chroma.scss           # Chroma 亮 / 暗配色的分发入口（§9.4）
+│   │   ├── _chroma-light.scss     # JetBrains Light 代码配色
+│   │   ├── _chroma-dark.scss      # JetBrains Dark（Darcula）代码配色
 │   │   ├── _base.scss             # reset + 基础排版 + 容器
 │   │   ├── _page-bg.scss          # 首页整页背景（§7.1）
 │   │   ├── _header.scss           # Header（§6）
@@ -193,20 +225,25 @@ themes/inaline-theme/
 │   │   ├── _footer.scss           # 页脚（§7.9）
 │   │   └── _motion.scss           # 进入 / 滚动进场动效（§5.3）
 │   ├── js/
-│   │   ├── main.js                # 全局：主题、Header 滚动态、页脚运行时长、整卡跳转、复制、进场动效
+│   │   ├── main.js                # 全局：主题、Header 滚动态、页脚运行时长、整卡跳转、复制、代码窗口、进场动效
 │   │   ├── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
 │   │   └── pages/post.js          # 文章页：目录高亮 / 折叠 / 阅读进度（§8.5）
 │   ├── images/cover/              # cover1–3.jpg，Hero 背景与卡片兜底同池
-│   └── fonts/HYTangMeiRen55W.woff2
+│   └── fonts/
+│       ├── HYTangMeiRen55W.woff2   # 正文手写体（全字集，preload）
+│       └── JetBrainsLxgwNerdMono-Regular.subset.woff2  # 代码等宽体（子集，不 preload）
 └── layouts/
     ├── baseof.html
     ├── home.html / page.html / section.html / taxonomy.html / term.html
+    ├── _markup/render-codeblock.html  # 代码块 macOS 窗口外壳（§9.4）
+    ├── _markup/render-table.html      # 表格外层滚动容器（§9.4）
+    ├── _markup/render-passthrough.html # 数学公式构建时渲染（§9.6）
     ├── posts/page.html            # 文章页（§8，覆盖通用 page.html）
     └── partials/
         ├── head.html              # meta、主题内联脚本、字体、CSS
         ├── header.html            # Header 外壳
         ├── nav-item.html          # 菜单项递归渲染（§6.5）
-        ├── icon.html              # 主题自绘 SVG 图标（引号 + 社交品牌）
+        ├── icon.html              # 主题自绘 SVG 图标（引号 + CC + 社交品牌）
         ├── page-background.html   # 首页整页背景（§7.1）
         ├── hero.html              # Hero 内容（§7.2–§7.6）
         ├── carousel.html          # 首页轮播图容器与条目解析（§7.10）
@@ -215,6 +252,7 @@ themes/inaline-theme/
         ├── post-cover.html        # 单篇文章封面解析（§7.7 / §7.8）
         ├── post-card.html         # 文章卡片（§7.7）
         ├── article-meta.html      # 文章末尾信息卡（§8.6）
+        ├── post-nav.html          # 上一篇 / 下一篇（§8.7）
         ├── pager.html             # 分页（§7.7）
         ├── sidebar.html           # 右侧栏容器（§7.8）
         ├── sidebar-toc.html       # 侧栏目录卡片（仅文章页，§8.5）
@@ -242,7 +280,7 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、页面进入 / 滚动进场动效）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前有 `home.js`、`post.js`）。
 - 每个模块写成幂等 `init()`，事件用 `dataset.bound` 防重复绑定；后续接入 Swup 时在 `page:view` 再次调用同一 `init()` 即可。
 - 全局入口暴露为 `window.inalineInit`，首页入口暴露为 `window.inalinePageInit`。
@@ -626,7 +664,7 @@ menu:
 
 文章页模板为 `layouts/posts/page.html`，覆盖通用 `page.html`；关于页等其他普通页面不受影响。
 
-自上而下：顶部通栏大图（居中标题区叠在图上）→ 两栏正文（左侧正文卡片 + 右侧栏）；正文卡片末尾附文章信息卡（§8.6）。文章页侧栏只保留博主信息卡与目录：博主卡在前，目录在后；目录滚到 Header 下沿后吸顶并伴随整篇文章（§8.5）。
+自上而下：顶部通栏大图（居中标题区叠在图上）→ 两栏正文（左侧正文卡片 + 右侧栏）；正文卡片末尾附文章信息卡（§8.6）与上一篇 / 下一篇（§8.7）。文章页侧栏只保留博主信息卡与目录：博主卡在前，目录在后；目录滚到 Header 下沿后吸顶并伴随整篇文章（§8.5）。
 
 ### 8.1 顶部大图
 
@@ -647,7 +685,7 @@ menu:
 ### 8.3 正文两栏
 
 - 容器复用 `.container--wide` + `.layout.layout--post`（与首页文章列表同一套宽度），上方留 `--space-6`；主栏桌面宽度与首页文章列表一致（1200 − 48 内边距 − 24 栏间距 − 280 侧栏 = 848）。
-- 正文 `.post-content` 本身就是一张卡片：`--color-elevated` + `--shadow-sm` + `--radius-lg`，内边距 `--space-6`，视觉语言与侧栏 `.sidebar-card` 一致；卡片宽度对齐首页文章列表的 848px，窄屏时居中收窄。卡片内部由 `.markdown` 承载正文，末尾追加 `.article-meta` 信息卡（§8.6）。
+- 正文 `.post-content` 本身就是一张卡片：`--color-elevated` + `--shadow-sm` + `--radius-lg`，内边距 `--space-6`，视觉语言与侧栏 `.sidebar-card` 一致；卡片宽度对齐首页文章列表的 848px，窄屏时居中收窄。卡片内部由 `.markdown` 承载正文，末尾追加 `.article-meta` 信息卡（§8.6）与 `.post-nav` 上一篇 / 下一篇（§8.7）。
 - 复用 `.layout` / `.layout-main` / `partial "sidebar.html"`；`.layout--post` 把侧栏拉满主栏高度（给目录 sticky 留行程，§8.5）；`≤1080px` 时随 `.layout` 一起撤掉侧栏，正文卡片居中。
 - 正文元素的基础排版统一在 `_markdown.scss`，容器加 `.markdown` 类；图片统一 `max-width: 100%`，避免原图撑破内容列。
 
@@ -665,9 +703,9 @@ menu:
 | 数据 | `.Fragments.Headings`（页面全部标题树，id 由 Hugo 生成）；只取 Level 2–3，不依赖 `markup.tableOfContents` 配置 |
 | 配置 | `params.sidebar.toc`：`enable`、`title`（默认"文章目录"）、`min_headings`（默认 2） |
 | 渲染门槛 | 压平后的标题少于 `min_headings` 时整卡不渲染 |
-| 卡片 | `position: sticky`，`top: calc(--header-height + --space-4)`，`z-index: 1`；文章页 `.layout--post` 让 `.sidebar` 拉满主栏高度，sticky 才有行程伴随整篇文章；标题行沿用 `.sidebar-title`，右侧 `.toc-progress` 显示阅读进度（主题色、等宽数字） |
+| 卡片 | `position: sticky`，`top: calc(--header-height + --space-4)`，`z-index: 1`；文章页 `.layout--post` 让 `.sidebar` 拉满主栏高度，sticky 才有行程伴随整篇文章；标题行沿用 `.sidebar-title`，右侧 `.toc-progress` 显示阅读进度（`0.875rem / 600`、主题色、等宽数字） |
 | Header 联动 | Header 向下滚动收起（`.site-header.is-hidden`）时，`body:has(...) .sidebar-toc` 把 `top` 改为 `--space-4`，目录同步上移一个 `--header-height`；Header 展开即回到原位。`top` 过渡 `--duration-base`，与 Header 的位移同拍；`prefers-reduced-motion` 下取消过渡。 |
-| 列表 | `.article-toc` 独立滚动：`max-height: --toc-body-max-height`（`min(500px, 55vh)`）、`overscroll-behavior: contain`，标题与进度不随列表滚走 |
+| 列表 | `.article-toc` 独立滚动：`max-height: --toc-body-max-height`（`min(500px, 55vh)`）、`overscroll-behavior: contain`，标题与进度不随列表滚走；滚动条隐藏（`scrollbar-width: none` / `::-webkit-scrollbar`），仍可滚轮 / 触控滚动 |
 | 条目 | 内边距 `--space-1 --space-2`、`--radius-sm`，`0.875rem / 500`，默认 `--color-text`；长标题任意位置折行；悬停浅底 `--color-bg` + 主题色 |
 | 当前项 | 主题色实心块 + `--color-on-primary` 文字；由 `post.js` 维护 `.is-active` 与 `aria-current="location"` |
 | 折叠 | 有子项的条目在链接之后、行尾最右侧渲染 `<button class="toc-item-toggle">`（chevron 0.625rem，按钮外框 24px）；条目用 flex 排布，链接 `flex: 1`，子列表 `flex-basis: 100%` 独占下一行。子列表默认 `.expanded`，折叠时移除该类并加 `inert`，`max-height: 0 → --toc-sub-max-height`、`opacity: 0 → 1`，`--duration-base`；按钮同步 `.collapsed` 旋转 -90°，并更新 `aria-expanded` / `aria-label` |
@@ -688,19 +726,35 @@ menu:
 | 结构 | `.post-content` 内：`.markdown` 正文 → `aside.article-meta` |
 | 标题 | 文章标题，`1rem / 600` |
 | 固定链接 | `.Permalink`，14px / 1.6；长 URL 任意位置折行 |
-| 链接样式 | 固定链接与许可协议链接复用 Markdown 链接样式（§9.3）：前置 `fa-link`、行尾外链图标、点状下划线、悬停主题色胶囊 |
+| 链接样式 | 固定链接与许可协议链接复用 Markdown 链接样式（§9.3）：点状下划线、行尾外链图标、悬停主题色胶囊；链接前另渲染一枚独立的 `fa-link` 图标（`.article-meta-link-icon`，不随链接悬停变色） |
 | 统计项 | `<dl>` 四列：作者 / 发布于 / 更新于 / 许可协议；`dt` 12px muted，`dd` 14px 正文色，`gap: --space-4`（16px） |
 | 作者 | front matter `author` → `params.author` → `—` |
 | 日期 | 发布于 `.Date`、更新于 `.Lastmod`，格式 `2006-01-02`；零值显示 `—` |
 | 许可 | `params.article_meta.license.name/url`；有 url 时新标签打开，只有 name 时纯文本，均未配置时显示"保留所有权利" |
-| 面板 | `--color-bg` 底 + `--radius-md`；外边距 `--space-4`（16px）、内边距 `calc(--space-4 + --space-1)`（20px）；URL 行下留 `--space-3`（12px）；无分割线 |
+| 水印 | 配置了许可协议时，右上角铺一枚 CC 徽标（`icon.html` 的 `cc`）：`10rem` 见方，`top/right: 0` 后再 `translate(15%, -15%)` 移出，颜色 `--color-border`（比卡片底色更灰一档），`aria-hidden` + `pointer-events: none`，绝对定位压在文字下方（正文层 `z-index: 1`）；卡片 `overflow: hidden` 收住溢出部分 |
+| 面板 | `--color-bg` 底 + `--radius-md`；仅上外边距 `--space-4`（16px），左右 / 底部为 0、内边距 `calc(--space-4 + --space-1)`（20px）；URL 行下留 `--space-3`（12px）；无分割线 |
 | 响应式 | 统计四列；`≤768px` 折为两列 |
 | 动效 | 链接颜色 `--duration-fast`；`prefers-reduced-motion` 下取消 |
 
-### 8.7 待补充 ⏳
+### 8.7 上一篇 / 下一篇 ✅
 
-- 代码块工具栏：语言标签 / 复制按钮。
-- 上一篇 / 下一篇。
+文章信息卡之后的快速切换导航。视觉语言沿用首页轮播图（§7.10）：整图背景 + 底部渐变压暗 + 白字压底，悬停也是同一档的「照片在框里呼吸」。
+
+| 项 | 规格 |
+| --- | --- |
+| 模板 | `post-nav.html`，由 `posts/page.html` 在 `.article-meta` 之后引入，只在文章页渲染 |
+| 数据 | `.PrevInSection` / `.NextInSection` 取 `posts` 分区内的相邻文章；有哪边就渲染哪张卡，两边都没有时整块不渲染 |
+| 布局 | `.post-nav` 两列 grid，间距 `--space-4`，上外边距 `--space-5`；上一篇在左、下一篇在右；只有一张时加 `.post-nav--single` 铺满整行；`≤768px` 改为单列上下排列 |
+| 卡片 | 整卡是一条 `<a>`；`min-height: 140px`，内边距 `--space-5`，`--radius-lg`，`overflow: hidden`，图片解码前以 `--color-surface` 兜底 |
+| 封面 | 复用 `post-cover.html`（与文章卡片 / 顶部大图同池）；相邻两卡的兜底轮换序号取 1 / 2，与顶部大图的 0 错开；`<img>` 绝对定位铺满，`object-fit: cover`，`loading="lazy"` |
+| 压暗 | `::after` 整卡统一铺 `rgba(0, 0, 0, .45)`，不用渐变；标题不加文字投影 |
+| 文案 | 标签「上一篇 / 下一篇」+ 方向箭头（`fa-arrow-left` / `fa-arrow-right`，`aria-hidden`）与标题；标题最多两行，下一篇整组靠右对齐 |
+| 文字色 | 白色（`--color-over-hero` / `--color-over-hero-soft`），悬停显式锁回白色，避免全局 `a:hover` 把照片上的文字染成主题色（§2.2） |
+| 悬停 | 与轮播图当前页一致：封面 `scale(1.04)` + `blur(2px)`，`--duration-base`；键盘 `:focus-visible` 同效，另加 2px 主题色描边 |
+| 降级 | 无 JS 不受影响（原生链接）；`prefers-reduced-motion` 下取消过渡与悬停缩放 / 模糊 |
+
+### 8.8 待补充 ⏳
+
 - 移动端断点与顶部大图高度微调。
 
 ---
@@ -710,6 +764,7 @@ menu:
 所有 Markdown 内容的排版集中在 `assets/css/_markdown.scss`，由内容容器上的 `.markdown` 类启用：
 文章正文（`layouts/posts/page.html`）、普通页面（`layouts/page.html`）、分区页内容（`layouts/section.html`）。
 容器自身的卡片、宽度与栅格仍归 `_article.scss` / `_post.scss`，本文件只处理内容元素。
+代码高亮配色单独放在 `_chroma.scss`（亮 / 暗分发）、`_chroma-light.scss`、`_chroma-dark.scss`。
 
 ### 9.1 作用域与基础
 
@@ -719,26 +774,29 @@ menu:
 | 基础字号 | `1rem / 1.9`；`overflow-wrap: break-word` |
 | 段落 | `margin: 0 0 1.1em`，`text-wrap: pretty` |
 | 过渡 | 链接与 `summary` 的颜色 `--duration-fast`；`prefers-reduced-motion` 下取消 |
+| 选中 | 鼠标选中正文时，文字取 `--color-primary`，底色取 `--color-primary-soft` |
 
 ### 9.2 标题
 
 | 层级 | 规格 |
 | --- | --- |
-| h1–h6 公共 | 字重 500、`line-height: 1.35`、`text-wrap: balance`、`scroll-margin-top: calc(--header-height + --space-4)`；标题内的链接跟随标题色、无下划线 |
-| h1 | `1.875rem`，底部 1px 分割线 |
-| h2 | `1.5rem`，左侧 3px 主题色短竖条（`::before`），上间距 `--space-8` |
+| h1–h6 公共 | 字重 500、`line-height: 1.35`、`text-wrap: balance`、`scroll-margin-top: calc(--header-height + --space-4)`；标题前的四角星（`::before`，mask 取形）以 6s 逆时针匀速旋转；悬停整条标题右移 `--space-2`；标题内的链接跟随标题色、无下划线 |
+| 四角星 | 颜色按层级取 `--color-heading-mark-1` … `--color-heading-mark-6`（h1 橙 / h2 紫 / h3 蓝 / h4 绿 / h5 粉 / h6 灰） |
+| h1 | `1.875rem`，底部 1px 分割线（`--color-border`），上间距 `--space-8` |
+| h2 | `1.5rem`，上间距 `--space-8` |
 | h3 | `1.25rem`，上间距 `--space-6` |
 | h4 / h5 / h6 | `1.125rem` / `1rem` / `.9375rem`；h6 用 `--color-text-muted` |
+| 动效降级 | `prefers-reduced-motion` 下四角星停转、悬停位移取消；打印时四角星停转 |
 
 ### 9.3 行内元素
 
 | 元素 | 规格 |
 | --- | --- |
-| 链接 | 文字色 + 点状下划线（链接背景图：1px 圆点 / 4px 间距）+ 前置 `fa-link` + 行尾外链图标（FA `arrow-up-right-from-square`）；悬停整颗铺主题色、文字与图标转白、点状线被实心背景覆盖；标题内链接、图片链接、脚注引用不套用该样式；文章信息卡内的链接复用同一 mixin（§8.6）；`:focus-visible` 主题色描边 |
-| strong / em | 字重 600 / 斜体 |
+| 链接 | `inline-block` + `max-width: 100%`；文字色 + 点状下划线（链接背景图：1px 圆点 / 4px 间距）+ 行尾外链图标（FA `arrow-up-right-from-square`，`::after`）；悬停整颗铺主题色、文字与图标转白、点状线被实心背景覆盖；标题内链接、图片链接、脚注引用不套用该样式；文章信息卡内的链接复用同一 mixin（§8.6），并在 `<a>` 外另加一枚 `fa-link` 图标；长链接允许跨行；`:focus-visible` 主题色描边 |
+| strong / em | strong 字重 600，下缘叠 30% 高的主题色荧光条（`--color-primary-highlight`）；em 斜体 |
 | del | `--color-text-muted` |
 | mark | `--color-primary-soft` 底 + 小圆角 |
-| kbd | `--color-surface` 底、1px 描边（下边 2px）、等宽字体、`--radius-sm` |
+| kbd | `--color-surface` 底、1px 描边（下边 2px）、等宽字体、`--radius-sm`；`.8125em / 1.4` |
 | sup / sub | `.75em`，`line-height: 0`，相对定位 |
 | abbr | 虚线下划线 + `cursor: help` |
 
@@ -748,17 +806,43 @@ menu:
 | --- | --- |
 | 列表 | `padding-left: 1.6em`；条目间 `.25em`；`::marker` 主题色，序号等宽 |
 | 任务列表 | `li:has(> input[type="checkbox"])` 去圆点；checkbox `accent-color: --color-primary` |
-| 引用 | 左侧 3px 主题色、`--color-surface` 底、右侧 `--radius-sm`；嵌套引用改灰边 + 透明底 |
+| 引用 | 左侧 3px 主题色竖线（各层级同色）、`--color-quote-bg-1` 淡底、右侧 `--radius-sm`；嵌套引用竖线不变，底色按层级换 `--color-quote-bg-2` / `--color-quote-bg-3`，由浅到深 |
 | 行内代码 | `--font-mono`、`--color-surface` 底、1px 描边、`--radius-sm` |
-| 代码块 | `.highlight` 留外距；`pre` 内边距 `--space-4 --space-5`、`--radius-md`、`--shadow-sm`、横向滚动；深色底与 token 配色来自 Chroma 内联样式（`noClasses: true`） |
-| 表格 | `display: block` + `overflow-x: auto`，宽表在自身区域滚动；单元格下边框、表头 `--color-surface` + 加粗、偶数行 `--color-bg`、悬停 `--color-surface` |
+| 代码块 | 由 `render-codeblock.html` 包成 macOS 代码窗口（见下节）；Chroma 只输出类名（`noClasses: false`、`lineNos: true`），配色见 `_chroma.scss` |
+| 表格 | 渲染钩子 `render-table.html` 包一层 `.table-scroll`：表格 `width: 100%` 与父级同宽，内容超宽时由包装层横向滚动；`.9375rem / 1.6`；单元格下边框、表头 `--color-surface` + 加粗 + 不换行、偶数行 `--color-bg`；无行悬停变色；`caption` 左对齐 muted 小字 |
 | 图片 / 图注 | 图片 `max-width: 100%` + `--radius-md`；独占段落的图片居中成块，与文字同段时保持行内；`figure` 居中，`figcaption` muted 小字 |
-| 分隔线 | 两端淡出的 1px 渐变线（`--color-border`） |
+| 分隔线 | 参考 Fomal：`2px` 虚线（`--color-hr-line`）+ 雪花图标（FA `\f2dc`，`--color-primary`）；图标默认在左 5%，悬停 1s 移到右 5%，`prefers-reduced-motion` 下不移动 |
 | 脚注 | `.footnotes` 顶部细线 + muted 小字；隐藏 Goldmark 自带 `<hr>`；`.footnote-ref` 主题色、无下划线；序号 marker 弱化 |
 | 定义列表 | `dt` 加粗，`dd` 左缩进 `--space-5`、muted |
 | 折叠块 | `details` 描边 + `--color-surface` 底 + `--radius-md`；`summary` 悬停转主题色，展开时下方补分割线 |
 
+**代码窗口**
+
+由 `layouts/_markup/render-codeblock.html` 把 `.highlight` 包进 `.code-window`：窗口条 → 代码区 → 折叠开关。
+
+| 项 | 规格 |
+| --- | --- |
+| 外壳 | `--code-window-border` 描边 + `--radius-md` + `--shadow-sm`，底色 `--code-window-bg`，`overflow: hidden` |
+| 窗口条 | 高 `2.25rem`，底色 `--code-window-bar` + 底边 1px 描边；左侧依次为三枚 12px 交通灯（`--code-dot-*`，两种主题同色）与语言名（`--font-mono`、`.75rem`、`--code-window-fg`）；右侧依次为换行开关（`fa-level-down`，仅横向溢出时出现）、图标复制按钮与折叠开关（仅长代码出现） |
+| 复制 | 按钮默认 `hidden`，`main.js` 找到代码列后露出并绑定；点击把代码文本写入剪贴板，成功时图标由 `fa-copy` 切为 `fa-check`、`aria-label` 改为"已复制"，1.6s 后复原。按钮 `1.75rem` 见方、无边框，悬停只提亮图标；无 JS 时按钮不出现 |
+| 高亮 | `markup.highlight.noClasses: false` + `lineNos: true`：Chroma 只输出类名；`_chroma-light.scss`（JetBrains Light）与 `_chroma-dark.scss`（Darcula）提供两套配色，`_chroma.scss` 负责亮色默认与暗色覆盖；`--code-window-bg` 必须与 `.chroma` 背景一致 |
+| 行号 | 表格布局：数字列 `width: 1%`、右对齐、右侧留 `--space-3`、`aria-hidden` 且移出 Tab 顺序；代码列左内边距为 0，间距只由数字列右侧留白提供；横向滚动由 `.code-window-body` 承担，数字列 `position: sticky; left: 0` 吸在左侧并铺代码区底色；行号色 `--code-window-line` |
+| 换行 | `main.js` 检测 `.code-window-body` 是否横向溢出（`scrollWidth > clientWidth`，等宽字体就绪后重测一次），溢出时露出标题栏换行开关。点击切换 `.is-wrapped`：隐藏表格里的数字列，改用 CSS counter 在每个 `.line` 开头画行号（伪元素不进复制文本，续行与代码列左边缘对齐）；行号槽宽度按最大行号位数写入 `--code-line-digits`，用 `calc(位数 * 1ch)` 精确贴合数字，不预留固定宽度；`.cl` 改为 flex 项（`flex: 1; min-width: 0`）并 `white-space: pre-wrap` + `overflow-wrap: anywhere`，取消横向滚动。关闭后恢复表格行号与横向滚动。按钮 `aria-pressed` 与 `aria-label` 同步，激活时图标转主题色 |
+| 折叠 | `main.js` 数 `.chroma .line`（取不到时按换行数兜底）；超过 12 行才露出底部折叠条与标题栏折叠开关，默认 `.is-collapsed`：代码区 `max-height: 18rem` + 4rem 底部渐隐，横向滚动在收起 / 展开状态都保留；≤12 行保持隐藏（模板 `hidden` + CSS `[hidden]` 兜底）。两个开关共用同一状态，点击任意一个都会同步另一处；箭头旋转、`aria-expanded` / `aria-label` 同步 |
+| 降级 | 无 JS 时换行与折叠开关保持隐藏、代码完整显示；打印时展开折叠内容并隐藏换行 / 复制 / 折叠开关；`prefers-reduced-motion` 下按钮过渡取消 |
+
 ### 9.5 打印与降级
 
-- 打印时链接保留下划线；代码块 / 引用 / 表格 / 图 / details `break-inside: avoid`，h1–h3 `break-after: avoid`。
-- `prefers-reduced-motion` 下取消链接与 `summary` 的颜色过渡。
+- 打印时链接保留下划线、隐藏链接图标；代码块 / 引用 / 表格 / 图 / details `break-inside: avoid`，h1–h3 `break-after: avoid`。
+- 打印时代码窗口展开被折叠的内容，并隐藏换行 / 复制 / 折叠开关；标题四角星停止旋转。
+- `prefers-reduced-motion` 下取消链接与 `summary` 的颜色过渡；标题四角星停转、标题悬停位移取消；代码窗口按钮过渡取消。
+
+### 9.6 数学公式 ✅
+
+| 项 | 规格 |
+| --- | --- |
+| 解析 | `markup.goldmark.extensions.passthrough`：行内 `$...$`，块级 `$$...$$`；公式在 Markdown 阶段原样保留，`_`、`*` 等不会被当作强调。只启用 `$` 系分隔符，避免 `\[...\]` 与正文里的转义方括号冲突 |
+| 渲染 | `layouts/_markup/render-passthrough.html` 在构建时调用 `transform.ToMath`（Hugo 内置 KaTeX WASM）：`output: mathml`，`displayMode` 按 `.Type` 区分行内 / 块级；页面输出即最终公式，不加载前端 KaTeX / MathJax，也不依赖 CDN |
+| 启用 | 所有页面自动生效，无需 front matter 开关 |
+| 样式 | 行内 `<math>` 跟随正文；块级输出外层还有一层 `<span class="katex">`，用 `:has(> math[display="block"])` 把它转成块容器；`math[display="block"]` 以 `fit-content` 收缩后居中，上下 `1.5em`，过宽时自身横向滚动，不撑破正文列 |
+| 降级 | 渲染失败时 `warnf` 并在原位置输出原始 LaTeX；页面无 JS 依赖，显示依赖浏览器原生 MathML（Chrome 109+ / Firefox / Safari） |

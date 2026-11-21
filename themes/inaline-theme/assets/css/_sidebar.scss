@@ -542,17 +542,25 @@ body:has(.site-header.is-hidden) .sidebar-toc {
 .toc-progress {
   margin-left: auto;
   color: var(--color-primary);
-  font-size: 0.75rem;
+  // 与目录条目同字号：原 0.75rem 在窄侧栏里偏小，百分比不易读
+  font-size: 0.875rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
-// 列表区独立滚动：长目录不把卡片撑出视口，标题与进度始终可见
+// 列表区独立滚动：长目录不把卡片撑出视口，标题与进度始终可见。
+// 滚动条不参与视觉，藏掉但仍可滚轮 / 触控滚动
 .article-toc {
   max-height: var(--toc-body-max-height);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none; // Firefox / 新版 Chromium
+  -ms-overflow-style: none; // 旧 Edge / IE
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .toc-list,

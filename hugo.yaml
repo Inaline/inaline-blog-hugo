@@ -268,8 +268,22 @@ menu:
         icon: "fa-solid fa-tag"
 
 markup:
+  # 代码高亮走 class：主题自带 Chroma 亮 / 暗两套样式（_chroma.scss），
+  # 亮色默认生效，暗色在暗色模式下覆盖；行号由 Chroma 生成
   highlight:
-    noClasses: true
+    noClasses: false
+    lineNos: true
   goldmark:
     renderer:
       unsafe: true
+    # 数学公式：passthrough 让 $...$ / $$...$$ 原样保留，
+    # 再由 render-passthrough.html 在构建时调用 transform.ToMath 渲染为 MathML。
+    # 只启用 $ 系分隔符：\[...\] 会和正文里的转义方括号冲突
+    extensions:
+      passthrough:
+        enable: true
+        delimiters:
+          block:
+            - ['$$', '$$']
+          inline:
+            - ['$', '$']
