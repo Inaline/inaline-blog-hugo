@@ -828,7 +828,7 @@ menu:
 | 表单操作栏 | 左侧表情按钮只有 `fa-face-smile` 图标（32px 点击区、图标 1.125rem）；右侧依次为 Markdown 指南图标、预览与发送：Markdown 指南复用表情按钮的尺寸与样式（`fa-brands fa-markdown`，外链到 `https://guides.github.com/features/mastering-markdown/`）；预览与发送同高，预览宽度随内容自适应、只有文字无图标，outline 默认 `--color-border` 描边 + muted 文字，悬停只把边框与文字转主题色；发送为实心主题色带 `fa-paper-plane`，保留 `min-width: 72px`，悬停 `--color-primary-hover`；窄屏换行时操作组靠右 |
 | 列表头 | 表单下方一行：左侧「XX 条评论」文字标题；右侧文字卡片（`--color-bg` 胶囊）内放「最新 / 最早」排序与刷新。当前排序 `is-active` 为主题色实心 + 白字，另一项默认 muted、悬停只转文字色；刷新仅 `fa-arrows-rotate` 图标，悬停转文字色 |
 | 顶层条目 | 40px 圆形头像 + 内容列；头像缺省用名字首字兜底（与侧栏近期评论一致），博主头像沿用 `hero.avatar` |
-| 评论信息行 | 昵称（0.9375rem / 500）+ 相对时间 |
+| 评论信息行 | 昵称（0.9375rem / 500，下缘 30% 高主题色荧光条，与 Markdown `strong` 一致）+ 相对时间 |
 | 气泡卡片 | `--color-bg` 底 + `--radius-md`，内边距 `--space-3 --space-4`，装正文与底部行；底部行左侧设备信息、右侧回复按钮；二级评论内边距收为 `--space-2 --space-3` |
 | 二级评论 | 容器只负责纵向节奏：与父评论正文同列（不再额外缩进），回复之间间距 `--space-4`；每条回复各自带头像、信息行与气泡卡片，不共用整块面板 |
 | 二级条目 | 32px 头像、昵称与正文 0.875rem，与顶层拉开层级 |

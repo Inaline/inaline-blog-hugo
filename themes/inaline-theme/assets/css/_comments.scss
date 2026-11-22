@@ -285,6 +285,8 @@
   font-size: .9375rem;
   font-weight: 500;
   line-height: 1.4;
+  // 下缘一条 30% 高的主题色荧光条，与 Markdown strong 一致
+  background: linear-gradient(var(--color-primary-highlight), var(--color-primary-highlight)) bottom / 100% 30% no-repeat;
 }
 
 .post-comment-time {
