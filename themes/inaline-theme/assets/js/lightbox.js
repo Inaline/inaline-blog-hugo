@@ -5,6 +5,7 @@
  *  - 最近的 [data-lightbox-group] 祖先内的图片归为同一组；
  *  - 没有该属性时回退到最近的 .markdown（文章正文 / 页面内容）；
  *  - [data-lightbox-ignore] 祖先内的图片不参与预览（头像、表情等）；
+ *    评论里的 .wl-emoji 也自动忽略，点表情不会打开大图；
  *  - data-lightbox-src 指定大图地址（缩略图场景），
  *    data-lightbox-caption 覆盖图注（默认取 alt）。
  *
@@ -15,7 +16,7 @@
   'use strict';
 
   var GROUP_ATTR = 'data-lightbox-group';
-  var IGNORE_SELECTOR = '[data-lightbox-ignore]';
+  var IGNORE_SELECTOR = '[data-lightbox-ignore], .wl-emoji';
   var MAX_SCALE = 4;
   var ZOOM_STEP = 0.5;
   var SWIPE_X = 56;      // 横向切换的最小拖动距离

@@ -79,6 +79,58 @@
   gap: var(--space-3);
 }
 
+// 回复上下文：点评论的"回复"后出现在字段与正文之间，显示回复对象
+.post-comment-reply-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: .8125rem;
+  line-height: 1.5;
+
+  &[hidden] {
+    display: none;
+  }
+
+  b {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+}
+
+// 取消回复：与评论区的小操作同一套语言，悬停只转主题色
+.post-comment-reply-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: .8125rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
 // 字段外框：左侧标签插槽 + 右侧输入框共用一层描边。
 // 输入区铺白面（亮色纯白，暗色为抬升层），聚焦只把外框边框转主题色，
 // 不改文字颜色，输入框自身不再画边框
@@ -200,6 +252,204 @@
   gap: var(--space-2);
 }
 
+// 提交结果 / 校验错误：空内容由 JS 加 hidden，不占高度
+.post-comment-status {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: .8125rem;
+  line-height: 1.5;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+// 错误没有独立的错误色：用正文色 + 主题色左边线提示
+.post-comment-status.is-error {
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--color-primary);
+  color: var(--color-text);
+}
+
+// 预览区：与 textarea 互斥显示，外框沿用输入框的白面 / 描边 / 圆角。
+// 高度由 comment.js 量取 textarea 后写入 inline style；内容更长时内部滚动
+.post-comment-preview {
+  margin-top: var(--space-3);
+  min-height: 104px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-elevated);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.post-comment-preview-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: .875rem;
+}
+
+// 预览按钮激活态：边框与文字转主题色，和发送的实心主操作区分开
+.post-comment-preview-toggle.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+// --- 表情选择器 ---
+
+// 表单底部的表情按钮 + 向上弹出的面板。absolute 定位不占布局
+.post-comment-emoji {
+  position: relative;
+  display: inline-flex;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.post-comment-emoji-toggle[aria-expanded="true"] {
+  color: var(--color-primary);
+}
+
+.post-comment-emoji-popup {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 0;
+  z-index: var(--z-dropdown);
+  // LibSass 不认 min() 混单位，用 width + max-width 兜住窄屏
+  width: 360px;
+  max-width: calc(100vw - 48px);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-dropdown);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.post-comment-emoji-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.post-comment-emoji-tab {
+  padding: 2px var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: .75rem;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+              background-color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  &.is-active {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    cursor: default;
+
+    &:hover {
+      color: var(--color-on-primary);
+    }
+  }
+}
+
+// 面板最大高度收住，QQ 表情再多也不把页面撑高
+.post-comment-emoji-panel {
+  max-height: 240px;
+  overflow-y: auto;
+  padding-top: var(--space-2);
+}
+
+.post-comment-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.post-comment-emoji-text {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.post-comment-emoji-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease);
+
+  &:hover {
+    background: var(--color-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+
+  img {
+    display: block;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+  }
+}
+
+// 颜文字按钮宽度随文本，不等分成格子；白名单换行，长颜文字整枚换行
+.post-comment-emoji-text .post-comment-emoji-item {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  padding: 2px var(--space-2);
+  font-size: .8125rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.post-comment-emoji-status {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: .75rem;
+  line-height: 1.5;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
 // --- 列表头：总数 + 排序 / 刷新 ---
 
 .post-comments-bar {
@@ -274,9 +524,36 @@
   margin-left: var(--space-1);
   padding: 0;
   font-size: .875rem;
+
+  // 请求进行中：禁用并转动图标；放在 :hover 之后才能压过悬停色
+  &:disabled {
+    color: var(--color-text-muted);
+    cursor: default;
+    opacity: .6;
+  }
+
+  &.is-loading i {
+    animation: post-comments-spin .8s linear infinite;
+  }
+}
+
+@keyframes post-comments-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // --- 评论列表 ---
+
+// 加载 / 空列表 / 加载失败的提示：列表区里的一行居中文字
+.post-comments-state {
+  margin: 0;
+  padding: var(--space-5) 0;
+  color: var(--color-text-muted);
+  font-size: .875rem;
+  line-height: 1.6;
+  text-align: center;
+}
 
 // 评论之间不再画分割线，靠间距与灰色气泡卡片区分
 .post-comment-list {
@@ -364,6 +641,112 @@
     margin: 0 0 .5em;
 
     &:last-child { margin-bottom: 0; }
+  }
+
+  // 与 Markdown 正文 / 评论昵称同一套强调语言：粗体带 30% 荧光条
+  strong {
+    font-weight: 600;
+    background: linear-gradient(var(--color-primary-highlight), var(--color-primary-highlight)) bottom / 100% 30% no-repeat;
+  }
+
+  em {
+    font-style: italic;
+  }
+
+  del {
+    color: var(--color-text-muted);
+    text-decoration-thickness: 1px;
+  }
+
+  // 评论也允许 Markdown 标题，但压到与正文同级，避免评论里出现巨型标题
+  h1, h2, h3, h4, h5, h6 {
+    margin: .8em 0 .4em;
+    font-size: 1em;
+    font-weight: 600;
+    line-height: 1.4;
+
+    &:first-child { margin-top: 0; }
+  }
+
+  ul, ol {
+    margin: 0 0 .5em;
+    padding-left: 1.4em;
+
+    &:last-child { margin-bottom: 0; }
+  }
+
+  li {
+    margin: .15em 0;
+  }
+
+  blockquote {
+    margin: 0 0 .5em;
+    padding: .15em 0 .15em var(--space-3);
+    border-left: 2px solid var(--color-border);
+    color: var(--color-text-muted);
+
+    &:last-child { margin-bottom: 0; }
+  }
+
+  code {
+    padding: 1px 4px;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    font-family: var(--font-mono);
+    font-size: .875em;
+  }
+
+  pre {
+    margin: 0 0 .5em;
+    padding: var(--space-2) var(--space-3);
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+
+    code {
+      padding: 0;
+      background: none;
+    }
+  }
+
+  hr {
+    margin: var(--space-4) 0;
+    border: 0;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  table {
+    width: 100%;
+    margin: 0 0 .5em;
+    border-collapse: collapse;
+    font-size: .9375em;
+  }
+
+  th, td {
+    padding: 4px var(--space-2);
+    border: 1px solid var(--color-border);
+    text-align: left;
+  }
+
+  th {
+    background: var(--color-surface);
+    font-weight: 500;
+  }
+
+  // 表情图片：按行高缩放，与文字基线对齐；不参与 lightbox（§5.4）
+  .wl-emoji {
+    display: inline-block;
+    width: 1.5em;
+    height: 1.5em;
+    margin: 0 .1em;
+    border-radius: 0;
+    vertical-align: -.35em;
+    object-fit: contain;
+  }
+
+  // 颜文字整枚不折行
+  .wl-kaomoji {
+    white-space: nowrap;
   }
 
   // 评论里的链接保留下划线：正文不是 .markdown 作用域，拿不到那套点状线
@@ -501,6 +884,18 @@
     background: var(--color-primary-hover);
     color: var(--color-on-primary);
   }
+
+  // 发送中：保留主操作外观，只降低不透明度；悬停也不再加深
+  &:disabled {
+    cursor: default;
+    opacity: .6;
+  }
+
+  &:disabled:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
 }
 
 // 二级评论容器：只负责纵向节奏。
@@ -546,6 +941,11 @@
   justify-content: center;
   gap: var(--space-2);
   margin-top: var(--space-5);
+
+  // display: flex 会压过浏览器默认的 [hidden]，这里显式兜底
+  &[hidden] {
+    display: none;
+  }
 }
 
 .post-comments-page {
@@ -589,6 +989,18 @@
   font-size: .8125rem;
 }
 
+// 省略号与分页项同宽同高，数字列不会因为省略号而错位
+.post-comments-page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  color: var(--color-text-muted);
+  font-size: .875rem;
+  line-height: 1;
+}
+
 // 窄屏：表单三个输入框竖排
 @media (max-width: 768px) {
   .post-comment-form-fields {
@@ -596,11 +1008,21 @@
   }
 }
 
+// 更窄的屏幕上表情格子收一列，面板不横向溢出
+@media (max-width: 480px) {
+  .post-comment-emoji-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
 // 减少动态效果：只保留颜色变化，分割线雪花不再移动
 @media (prefers-reduced-motion: reduce) {
   .post-comment-reply,
+  .post-comment-reply-cancel,
   .post-comment-tool,
   .post-comment-action,
+  .post-comment-emoji-tab,
+  .post-comment-emoji-item,
   .post-comment-field,
   .post-comment-input,
   .post-comment-textarea,
@@ -609,6 +1031,11 @@
   .post-comments-page,
   .post-comments-divider::before {
     transition: none;
+  }
+
+  // 刷新中的旋转图标也停住，只保留禁用态
+  .post-comments-refresh.is-loading i {
+    animation: none;
   }
 
   .post-comments-divider:hover::before {

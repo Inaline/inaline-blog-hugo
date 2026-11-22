@@ -1,0 +1,11 @@
+{
+  "name": "inaline-blog-waline",
+  "private": true,
+  "description": "Local Waline comment server (npm, SQLite)",
+  "scripts": {
+    "start": "node --env-file=.env node_modules/@waline/vercel/vanilla.js"
+  },
+  "dependencies": {
+    "@waline/vercel": "1.43.8"
+  }
+}

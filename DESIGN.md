@@ -231,7 +231,7 @@ themes/inaline-theme/
 │   │   ├── _post.scss             # 文章卡片 / 分页 / 标签（§7.7）
 │   │   ├── _markdown.scss         # Markdown 正文排版（§9）
 │   │   ├── _article.scss          # 文章页：顶部大图 / 标题区 / 正文两栏 / 信息卡（§8）
-│   │   ├── _comments.scss         # 文章评论区：两级评论 / 分页（§8.8）
+│   │   ├── _comments.scss         # 文章评论区：两级评论 / 表单 / 分页（§8.8）
 │   │   ├── _carousel.scss         # 首页轮播图（§7.10）
 │   │   ├── _sidebar.scss          # 两栏骨架 + 侧栏（§7.8 / §8.5）
 │   │   ├── _footer.scss           # 页脚（§7.9）
@@ -240,6 +240,10 @@ themes/inaline-theme/
 │   ├── js/
 │   │   ├── main.js                # 全局：主题、封面记忆（§7.1）、Header 滚动态、页脚运行时长、整卡跳转、复制、代码窗口、进场动效
 │   │   ├── lightbox.js            # 全局：图片预览分组 / 缩放 / 切换（§5.4）
+│   │   ├── waline.js              # Waline API 封装：列表 / 发表 / 错误 / 邮箱头像（§8.8）
+│   │   ├── emoji.js               # 评论区表情包：预设拉取 / 选择器 / 颜文字（§8.8）
+│   │   ├── format.js              # 评论预览的轻量 Markdown（§8.8）
+│   │   ├── comment.js             # 文章页评论区：渲染 / 分页 / 排序 / 表单（§8.8）
 │   │   ├── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
 │   │   └── pages/post.js          # 文章页：目录高亮 / 折叠 / 阅读进度（§8.5）
 │   ├── images/cover/              # cover1–3.jpg，Hero 背景与卡片兜底同池
@@ -268,8 +272,7 @@ themes/inaline-theme/
         ├── post-card.html         # 文章卡片（§7.7）
         ├── article-meta.html      # 文章末尾信息卡（§8.6）
         ├── post-nav.html          # 上一篇 / 下一篇（§8.7）
-        ├── post-comments.html     # 文章评论区：分割线 / 标题 / 分页 / 演示数据（§8.8）
-        ├── post-comment.html      # 单条评论 + 一层回复（§8.8）
+        ├── post-comments.html     # 文章评论区骨架：分割线 / 标题 / 表单 / 列表 / 分页（§8.8）
         ├── pager.html             # 分页（§7.7）
         ├── sidebar.html           # 右侧栏容器（§7.8）
         ├── sidebar-toc.html       # 侧栏目录卡片（仅文章页，§8.5）
@@ -299,9 +302,13 @@ themes/inaline-theme/
 
 - `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页页脚背景（§7.1）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `lightbox.js`：全局图片预览（§5.4），点击监听用事件委托，动态内容无需重新初始化；暴露 `window.inalineLightboxInit`。
+- `waline.js`：Waline API 薄封装（§8.8），只负责拼地址、解析 `{ errno, errmsg, data }`、归一错误与按邮箱生成头像地址；不碰 DOM。
+- `emoji.js`：评论区表情包（§8.8），读取 `params.waline.emoji`，按需拉取 `@waline/emojis` 预设的 `info.json`，渲染选择器，并把 `:key:` / 颜文字转成安全 HTML。
+- `format.js`：评论预览用的轻量 Markdown（§8.8），先转义再生成 HTML，不参与存储。
+- `comment.js`：文章评论区 UI（§8.8），由文章页模板按需引入；从 `data-post-comments` 读取配置，渲染评论树并接管分页 / 排序 / 刷新 / 表单 / 预览。
 - `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前有 `home.js`、`post.js`）。
 - 每个模块写成幂等 `init()`，事件用 `dataset.bound` 防重复绑定；后续接入 Swup 时在 `page:view` 再次调用同一 `init()` 即可。
-- 全局入口暴露为 `window.inalineInit`，首页入口暴露为 `window.inalinePageInit`。
+- 全局入口暴露为 `window.inalineInit`，首页 / 文章页入口暴露为 `window.inalinePageInit`，评论区入口暴露为 `window.inalineCommentInit`。
 - 防闪烁的主题初始化脚本单独内联在 `head.html`，不进 `main.js`。
 
 ---
@@ -365,7 +372,7 @@ themes/inaline-theme/
 
 - 点击时现算分组：Waline 等后插入的 DOM 无需重新初始化；`init()` 幂等，后续接入 Swup 时在 `page:view` 再调用即可。
 - 说说：每张动态卡加 `data-lightbox-group`，卡内多图即可左右切换；头像放进 `data-lightbox-ignore` 子树。
-- 评论：每条评论的正文容器加 `data-lightbox-group`（本条评论的图片成组）；希望所有评论图片共用一组时，把属性加到评论列表容器上。
+- 评论：每条评论的正文容器加 `data-lightbox-group`（本条评论的图片成组）；希望所有评论图片共用一组时，把属性加到评论列表容器上。评论里的 `.wl-emoji` 也自动忽略，点表情不会打开大图。
 - 图片被链接包着时点击仍打开预览；带 Ctrl / Cmd / Shift / Alt 的点击不接管，保留浏览器打开链接的习惯。
 - 点击监听在 `document` 捕获阶段，先于 `data-card-href` 的整卡跳转（§7.7）执行；`preventDefault` 后卡片监听按约定让路。
 
@@ -654,7 +661,7 @@ menu:
 **近期评论卡**：
 
 - 配置 `params.sidebar.comments`：`enable`、`title`（默认"近期评论"）、`count`（默认 5）。
-- 评论系统（Waline）尚未接入，当前列表由模板内的占位数据渲染；卡片带 `data-sidebar-comments` 锚点，接入后由前端回填。
+- 文章评论区已接入 Waline（§8.8），侧栏近期评论仍由模板内的占位数据渲染；卡片带 `data-sidebar-comments` 锚点，后续由前端回填。
 - 标题行：`fa-regular fa-comment` 图标（与标题同色，`1.0625rem`）+ 文案，规格同最新文章卡。
 - 列表每条间距 `--space-4`。每条为整行链接（没有文章可指时退化为静态条目）：左侧 32px 圆形头像，图片 `object-fit: cover` 裁圆，缺省以名字首字作占位。
 - 右侧上排：用户名（`0.8125rem / 500`，靠左，超长省略）与相对时间（`0.75rem`，`--color-text-muted`，靠右）；下排正文 `0.75rem`、最多两行。
@@ -816,40 +823,58 @@ menu:
 | 悬停 | 与轮播图当前页一致：封面 `scale(1.04)` + `blur(2px)`，`--duration-base`；键盘 `:focus-visible` 同效，另加 2px 主题色描边 |
 | 降级 | 无 JS 不受影响（原生链接）；`prefers-reduced-motion` 下取消过渡与悬停缩放 / 模糊 |
 
-### 8.8 评论区 ✅（UI；数据为演示占位）
+### 8.8 评论区 ✅（Waline）
 
-上一篇 / 下一篇之后的评论区，仍在 `.post-content` 卡片内，用一条 Markdown 雪花分割线（§9.4，与正文 `hr` 共用 `md-divider` mixin）与上方内容分开。当前只实现 UI：`post-comments.html` 内置演示数据，发布表单不提交、头像不随邮箱变化；接入 Waline 后由前端按 `data-post-comments` 回填真实列表与分页、接管表单交互，演示数据删除。
+上一篇 / 下一篇之后的评论区，仍在 `.post-content` 卡片内，用一条 Markdown 雪花分割线（§9.4，与正文 `hr` 共用 `md-divider` mixin）与上方内容分开。模板只输出结构骨架、`data-*` 配置与表情包 JSON；`comment.js` 按 `data-post-comments` 请求 Waline，渲染评论树并接管分页 / 排序 / 刷新 / 发布表单；表情由 `emoji.js` 管理，发布前的 Markdown 预览由 `format.js` 渲染，HTTP 细节集中在 `waline.js`（`window.InalineWaline`）。
+
+**配置与文件**
+
+- `hugo.yaml` 的 `params.waline`：`enable`（总开关）、`server`（服务地址）、`page_size`（每页顶层评论数）、`avatar_prefix`（表单头像前缀）、`emoji`（表情选项卡）。缺少 `server` 或 `enable: false` 时，评论区与相关脚本都不渲染 / 不加载。
+- `waline.js`：`create({ server })` 返回 `list()` / `add()`。`list()` 把 `sort: 'newest' | 'oldest'` 映射到 Waline 的 `insertedAt_desc` / `insertedAt_asc`，统一返回 `{ comments, page, pageSize, totalPages, count }`；`add()` 透传评论字段；`avatarUrl(mail, prefix, nick)` 复刻 Waline 服务端默认头像规则：纯数字昵称或 `<数字>@qq.com` 取 QQ 头像，其余走 `avatar_prefix + MD5(trim + lowercase mail)`。
+- `emoji.js`：读取 `params.waline.emoji`。图片包支持 `preset`（`@waline/emojis@1.4.0/<name>` 简写或完整目录 URL，运行时读取 `<preset>/info.json`）与 `folder + items` 自定义包；文本包用 `type: "text"` + `items`。对外暴露 `load()` / `toHtml()` / `protect()` / `restore()`；某个图片包加载失败只跳过该包，颜文字仍可用。
+- `format.js`：预览用轻量 Markdown。先转义再生成 HTML，支持段落 / 换行、标题、引用、有序 / 无序列表、分隔线、围栏代码、行内代码、粗体、斜体、删除线、链接与图片；链接只放行 http(s) / 相对路径 / mailto / 锚点。预览是近似效果，最终以服务端渲染为准。
+- `comment.js`：幂等 `init()`，暴露 `window.inalineCommentInit`；从 section 的 `data-waline-server` / `data-comment-path` / `data-comment-page-size` / `data-comment-avatar-prefix` 与 `[data-comment-emoji-config]` 读配置。发布成功后把昵称 / 邮箱 / 网址写进 `localStorage` 的 `inaline-comment-user`，下次自动回填。
+- 无 JS 时列表停在「评论加载中…」并显示 `<noscript>` 提示：评论依赖服务端数据，不做静态降级。
 
 | 项 | 规格 |
 | --- | --- |
-| 模板 | `post-comments.html` 负责分割线 / 标题 / 发布表单 / 列表 / 分页与演示数据；`post-comment.html` 渲染单条评论并向下递归一层回复 |
-| 结构 | 顶层评论分页；回复最多一层（二级），挂在所属顶层评论下方；每条评论的头像 / 昵称 / 时间在卡片外，正文、设备信息与回复按钮收进灰色气泡卡片；评论之间不画分割线，靠间距区分；二级评论里的 `replies` 不渲染，保证嵌套只有两级 |
+| 模板 | `post-comments.html` 负责分割线 / 标题 / 发布表单 / 列表容器 / 分页容器、`data-*` 配置与表情包 JSON；单条评论由 `comment.js` 按 Waline 数据生成，不再有单独的评论 partial |
+| 结构 | 顶层评论分页；回复最多一层（二级），挂在所属顶层评论下方；每条评论的头像 / 昵称 / 时间在卡片外，正文、设备信息与回复按钮收进灰色气泡卡片；评论之间不画分割线，靠间距区分；二级评论的 `children` 不再向下渲染，保证嵌套只有两级 |
 | 标题 | `fa-regular fa-comments` + "评论"，不显示总数 |
-| 发布表单 | 标题与列表之间；左侧 40px 头像，右侧邮箱 / 昵称 / 网址三个字段（每个由左侧标签插槽 + 右侧输入框组成），下方正文 textarea，底部表情按钮与预览 / 发送按钮。当前只有 UI：不提交、头像不随邮箱变化 |
-| 表单头像 | 复用 `.post-comment-avatar` 外框：`--color-bg` 底 + `fa-user`；`data-comment-avatar` 作为接入 Waline 后按邮箱替换头像的挂点 |
+| 发布表单 | 标题与列表之间；左侧 40px 头像，右侧邮箱 / 昵称 / 网址三个字段（每个由左侧标签插槽 + 右侧输入框组成），下方正文 textarea，底部表情按钮与预览 / 发送按钮。发送为 `type="submit"`，由 `comment.js` 提交到 Waline；表情与预览均已接入 |
+| 表单头像 | 复用 `.post-comment-avatar` 外框：`--color-bg` 底 + `fa-user`；昵称 / 邮箱输入（共用 250ms 防抖）后按 `avatarUrl` 换成头像。规则与服务端一致：纯数字昵称或 `<数字>@qq.com` 取 `https://q1.qlogo.cn/g?b=qq&nk=<数字>&s=100`，其余走 Libravatar；图片加载失败退回 `fa-user` |
 | 表单字段 | 三列 grid（`≤768px` 单列），`name` 取 `mail` / `nick` / `link`，`autocomplete` 对应 email / nickname / url；每个字段是 `label` 包裹的外框：左侧 `.post-comment-field-label` 标签插槽（邮箱 / 昵称 / 网址，muted、`--color-bg` 灰底、左右 `--space-2` 内边距、右侧 1px `--color-border` 竖线），右侧透明底输入框铺满剩余宽度；外框高 40px、输入区 `--color-elevated` 白底（暗色为抬升层）+ 1px `--color-border` + `--radius-md`；`:focus-within` 只把外框边框转主题色，不改文字颜色；输入框自身无描边、不加光圈 / 阴影；占位提示只显示「必填」/「可选」 |
+| 回复上下文 | 点评论的「回复」后，字段与正文之间出现 `.post-comment-reply-hint`，显示 `回复 @昵称` 与取消按钮；textarea 占位变成 `回复 @昵称…`，焦点移到表单。提交时带 `pid`（直接回复对象）与 `rid`（顶层评论），服务端把回复挂到顶层评论下；回复成功后留在当前页并滚回父评论 |
 | 表单正文 | textarea 最小高 104px、纵向可拉伸，内边距 `--space-3`（底部多留一档放字数提示）；与字段同底色、同描边，聚焦反馈一致；加 `maxlength="1000"` |
-| 字数提示 | `.post-comment-editor` 包住 textarea，右下角绝对定位 `0/1000`（muted、0.75rem），不挡输入；当前为演示占位，`data-comment-counter` 留给前端随输入更新 |
-| 表单操作栏 | 左侧表情按钮只有 `fa-face-smile` 图标（32px 点击区、图标 1.125rem）；右侧依次为 Markdown 指南图标、预览与发送：Markdown 指南复用表情按钮的尺寸与样式（`fa-brands fa-markdown`，外链到 `https://guides.github.com/features/mastering-markdown/`）；预览与发送同高，预览宽度随内容自适应、只有文字无图标，outline 默认 `--color-border` 描边 + muted 文字，悬停只把边框与文字转主题色；发送为实心主题色带 `fa-paper-plane`，保留 `min-width: 72px`，悬停 `--color-primary-hover`；窄屏换行时操作组靠右 |
-| 列表头 | 表单下方一行：左侧「XX 条评论」文字标题；右侧文字卡片（`--color-bg` 胶囊）内放「最新 / 最早」排序与刷新。当前排序 `is-active` 为主题色实心 + 白字，另一项默认 muted、悬停只转文字色；刷新仅 `fa-arrows-rotate` 图标，悬停转文字色 |
-| 顶层条目 | 40px 圆形头像 + 内容列；头像缺省用名字首字兜底（与侧栏近期评论一致），博主头像沿用 `hero.avatar` |
+| 字数提示 | `.post-comment-editor` 包住 textarea，右下角绝对定位 `0/1000`（muted、0.75rem），不挡输入；由 `comment.js` 随输入更新 |
+| 表单操作栏 | 左侧表情按钮只有 `fa-face-smile` 图标（32px 点击区、图标 1.125rem），点击打开表情面板；右侧依次为 Markdown 指南图标、预览与发送：Markdown 指南复用表情按钮的尺寸与样式（`fa-brands fa-markdown`，外链到 `https://guides.github.com/features/mastering-markdown/`）；预览与发送同高，预览宽度随内容自适应、只有文字无图标，outline 默认 `--color-border` 描边 + muted 文字，悬停只把边框与文字转主题色，预览中切换为「编辑」并加 `.is-active`（主题色描边 / 文字）；发送为实心主题色带 `fa-paper-plane`，保留 `min-width: 72px`，悬停 `--color-primary-hover`；提交中禁用并把文字换成「发送中」；窄屏换行时操作组靠右 |
+| 表情选择器 | 表情按钮外包一层 `.post-comment-emoji`（`position: relative`），面板向上弹出：`--color-elevated` 底 + 1px `--color-border` + `--radius-md` + `--shadow-dropdown`，宽 360px、`max-width: calc(100vw - 48px)`，`z-index: var(--z-dropdown)`。面板顶部是选项卡（文字胶囊，当前项主题色实心 + 白字），下方是表情区：图片包 8 列网格（≤480px 收为 7 列，32px 按钮 / 24px 图片，最高 240px 滚动），颜文字用 flex 换行、按钮宽度随文本。点击选项卡只切换分类、面板保持打开；点击某枚表情插入光标处（图片包插 `:key:`，颜文字插原文）后收起面板并把焦点交回 textarea；点击外部或 Esc 关闭，Esc 后焦点回到按钮。外部关闭监听用 `pointerdown`（回退 `mousedown`），避免选项卡重绘后 click 冒泡把面板误关 |
+| 表情配置 | `params.waline.emoji` 是选项卡数组：`preset`（`qq` / `alus` / `bilibili` 等 `@waline/emojis` 预设名，或完整目录 URL）+ 可选 `name`；或 `folder` / `prefix` / `type` / `items` 自定义图片包；或 `type: "text"` + `items` 的颜文字包。图片包的 `info.json` 运行时拉取并缓存；某个包失败只跳过该包，面板底部提示「部分表情包加载失败」。删除整个 `emoji` 项时表情按钮自动隐藏 |
+| 表情提交 | `emoji.js` 在提交 / 预览前把 `:key:` 换成 `<img class="wl-emoji" src="..." alt="key" loading="lazy">`，把颜文字包成 `<span class="wl-kaomoji">...（已转义）...</span>`；服务端 markdown-it（`html: true`）+ DOMPurify 保留两种标签。`.wl-emoji` 也被 lightbox 忽略，点表情不会打开大图 |
+| Markdown 预览 | 预览按钮在 textarea 与 `.post-comment-preview` 之间切换：编辑区隐藏、预览区显示；切换时由 JS 量取 textarea 当前高度写进预览区 inline height，外层高度保持一致，内容更长时在预览区内部滚动。预览区沿用 `.post-comment-content` 排版，外框与输入框同底色 / 描边 / 圆角。`format.js` 先整体转义再渲染，支持常见 Markdown；`emoji.js` 先把表情 / 颜文字换成占位符，渲染完再还原，避免 `*` / `_` 被当成强调符。预览只用于发布前确认，最终以服务端渲染为准 |
+| 提交反馈 | 表单下方 `.post-comment-status`（`role="status"` / `aria-live="polite"`）：成功后显示「评论已发布」或审核提示，校验 / 网络 / 限频错误显示对应中文文案；空内容时加 `hidden`，不占高度 |
+| 列表头 | 表单下方一行：左侧「XX 条评论」总数（Waline 的 `count`，含回复）；右侧文字卡片（`--color-bg` 胶囊）内放「最新 / 最早」排序与刷新。当前排序 `is-active` 为主题色实心 + 白字，另一项默认 muted、悬停只转文字色；排序切换后回到第 1 页；刷新保持当前页，请求中图标旋转并禁用，悬停不改变禁用色 |
+| 顶层条目 | 40px 圆形头像 + 内容列；头像取 Waline 返回的 `avatar`，缺省 / 加载失败用名字首字兜底 |
 | 评论信息行 | 昵称（0.9375rem / 500，下缘 30% 高主题色荧光条，与 Markdown `strong` 一致）+ 相对时间 |
 | 气泡卡片 | `--color-bg` 底 + `--radius-md`，内边距 `--space-3 --space-4`，装正文与底部行；底部行左侧设备信息、右侧回复按钮；二级评论内边距收为 `--space-2 --space-3` |
-| 二级评论 | 容器只负责纵向节奏：与父评论正文同列（不再额外缩进），回复之间间距 `--space-4`；每条回复各自带头像、信息行与气泡卡片，不共用整块面板 |
+| 二级评论 | 容器只负责纵向节奏：与父评论正文同列（不再额外缩进），回复之间间距 `--space-4`；每条回复各自带头像、信息行与气泡卡片，不共用整块面板；回复按时间正序渲染，`reply_user` 提供被回复者，正文首段前插入 `.post-comment-mention` 的 `@昵称` |
 | 二级条目 | 32px 头像、昵称与正文 0.875rem，与顶层拉开层级 |
-| 时间 | `relative-time.html`：1 分钟内"刚刚"，之后 N 分钟 / 小时前，7 天内 N 天前，超过 7 天显示 `2006年1月2日`；`<time datetime>` 输出绝对时间，`title` 提供完整时间 |
-| 设备信息 | 三项均带图标与 `title`，位于气泡底部行左侧：IP 归属地 `fa-location-dot`；系统按平台取 `fa-brands`（Windows / Apple / Android / Linux）；浏览器取 Chrome / Edge / Firefox / Safari 品牌图标 |
-| 回复按钮 | `button` + `fa-reply`，位于气泡右下角；默认 muted，悬停只转主题色、不铺底，`:focus-visible` 主题色描边；当前仅 UI，不展开输入框 |
+| 时间 | `comment.js` 按 Waline 的 `time` 现算，规则同 `relative-time.html`：1 分钟内"刚刚"，之后 N 分钟 / 小时前，7 天内 N 天前，超过 7 天显示 `2006年1月2日`；`<time datetime>` 输出绝对时间，`title` 提供完整时间；页面停留时每分钟重算一次 |
+| 设备信息 | IP 归属地取 `addr`，为空时不渲染；系统 / 浏览器按 `os` / `browser` 映射图标（Windows / Apple / Android / Linux；Chrome / Edge / Firefox / Safari），浏览器名与版本间补空格（Waline 输出 `Chrome140.0`），未知平台用通用图标兜底；三项均带 `title` |
+| 回复按钮 | `button` + `fa-reply`，位于气泡右下角；默认 muted，悬停只转主题色、不铺底，`:focus-visible` 主题色描边；点击进入回复上下文 |
 | 正文链接 | 保留下划线（`text-underline-offset: 2px`）；正文不是 `.markdown` 作用域，不复用点状线链接样式 |
-| 分页 | 复用列表页分页语言：36px 方形按钮、当前页实心主题色、悬停只换文字色；用 `button` 承载，避免演示阶段改变 URL；当前页 `aria-current="page"` |
-| 正文 | `.post-comment-content` 带 `data-lightbox-group`，评论内图片按条成组预览（§5.4）；长链接 / 长英文串任意位置折行 |
-| 可访问性 | `section` + `aria-labelledby`、`nav` + `aria-label`、表单 `aria-label`；头像纯装饰 `aria-hidden`；三个字段用 `label` 包裹输入框，左侧标签即可访问名称（不再重复 `aria-label`）；回复按钮带 `aria-label="回复 {昵称}"`；排序按钮用 `aria-pressed` 标记当前项，刷新按钮用 `aria-label` |
+| 分页 | 复用列表页分页语言：36px 方形按钮、当前页实心主题色、悬停只换文字色；按 Waline 的 `totalPages`（顶层评论数）由 JS 生成首尾页 + 当前页左右各一页，跳过的页码用省略号收拢；总数不超过一页时整块 `hidden`；用 `button` 承载，不改变 URL；当前页 `aria-current="page"` |
+| 空 / 加载 / 失败 | 首次加载显示「评论加载中…」；无评论显示「还没有评论，来抢沙发吧。」；请求失败显示「评论加载失败，点击右上角刷新重试。」，保留刷新按钮 |
+| 正文 | `.post-comment-content` 带 `data-lightbox-group`，评论内图片按条成组预览（§5.4）；补了粗体（30% 主题色荧光条）、斜体、删除线、标题（压到正文级）、有序 / 无序列表、引用、行内代码、代码块、分隔线、表格的基础样式；`.wl-emoji` 按 1.5em 缩放并与文字基线对齐，`.wl-kaomoji` 整枚不折行；长链接 / 长英文串任意位置折行 |
+| 可访问性 | `section` + `aria-labelledby`、`nav` + `aria-label`、表单 `aria-label`；头像纯装饰 `aria-hidden`；三个字段用 `label` 包裹输入框，左侧标签即可访问名称（不再重复 `aria-label`）；回复按钮带 `aria-label="回复 {昵称}"`；排序按钮用 `aria-pressed` 标记当前项；刷新按钮用 `aria-label`；列表区用 `aria-busy` 标记请求中；提交反馈用 `role="status"`；表情按钮用 `aria-haspopup="dialog"` / `aria-expanded` / `aria-controls` 指向面板，面板 `role="dialog"` 并接收焦点，选项卡用 `aria-pressed`，颜文字项带 `aria-label`；预览按钮用 `aria-pressed` 标记当前态 |
 | 锚点 | 评论区 `#comments` 与单条评论 `#comment-<id>` 均设 `scroll-margin-top`，落点让开 fixed Header |
-| 动效降级 | 评论 / 表单 / 排序 / 刷新按钮、字段外框、输入框、分页与分割线雪花在 `prefers-reduced-motion` 下取消过渡 / 位移 |
+| 动效降级 | 评论 / 表单 / 排序 / 刷新按钮、表情选项卡 / 表情项、字段外框、输入框、分页与分割线雪花在 `prefers-reduced-motion` 下取消过渡 / 位移；刷新中的旋转图标也停住 |
 
 ### 8.9 待补充 ⏳
 
 - 移动端断点与顶部大图高度微调。
+- 评论图片上传、GIF 搜索等 Waline 客户端能力尚未接入；预览的轻量 Markdown 暂不支持表格、脚注与嵌套列表。
+- 侧栏近期评论、文章卡片评论量、页脚统计随 Waline 回填。
 
 ---
 

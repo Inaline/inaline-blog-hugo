@@ -6,3 +6,8 @@ resources/_gen/
 # OS / editor
 .DS_Store
 *.swp
+
+# Waline（本地密钥、依赖与 SQLite 数据）
+waline/.env
+waline/data/
+waline/node_modules/
