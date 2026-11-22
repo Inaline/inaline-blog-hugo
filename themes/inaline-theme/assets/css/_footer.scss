@@ -1,17 +1,26 @@
 // ---------------------------------------------------------------------------
 // 页脚
 //
-// 深色毛玻璃条：压在首页的整页背景图之上（内页则压在页面底色上），
-// 比正文区重一档，把"页面到头了"这条线画出来。
+// 深色毛玻璃条：压在首页整页背景图或文章页页脚自己的封面图上
+//（其余内页则压在页面底色上），比正文区重一档，把"页面到头了"这条线画出来。
 //
 // 它是全站唯一的恒定深色块，不跟主题翻色——深遮罩 + 白字就是它的身份：
 // 亮色模式下若翻成浅色，"和正文区分、更突出"的意图当场就没了。
 // 所以这里消费的都是跨主题恒定的令牌（--footer-scrim / --color-over-hero*），
 // 与 --badge-bg / --glow-* 同一类（见 _tokens.scss 的说明）。
-//
-// 文章页例外：页脚下方没有整页背景图，body.has-post-hero 下取消底色与模糊，
-// 改用常规文字色（见文件末尾）。
 // ---------------------------------------------------------------------------
+
+// 文章页：背景图只在页脚出现（§7.1）。main.js 把首页上次展示的封面写进
+// --footer-cover，再叠一层 --footer-scrim 渐变把照片压暗，白字仍可读。
+// 图铺满页脚、居中裁切；有图时不再需要毛玻璃——模糊的是身后的灰色页面
+.site-footer.has-cover-bg {
+  background-image: linear-gradient(var(--footer-scrim), var(--footer-scrim)), var(--footer-cover);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 
 .site-footer {
   padding: var(--space-6) 0;
@@ -60,19 +69,4 @@
 .footer-num,
 .footer-site {
   color: var(--color-primary);
-}
-
-// ---------------------------------------------------------------------------
-// 文章页：页脚下面是页面底色，没有整页背景图，不需要深色玻璃遮罩。
-// 回到透明底 + 常规文字色；链接悬停用主题色加深（深色底上的"转白"在这里会消失）
-// ---------------------------------------------------------------------------
-body.has-post-hero .site-footer {
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  color: var(--color-text-muted);
-
-  .footer-link:hover {
-    color: var(--color-primary-hover);
-  }
 }

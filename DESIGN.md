@@ -189,6 +189,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --sidebar-width: 280px;
 --carousel-height: 270px;   // 首页轮播图，与侧栏 profile 卡等高
 --post-hero-height: clamp(240px, 30vw, 380px); // 文章页顶部大图：按视口宽度伸缩，不随窗口高度变化
+--post-wave-height: 56px;  // 文章页大图底部浪花高度；≤768px 收为 44px（§8.1）
 --toc-body-max-height: min(500px, 55vh); // 侧栏目录列表滚动区上限（§8.5）
 --toc-sub-max-height: 500px;             // 子目录展开动画的 max-height 上限（§8.5）
 --header-height: 56px;
@@ -237,7 +238,7 @@ themes/inaline-theme/
 │   │   ├── _motion.scss           # 进入 / 滚动进场动效（§5.3）
 │   │   └── _lightbox.scss         # 图片预览（§5.4）
 │   ├── js/
-│   │   ├── main.js                # 全局：主题、Header 滚动态、页脚运行时长、整卡跳转、复制、代码窗口、进场动效
+│   │   ├── main.js                # 全局：主题、封面记忆（§7.1）、Header 滚动态、页脚运行时长、整卡跳转、复制、代码窗口、进场动效
 │   │   ├── lightbox.js            # 全局：图片预览分组 / 缩放 / 切换（§5.4）
 │   │   ├── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
 │   │   └── pages/post.js          # 文章页：目录高亮 / 折叠 / 阅读进度（§8.5）
@@ -296,7 +297,7 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页页脚背景（§7.1）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `lightbox.js`：全局图片预览（§5.4），点击监听用事件委托，动态内容无需重新初始化；暴露 `window.inalineLightboxInit`。
 - `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前有 `home.js`、`post.js`）。
 - 每个模块写成幂等 `init()`，事件用 `dataset.bound` 防重复绑定；后续接入 Swup 时在 `page:view` 再次调用同一 `init()` 即可。
@@ -507,20 +508,21 @@ menu:
 首页自上而下：整页固定背景 → Hero（作者徽章 + 一言卡片 + 下滚箭头）→ 两栏内容（文章列表顶部的轮播图 + 文章列表 + 右侧栏）→ 页脚。轮播图只在第一页渲染（§7.10）。
 `params.description` 不在页面渲染，只作为 `<meta name="description">` 的来源。
 
-### 7.1 整页背景 ✅
+### 7.1 首页整页背景 ✅
 
-首页背景不是 Hero 的背景，而是**整个首页**的固定背景：从首屏一直铺到页脚，滚动时图像不动。
+首页背景不是 Hero 的背景，而是**整个首页**的固定背景：从首屏一直铺到页脚，滚动时图像不动。文章页不铺整页背景，记得住的封面只在页脚出现（见下表「封面记忆」）。
 
 | 项 | 规格 |
 | --- | --- |
 | 容器 | `.page-bg`：`position: fixed`，`top/left/right: 0`，`height: 100vh` + `100lvh`，`z-index: -1`，`pointer-events: none`，底色 `--color-bg` |
-| 图层 | 每张封面一个 `.page-bg-layer`（`position: absolute; inset: 0`），`background-size: cover`、`center`、`no-repeat`；`opacity: 0`，`.is-active` 时 `1` |
+| 图层 | 每张封面一个 `.page-bg-layer`（`position: absolute; inset: 0`），`background-size: cover`、`center`、`no-repeat`；`opacity: 0`，`.is-active` 时 `1`；每层带 `data-cover`（`RelPermalink`），供记忆 / 还原 |
 | 切换 | JS 挪 `.is-active`，`opacity` 600ms 交叉淡入；`prefers-reduced-motion` 下直接换 |
 | 遮罩 | `.page-bg::after` 铺满，背景 `--page-scrim`；亮色透明，暗色 35% 黑 |
 | 配置 | `params.hero.covers`：assets 路径列表；未配置 / 全部解析失败回退内置 `images/cover/cover1.jpg` |
 | 初始图 | `params.hero.initial_cover`：封面路径 → 固定从它开始；`random` → 每次随机；留空 → 第一张 |
 | 兜底 | `random` 时模板先做一次构建期随机（无 JS 兜底），`home.js` 在每次载入时重摇 |
 | 切换按钮 | 卡片左下角左右箭头，仅当封面多于一张时渲染 |
+| 封面记忆 | `main.js` 在首页把当前激活封面的 `data-cover` 写入 localStorage（键 `inaline-page-bg`，含随机初始图与箭头切换）。文章页不渲染 `.page-bg`，`body` 保持 `--color-bg` 灰底；页脚输出 `data-footer-covers`，`main.js` 读回记录、校验其属于封面池后写入 `--footer-cover` 并加 `has-cover-bg`，未记录 / 失效时退回封面池第一张（页脚外观见 §7.9） |
 
 **硬约束**：
 
@@ -679,9 +681,9 @@ menu:
 
 ### 7.9 页脚 ✅
 
-深色毛玻璃条：`--footer-scrim` + `backdrop-filter: blur(--footer-blur) saturate(1.08)`，白字 `--color-over-hero-soft`，`0.875rem / 1.6`，居中，上下 `--space-6`。除文章页外，全站唯一不随主题翻色的深色块。
+深色毛玻璃条：`--footer-scrim` + `backdrop-filter: blur(--footer-blur) saturate(1.08)`，白字 `--color-over-hero-soft`，`0.875rem / 1.6`，居中，上下 `--space-6`。它是全站唯一不随主题翻色的深色块。
 
-文章页（`body.has-post-hero`）的页脚下方没有整页背景图，因此不铺遮罩：透明底、取消毛玻璃，文字改用 `--color-text-muted`，链接悬停改为 `--color-primary-hover`。
+首页页脚压在整页背景图上。文章页页脚由 `main.js` 把首页上次展示的封面写进 `--footer-cover`：`.has-cover-bg` 状态用 `linear-gradient(var(--footer-scrim), var(--footer-scrim))` 盖在图上（`background-size: cover`、居中、不重复），并取消无意义的毛玻璃；没有记录 / JS 不可用时退回普通深色玻璃。其余内页的页脚压在页面底色上（§7.1）。
 
 六行自上而下全部可选，任一行留空 / 关闭即不渲染：
 
@@ -721,7 +723,9 @@ menu:
 
 文章页模板为 `layouts/posts/page.html`，覆盖通用 `page.html`；关于页等其他普通页面不受影响。
 
-自上而下：顶部通栏大图（居中标题区叠在图上）→ 两栏正文（左侧正文卡片 + 右侧栏）；正文卡片末尾附文章信息卡（§8.6）、上一篇 / 下一篇（§8.7）与评论区（§8.8）。文章页侧栏自上而下为博主信息卡与「目录 + 最新文章」吸顶组：整组滚到 Header 下沿后吸顶并一直保持，直到最新文章卡的底部与左侧正文卡片底部平齐，再随页面滚走（§8.5）。
+自上而下：顶部通栏大图（居中标题区叠在图上，底部浪花）→ 两栏正文（左侧正文卡片 + 右侧栏）；正文卡片末尾附文章信息卡（§8.6）、上一篇 / 下一篇（§8.7）与评论区（§8.8）。文章页侧栏自上而下为博主信息卡与「目录 + 最新文章」吸顶组：整组滚到 Header 下沿后吸顶并一直保持，直到最新文章卡的底部与左侧正文卡片底部平齐，再随页面滚走（§8.5）。
+
+文章页不铺整页背景，`body` 保持 `--color-bg` 灰底；首页上次展示的封面只在页脚出现（`data-footer-covers` + `main.js`，见 §7.1 / §7.9）。
 
 ### 8.1 顶部大图
 
@@ -730,11 +734,12 @@ menu:
 | 容器 | `.post-hero`：`position: relative`，flex 列、`justify-content: flex-end`；`min-height: --post-hero-height`（`clamp(240px, 30vw, 380px)`），按视口宽度伸缩、不随窗口高度变化；窄屏标题区变高时允许大图一起撑高 |
 | 图片 | 复用 `post-cover.html`：front matter 的 `cover` 优先，未配置 / 解析失败回退封面池；绝对定位铺满，`object-fit: cover`，`fetchpriority="high"` |
 | 压暗 | `::after` 双层渐变：顶部 `--post-hero-scrim-top` → 28% 处透明（Header 白字兜底）；底部 `--post-hero-scrim-bottom` → 58% 处过渡到 `--post-hero-scrim-top` → 顶部透明，为标题区铺深底 |
+| 浪花 | `.post-hero-wave` 绝对定位在大图底部，高 `--post-wave-height`（56px，`≤768px` 收为 44px），`z-index: 2`（压暗遮罩 1 与标题区 3 之间），`overflow: hidden`、`pointer-events: none`；SVG `viewBox="0 24 150 28"` 在 `<defs>` 里定义 `#post-hero-wave-path`，四层 `<use>` 复用同一条曲线，以 9 / 13 / 17 / 24s 横向漂移（`cubic-bezier(.36,.45,.63,.53)`、负延迟形成视差）；`fill: var(--color-bg)`，透明度依次 .7 / .5 / .3 / 1，最底一层与正文灰底衔接；窄屏隐藏中间两层，`prefers-reduced-motion` 下停止 |
 | 起点 | 大图从 y=0 起铺。`baseof.html` 给文章页 `<main>` 加 `.main--post`（`padding-top: 0`） |
 
 ### 8.2 标题区（叠在大图上）
 
-- `.post-header` 仍用 `.container`（`--content-width`）居中；顶部内边距 `calc(--header-height + --space-2)` 给 fixed Header 让位，底部 `calc(--space-8 + --space-4)`，整体比贴底时上提一档。
+- `.post-header` 仍用 `.container`（`--content-width`）居中；顶部内边距 `calc(--header-height + --space-2)` 给 fixed Header 让位，底部 `calc(--space-8 + --space-4 + --space-4)`（其中一档 `--space-4` 给浪花让位），整体比贴底时上提一档。
 - 标题 `clamp(1.75rem, 4vw, 2.5rem)`，白色、`text-wrap: balance`；不再加文字投影，靠大图遮罩保证可读。
 - 基本信息：图标 + 文案「发布于：…」「阅读时长：…」「字数：…」，横排、居中换行，颜色 `--color-over-hero-soft`；相邻信息之间用独立的 `.post-meta-sep` 竖线元素（1px 宽，颜色 / 高度与文字一致，左右间距由 `.post-meta` 的 `--space-2` gap 提供，`aria-hidden`）。阅读时长沿用文章卡片算法（正文去空白字符数 ÷ 400，向上取整、下限 1 分钟），字数取同一字符数。
 - 分类与标签同排居中，均为纯文字链接：每组前放一枚组图标（分类 `fa-folder-open`、标签 `fa-tags`，`aria-hidden`，不写文字标签）；链接颜色 `--color-over-hero-soft`，标签保留 `#` 前缀，悬停提亮并加下划线；无对应术语时整组不渲染。
@@ -820,9 +825,9 @@ menu:
 | 模板 | `post-comments.html` 负责分割线 / 标题 / 发布表单 / 列表 / 分页与演示数据；`post-comment.html` 渲染单条评论并向下递归一层回复 |
 | 结构 | 顶层评论分页；回复最多一层（二级），挂在所属顶层评论下方；每条评论的头像 / 昵称 / 时间在卡片外，正文、设备信息与回复按钮收进灰色气泡卡片；评论之间不画分割线，靠间距区分；二级评论里的 `replies` 不渲染，保证嵌套只有两级 |
 | 标题 | `fa-regular fa-comments` + "评论"，不显示总数 |
-| 发布表单 | 标题与列表之间；左侧 40px 头像，右侧邮箱 / 昵称 / 网址三个输入框，下方正文 textarea，底部表情按钮与预览 / 发送按钮。当前只有 UI：不提交、头像不随邮箱变化 |
+| 发布表单 | 标题与列表之间；左侧 40px 头像，右侧邮箱 / 昵称 / 网址三个字段（每个由左侧标签插槽 + 右侧输入框组成），下方正文 textarea，底部表情按钮与预览 / 发送按钮。当前只有 UI：不提交、头像不随邮箱变化 |
 | 表单头像 | 复用 `.post-comment-avatar` 外框：`--color-bg` 底 + `fa-user`；`data-comment-avatar` 作为接入 Waline 后按邮箱替换头像的挂点 |
-| 表单字段 | 三列 grid（`≤768px` 单列），`name` 取 `mail` / `nick` / `link`，`autocomplete` 对应 email / nickname / url；高 40px，`--color-bg` 底 + 1px `--color-border` + `--radius-md`；聚焦只把边框转为主题色，不加光圈 / 阴影 |
+| 表单字段 | 三列 grid（`≤768px` 单列），`name` 取 `mail` / `nick` / `link`，`autocomplete` 对应 email / nickname / url；每个字段是 `label` 包裹的外框：左侧 `.post-comment-field-label` 标签插槽（邮箱 / 昵称 / 网址，muted、`--color-bg` 灰底、左右 `--space-2` 内边距、右侧 1px `--color-border` 竖线），右侧透明底输入框铺满剩余宽度；外框高 40px、输入区 `--color-elevated` 白底（暗色为抬升层）+ 1px `--color-border` + `--radius-md`；`:focus-within` 只把外框边框转主题色，不改文字颜色；输入框自身无描边、不加光圈 / 阴影；占位提示只显示「必填」/「可选」 |
 | 表单正文 | textarea 最小高 104px、纵向可拉伸，内边距 `--space-3`（底部多留一档放字数提示）；与字段同底色、同描边，聚焦反馈一致；加 `maxlength="1000"` |
 | 字数提示 | `.post-comment-editor` 包住 textarea，右下角绝对定位 `0/1000`（muted、0.75rem），不挡输入；当前为演示占位，`data-comment-counter` 留给前端随输入更新 |
 | 表单操作栏 | 左侧表情按钮只有 `fa-face-smile` 图标（32px 点击区、图标 1.125rem）；右侧依次为 Markdown 指南图标、预览与发送：Markdown 指南复用表情按钮的尺寸与样式（`fa-brands fa-markdown`，外链到 `https://guides.github.com/features/mastering-markdown/`）；预览与发送同高，预览宽度随内容自适应、只有文字无图标，outline 默认 `--color-border` 描边 + muted 文字，悬停只把边框与文字转主题色；发送为实心主题色带 `fa-paper-plane`，保留 `min-width: 72px`，悬停 `--color-primary-hover`；窄屏换行时操作组靠右 |
@@ -838,9 +843,9 @@ menu:
 | 正文链接 | 保留下划线（`text-underline-offset: 2px`）；正文不是 `.markdown` 作用域，不复用点状线链接样式 |
 | 分页 | 复用列表页分页语言：36px 方形按钮、当前页实心主题色、悬停只换文字色；用 `button` 承载，避免演示阶段改变 URL；当前页 `aria-current="page"` |
 | 正文 | `.post-comment-content` 带 `data-lightbox-group`，评论内图片按条成组预览（§5.4）；长链接 / 长英文串任意位置折行 |
-| 可访问性 | `section` + `aria-labelledby`、`nav` + `aria-label`、表单 `aria-label`；头像纯装饰 `aria-hidden`；输入框均有 `aria-label`；回复按钮带 `aria-label="回复 {昵称}"`；排序按钮用 `aria-pressed` 标记当前项，刷新按钮用 `aria-label` |
+| 可访问性 | `section` + `aria-labelledby`、`nav` + `aria-label`、表单 `aria-label`；头像纯装饰 `aria-hidden`；三个字段用 `label` 包裹输入框，左侧标签即可访问名称（不再重复 `aria-label`）；回复按钮带 `aria-label="回复 {昵称}"`；排序按钮用 `aria-pressed` 标记当前项，刷新按钮用 `aria-label` |
 | 锚点 | 评论区 `#comments` 与单条评论 `#comment-<id>` 均设 `scroll-margin-top`，落点让开 fixed Header |
-| 动效降级 | 评论 / 表单 / 排序 / 刷新按钮、输入框、分页与分割线雪花在 `prefers-reduced-motion` 下取消过渡 / 位移 |
+| 动效降级 | 评论 / 表单 / 排序 / 刷新按钮、字段外框、输入框、分页与分割线雪花在 `prefers-reduced-motion` 下取消过渡 / 位移 |
 
 ### 8.9 待补充 ⏳
 

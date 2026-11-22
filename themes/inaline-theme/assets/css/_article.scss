@@ -49,13 +49,88 @@
 
 .post-page .post-hero .post-header {
   position: relative;
-  z-index: 2;
+  // 压在浪花（z-index: 2）之上，标题与标签不会被波形盖住
+  z-index: 3;
   width: 100%;
-  // 顶部给 fixed Header 让位；底部留出比之前更多的空间，文字整体往上提
+  // 顶部给 fixed Header 让位；底部在原有留白外再让出一档给浪花
   padding-top: calc(var(--header-height) + var(--space-2));
-  padding-bottom: calc(var(--space-8) + var(--space-4));
+  padding-bottom: calc(var(--space-8) + var(--space-4) + var(--space-4));
   text-align: center;
   color: var(--color-over-hero);
+}
+
+// --- 大图底部浪花 ---
+
+// 四层波形横向漂移，最底一层取页面底色，让大图以波浪边缘沉入正文区灰底。
+// 结构见 layouts/posts/page.html；--post-wave-height 见 _tokens.scss
+.post-hero-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--post-wave-height);
+  z-index: 2; // 在压暗遮罩之上、标题区（z-index: 3）之下
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.post-hero-wave-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.post-hero-wave-parallax > use {
+  fill: var(--color-bg);
+  // 长周期漂移：不同层不同速度，形成视差
+  animation: post-wave-move 24s cubic-bezier(.36, .45, .63, .53) infinite;
+}
+
+.post-hero-wave-parallax > use:nth-child(1) {
+  animation-delay: -2s;
+  animation-duration: 9s;
+  opacity: .7;
+}
+
+.post-hero-wave-parallax > use:nth-child(2) {
+  animation-delay: -3s;
+  animation-duration: 13s;
+  opacity: .5;
+}
+
+.post-hero-wave-parallax > use:nth-child(3) {
+  animation-delay: -4s;
+  animation-duration: 17s;
+  opacity: .3;
+}
+
+.post-hero-wave-parallax > use:nth-child(4) {
+  animation-delay: -5s;
+  animation-duration: 24s;
+}
+
+@keyframes post-wave-move {
+  0% { transform: translate3d(-90px, 0, 0); }
+  100% { transform: translate3d(85px, 0, 0); }
+}
+
+// 窄屏收矮一档，并隐藏中间两层，只留最淡与最实的两层（与参考站一致）
+@media (max-width: 768px) {
+  .post-hero-wave {
+    height: 44px;
+  }
+
+  .post-hero-wave-parallax > use:nth-child(2),
+  .post-hero-wave-parallax > use:nth-child(3) {
+    display: none;
+  }
+}
+
+// 减少动态效果：波形停在原地
+@media (prefers-reduced-motion: reduce) {
+  .post-hero-wave-parallax > use {
+    animation: none;
+  }
 }
 
 .post-page .post-title {

@@ -14,9 +14,9 @@
     · 时间用 relative-time.html：1 周内显示“x 分钟 / 小时 / 天前”，
       超过一周显示具体日期，与文章列表的时间语言一致
     · 头像留空时用名字首字兜底；博主的头像沿用 hero.avatar
-    · 发布评论表单目前只有 UI：左侧头像、右侧邮箱 / 昵称 / 网址、
-      下方正文（右下角 0/1000 字数提示）、底部表情 / Markdown 指南 / 预览 / 发送，
-      功能待接入 Waline 后实现
+    · 发布评论表单目前只有 UI：左侧头像、右侧邮箱 / 昵称 / 网址（每项为
+      左侧标签插槽 + 右侧输入框）、下方正文（右下角 0/1000 字数提示）、
+      底部表情 / Markdown 指南 / 预览 / 发送，功能待接入 Waline 后实现
     · 表单下方是“XX 条评论”标题与排序 / 刷新工具条，当前仅 UI
 */}}
 {{ $now := now }}
@@ -148,7 +148,9 @@
 
   {{/* 发布评论表单：目前只有 UI，不提交、不改头像。
        接入 Waline 后按邮箱取头像（data-comment-avatar 是替换头像的挂点），
-       字段名沿用 Waline 的 mail / nick / link / comment */}}
+       字段名沿用 Waline 的 mail / nick / link / comment。
+       字段用 <label> 包裹：左侧 .post-comment-field-label 是可见标签，
+       同时承担输入框的可访问名称 */}}
   <form class="post-comment-form" aria-label="发表评论">
     <div class="post-comment-form-main">
       <span class="post-comment-avatar" data-comment-avatar aria-hidden="true">
@@ -157,9 +159,18 @@
 
       <div class="post-comment-form-body">
         <div class="post-comment-form-fields">
-          <input class="post-comment-input" type="email" name="mail" placeholder="邮箱（必填）" aria-label="邮箱" autocomplete="email" required>
-          <input class="post-comment-input" type="text" name="nick" placeholder="昵称（必填）" aria-label="昵称" autocomplete="nickname" required>
-          <input class="post-comment-input" type="url" name="link" placeholder="网址（可选）" aria-label="网址" autocomplete="url">
+          <label class="post-comment-field">
+            <span class="post-comment-field-label">邮箱</span>
+            <input class="post-comment-input" type="email" name="mail" placeholder="必填" autocomplete="email" required>
+          </label>
+          <label class="post-comment-field">
+            <span class="post-comment-field-label">昵称</span>
+            <input class="post-comment-input" type="text" name="nick" placeholder="必填" autocomplete="nickname" required>
+          </label>
+          <label class="post-comment-field">
+            <span class="post-comment-field-label">网址</span>
+            <input class="post-comment-input" type="url" name="link" placeholder="可选" autocomplete="url">
+          </label>
         </div>
 
         <div class="post-comment-editor">

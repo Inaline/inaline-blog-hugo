@@ -10,6 +10,7 @@
   'use strict';
 
   var THEME_KEY = 'inaline-theme';
+  var PAGE_BG_KEY = 'inaline-page-bg';
 
   /** 主题切换：写 data-theme + localStorage（初始值由 head 内联脚本决定） */
   function initThemeToggle() {
@@ -28,6 +29,63 @@
         /* 隐私模式下 localStorage 不可用，忽略即可 */
       }
     });
+  }
+
+  /**
+   * 封面记忆（DESIGN.md §7.1）：首页把当前激活封面写进 localStorage，
+   * 文章页的页脚据此还原上一次首页看到的封面（见 initFooterCover）。
+   * 切换本身归 home.js（初始随机 + 左右箭头），这里只观察 .is-active 的变化，
+   * 因此两边不需要互相调用，各自保持幂等 init。
+   */
+  function initPageBgMemory() {
+    var bg = document.querySelector('.page-bg[data-page-bg="home"]');
+    if (!bg || bg.dataset.bgMemoryBound === 'true') return;
+    bg.dataset.bgMemoryBound = 'true';
+
+    function save() {
+      var active = bg.querySelector('.page-bg-layer.is-active');
+      var cover = active && active.getAttribute('data-cover');
+      if (!cover) return;
+      try {
+        localStorage.setItem(PAGE_BG_KEY, cover);
+      } catch (e) {
+        /* 隐私模式下 localStorage 不可用，忽略即可 */
+      }
+    }
+
+    save(); // 初始那张；home.js 的随机重摇 / 箭头切换会再触发下面的观察
+
+    if (!window.MutationObserver) return;
+    var observer = new MutationObserver(save);
+    var layers = bg.querySelectorAll('.page-bg-layer');
+    Array.prototype.forEach.call(layers, function (layer) {
+      observer.observe(layer, { attributes: true, attributeFilter: ['class'] });
+    });
+  }
+
+  /**
+   * 文章页页脚背景（DESIGN.md §7.1）：整页背景取消后，背景图只在页脚出现。
+   * 取首页上次展示的封面（同 PAGE_BG_KEY），校验它属于封面池后写进
+   * --footer-cover；没有记录 / 记录失效时退回封面池第一张。
+   */
+  function initFooterCover() {
+    var footer = document.querySelector('.site-footer[data-footer-covers]');
+    if (!footer || footer.dataset.footerCoverBound === 'true') return;
+    footer.dataset.footerCoverBound = 'true';
+
+    var covers = (footer.getAttribute('data-footer-covers') || '').split(' ');
+    if (!covers.length || !covers[0]) return;
+
+    var cover = '';
+    try {
+      cover = localStorage.getItem(PAGE_BG_KEY) || '';
+    } catch (e) {
+      /* 隐私模式下 localStorage 不可用，忽略即可 */
+    }
+    if (covers.indexOf(cover) === -1) cover = covers[0];
+
+    footer.style.setProperty('--footer-cover', "url('" + cover + "')");
+    footer.classList.add('has-cover-bg');
   }
 
   /** Header 滚动感知：滚动后加深阴影；向下滚动收起、向上滚动展开 */
@@ -367,6 +425,8 @@
 
   function init() {
     initThemeToggle();
+    initPageBgMemory();
+    initFooterCover();
     initHeaderScroll();
     initFooterUptime();
     initClickableCards();

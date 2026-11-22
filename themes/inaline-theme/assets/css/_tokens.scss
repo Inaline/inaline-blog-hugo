@@ -213,6 +213,7 @@
   --toc-body-max-height: min(500px, 55vh);
   --toc-sub-max-height: 500px;
   --post-hero-height: clamp(240px, 30vw, 380px); // 文章页顶部大图高度：按视口宽度伸缩，不随窗口高度变化（§8）
+  --post-wave-height: 56px; // 文章页大图底部浪花高度（窄屏在 _article.scss 收为 44px）
   --header-height: 56px;
   --header-blur: 20px;       // Header 与下拉面板共用的毛玻璃强度（两者须同档，见 §6.3）
 

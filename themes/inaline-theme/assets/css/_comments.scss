@@ -79,13 +79,68 @@
   gap: var(--space-3);
 }
 
-// 输入框与评论气泡同一层底色：亮色下是浅灰，暗色下比卡片深一档
-.post-comment-input,
+// 字段外框：左侧标签插槽 + 右侧输入框共用一层描边。
+// 输入区铺白面（亮色纯白，暗色为抬升层），聚焦只把外框边框转主题色，
+// 不改文字颜色，输入框自身不再画边框
+.post-comment-field {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  height: 40px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-elevated);
+  transition: border-color var(--duration-fast) var(--ease);
+
+  &:focus-within {
+    border-color: var(--color-primary);
+  }
+}
+
+// 左侧标签插槽：两字字段名 + 左右各一档内边距，保持灰色底，
+// 右侧竖线与白色输入区隔开。标签是可见名称，输入框不再另设 aria-label
+.post-comment-field-label {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-right: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: .875rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+// 右侧输入区：外框负责描边与底色，输入框铺满剩余宽度
+.post-comment-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: .875rem;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  // 聚焦反馈由外框的 :focus-within 承担，输入框自身不加描边 / 光圈
+  &:focus {
+    outline: none;
+  }
+}
+
+// 正文编辑区与输入字段同底色、同描边，聚焦反馈一致
 .post-comment-textarea {
   width: 100%;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-bg);
+  background: var(--color-elevated);
   color: var(--color-text);
   font: inherit;
   transition: border-color var(--duration-fast) var(--ease);
@@ -99,12 +154,6 @@
     outline: none;
     border-color: var(--color-primary);
   }
-}
-
-.post-comment-input {
-  height: 40px;
-  padding: 0 var(--space-3);
-  font-size: .875rem;
 }
 
 // 正文编辑区：textarea 右下角叠字数提示，底部多留一档内边距，
@@ -552,6 +601,7 @@
   .post-comment-reply,
   .post-comment-tool,
   .post-comment-action,
+  .post-comment-field,
   .post-comment-input,
   .post-comment-textarea,
   .post-comments-sort,

@@ -3,6 +3,7 @@
 
   它是**首页**的背景，不是 Hero 的背景——从首屏一直铺到页脚，滚动时图像固定不动
   （.page-bg 用 position: fixed，见 _page-bg.scss）。
+  文章页不放整页背景：背景图只在页脚出现（footer.html + main.js，§7.1）。
 
   三件事的理由，都写在这里，以后别再走回头路：
 
@@ -30,7 +31,8 @@
      整个图层盖死。
 
   封面池与文章卡片的兜底图同池（见 cover-pool.html），改 hugo.yaml 的
-  hero.covers，两处一起变。
+  hero.covers，两处一起变。main.js 记录当前激活封面的 data-cover，
+  文章页页脚据此还原上一次首页看到的图。
 */}}
 {{ $covers := partial "cover-pool.html" . }}
 
@@ -53,8 +55,8 @@
   {{ end }}
 {{ end }}{{ end }}{{ end }}
 
-<div class="page-bg"{{ if $random }} data-cover-random="true"{{ end }}>
+<div class="page-bg" data-page-bg="home"{{ if $random }} data-cover-random="true"{{ end }}>
   {{ range $i, $img := $covers }}
-  <div class="page-bg-layer{{ if eq $i $initial }} is-active{{ end }}" style="background-image: url('{{ $img.RelPermalink }}')"></div>
+  <div class="page-bg-layer{{ if eq $i $initial }} is-active{{ end }}" data-cover="{{ $img.RelPermalink }}" style="background-image: url('{{ $img.RelPermalink }}')"></div>
   {{ end }}
 </div>

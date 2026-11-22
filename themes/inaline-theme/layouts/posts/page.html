@@ -52,6 +52,22 @@
         </div>
       {{ end }}
     </header>
+
+    {{/* 浪花（§8.1）：四层波形横向漂移，最底一层取页面底色，
+         让大图以波浪边缘沉入下方灰底正文区 */}}
+    <div class="post-hero-wave" aria-hidden="true">
+      <svg class="post-hero-wave-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto" focusable="false">
+        <defs>
+          <path id="post-hero-wave-path" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path>
+        </defs>
+        <g class="post-hero-wave-parallax">
+          <use href="#post-hero-wave-path" x="48" y="0"></use>
+          <use href="#post-hero-wave-path" x="48" y="3"></use>
+          <use href="#post-hero-wave-path" x="48" y="5"></use>
+          <use href="#post-hero-wave-path" x="48" y="7"></use>
+        </g>
+      </svg>
+    </div>
   </div>
 
   <div class="container container--wide layout layout--post">
