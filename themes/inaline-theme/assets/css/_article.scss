@@ -179,8 +179,8 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 10rem;
-  height: 10rem;
+  width: 12rem;
+  height: 12rem;
   transform: translate(15%, -15%);
   color: var(--color-border);
   pointer-events: none;
@@ -327,7 +327,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, .45);
+  background: var(--post-nav-scrim);
   pointer-events: none;
 }
 

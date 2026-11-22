@@ -19,6 +19,10 @@
   {{ $js := resources.Get "js/main.js" | minify | fingerprint }}
   <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 
+  {{/* 图片预览（§5.4）：全站生效，动态插入的评论图片也能用 */}}
+  {{ $lightbox := resources.Get "js/lightbox.js" | minify | fingerprint }}
+  <script src="{{ $lightbox.RelPermalink }}" integrity="{{ $lightbox.Data.Integrity }}" defer></script>
+
   {{/* 页面级脚本出口：页面模板用 {{ define "page-scripts" }} 注入自己的 JS */}}
   {{ block "page-scripts" . }}{{ end }}
 </body>

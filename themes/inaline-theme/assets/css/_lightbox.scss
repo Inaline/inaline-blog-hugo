@@ -1,0 +1,307 @@
+// ---------------------------------------------------------------------------
+// 图片预览（DESIGN.md §5.4）
+//
+// 全屏遮罩 + 居中大图 + 底部工具栏。遮罩与圆形按钮使用固定深色令牌；
+// 底部工具栏玻璃按主题翻色（亮色叠白偏亮、暗色加深，见 _tokens.scss）。
+// ---------------------------------------------------------------------------
+
+// 打开期间锁住页面滚动；关闭后恢复
+html.is-lightbox-open {
+  overflow: hidden;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-lightbox);
+  background: var(--lightbox-backdrop);
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease);
+  overscroll-behavior: contain;
+}
+
+.lightbox[hidden] {
+  display: none;
+}
+
+.lightbox.is-open {
+  opacity: 1;
+}
+
+// 可预览图片给出放大镜光标；被 ignore 的子树（头像、表情）保持默认。
+// 两条规则特异度相同，靠源顺序让 ignore 覆盖
+.markdown img,
+[data-lightbox-group] img {
+  cursor: zoom-in;
+}
+
+[data-lightbox-ignore] img,
+img[data-lightbox-ignore] {
+  cursor: auto;
+}
+
+// --- 舞台 ----------------------------------------------------------------
+
+.lightbox-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // 四周等宽：图片的布局中心就是舞台中心，缩放锚点计算才成立。
+  // 工具栏浮在底部，不参与排版
+  padding: var(--space-8);
+  touch-action: none;
+}
+
+.lightbox-image {
+  flex: none;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: var(--radius-md);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .55);
+  cursor: zoom-in;
+  user-select: none;
+  -webkit-user-drag: none;
+  transform-origin: center center;
+  // 只过渡缩放 / 旋转；切图动画走独立的 translate（JS 动画），
+  // 不改透明度——避免加载时画面忽明忽暗
+  transition: transform var(--duration-base) var(--ease);
+  will-change: transform;
+}
+
+.lightbox.is-zoomed .lightbox-image {
+  cursor: grab;
+}
+
+.lightbox.is-dragging .lightbox-image {
+  cursor: grabbing;
+  transition: none;
+}
+
+// 加载中：只有真的等超过 SPINNER_DELAY 才显示，缓存图片不会闪一下
+.lightbox-loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  border: 2px solid rgba(255, 255, 255, .18);
+  border-top-color: var(--lightbox-fg);
+  border-radius: 50%;
+  animation: lightbox-spin .8s linear infinite;
+  pointer-events: none;
+}
+
+.lightbox:not(.is-loading) .lightbox-loader {
+  display: none;
+}
+
+@keyframes lightbox-spin {
+  to { transform: rotate(360deg); }
+}
+
+// 图注：默认取原图 alt，可用 data-lightbox-caption 覆盖
+.lightbox-caption {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--space-5) + 3.5rem + var(--space-2));
+  // LibSass 会把 CSS 的 min() 当成 Sass 函数求值，这里用 width + max-width 表达同一约束
+  width: calc(100% - 2 * var(--space-6));
+  max-width: 720px;
+  margin: 0;
+  transform: translateX(-50%);
+  // 纯白、无文字阴影：图注压在照片 / 遮罩上，靠颜色本身提高对比度
+  color: var(--lightbox-fg);
+  font-size: .875rem;
+  line-height: 1.6;
+  text-align: center;
+  pointer-events: none;
+}
+
+.lightbox-caption[hidden] {
+  display: none;
+}
+
+// --- 按钮 ----------------------------------------------------------------
+
+.lightbox-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--lightbox-btn-bg);
+  color: var(--lightbox-fg);
+  font-size: 1rem;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background-color var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+
+  &:hover {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+// 关闭按钮不画高亮边框：打开时脚本会主动聚焦它，一圈描边太抢眼。
+// 键盘焦点改用底色提亮，仍然可感知
+.lightbox-close:focus,
+.lightbox-close:focus-visible {
+  outline: none;
+}
+
+.lightbox-close:focus-visible {
+  background: var(--lightbox-btn-bg-focus);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: calc(var(--space-5) + env(safe-area-inset-top, 0px));
+  right: var(--space-5);
+  z-index: 2;
+}
+
+.lightbox-prev,
+.lightbox-next {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  transform: translateY(-50%);
+}
+
+.lightbox-prev {
+  left: var(--space-5);
+}
+
+.lightbox-next {
+  right: var(--space-5);
+}
+
+// --- 底部工具栏 ----------------------------------------------------------
+
+.lightbox-toolbar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  background: var(--lightbox-toolbar-bg);
+  color: var(--lightbox-fg-muted);
+  transform: translateX(-50%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+// 参考 Hero 卡片的左右切换：不套圆形底，图标平铺，
+// 默认灰、悬停 / 键盘选中转白
+.lightbox-toolbar .lightbox-button {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  color: var(--lightbox-fg-muted);
+  font-size: .875rem;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  &:hover,
+  &:focus-visible {
+    background: transparent;
+    color: var(--lightbox-fg);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.lightbox-counter,
+.lightbox-zoom {
+  font-size: .75rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.lightbox-counter {
+  min-width: 3.5em;
+  color: var(--lightbox-fg);
+}
+
+.lightbox-zoom {
+  min-width: 3em;
+  color: var(--lightbox-fg);
+}
+
+.lightbox-toolbar-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 var(--space-1);
+  background: rgba(255, 255, 255, .18);
+}
+
+// --- 窄屏 ----------------------------------------------------------------
+
+@media (max-width: 640px) {
+  .lightbox-stage {
+    padding: var(--space-4);
+  }
+
+  .lightbox-close {
+    top: calc(var(--space-4) + env(safe-area-inset-top, 0px));
+    right: var(--space-4);
+  }
+
+  .lightbox-prev,
+  .lightbox-next {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lightbox-prev {
+    left: var(--space-2);
+  }
+
+  .lightbox-next {
+    right: var(--space-2);
+  }
+
+  .lightbox-toolbar {
+    bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .lightbox-caption {
+    bottom: calc(var(--space-4) + 3.5rem + var(--space-2));
+    font-size: .8125rem;
+  }
+}
+
+// --- 减少动态效果 --------------------------------------------------------
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox,
+  .lightbox-image,
+  .lightbox-button {
+    transition: none;
+  }
+
+  .lightbox-loader {
+    animation: none;
+  }
+}

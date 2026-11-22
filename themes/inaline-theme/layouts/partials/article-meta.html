@@ -11,7 +11,7 @@
 {{ $author := or .Params.author site.Params.author "—" }}
 <aside class="article-meta" aria-label="文章信息">
   {{ with $license.name }}
-    {{ partial "icon.html" (dict "name" "cc" "size" "10rem" "class" "article-meta-logo") }}
+    {{ partial "icon.html" (dict "name" "cc" "size" "12rem" "class" "article-meta-logo") }}
   {{ end }}
 
   <p class="article-meta-title">{{ .Title }}</p>
@@ -46,7 +46,6 @@
       <dd class="article-meta-value">
         {{ with $license.name }}
           {{ with $license.url }}
-            <i class="fa-solid fa-link article-meta-link-icon" aria-hidden="true"></i>
             <a href="{{ . }}" target="_blank" rel="noopener noreferrer">{{ $license.name }}</a>
           {{ else }}
             {{ $license.name }}

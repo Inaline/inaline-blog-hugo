@@ -64,6 +64,37 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
   }
 }
 
+// Markdown 分隔线（§9.4）：2px 虚线 + 雪花图标，悬停时图标从左向右移动。
+// 文章正文与评论区共用同一条线——评论区在 .markdown 作用域之外，
+// 把规则抽成 mixin 供 _comments.scss 引用，两处样式不会分叉
+@mixin md-divider {
+  position: relative;
+  width: calc(100% - 4px);
+  height: 0;
+  margin: var(--space-7) auto;
+  border: 0;
+  border-top: 2px dashed var(--color-hr-line);
+  overflow: visible;
+
+  &::before {
+    content: "\f2dc";
+    position: absolute;
+    top: -10px;
+    left: 5%;
+    z-index: 1;
+    color: var(--color-primary);
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 20px;
+    line-height: 1;
+    transition: left 1s ease-in-out;
+  }
+
+  &:hover::before {
+    left: calc(95% - 20px);
+  }
+}
+
 .markdown {
   color: var(--color-text);
   font-size: 1rem;
@@ -302,13 +333,17 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
   // --- 引用 ----------------------------------------------------------------
 
   blockquote {
+    // 开引号（.md-quote-mark）的定位基准
+    position: relative;
     margin: 1.5em 0;
-    padding: var(--space-3) var(--space-4);
+    // 上内边距给开引号留出位置：引号高 1.5rem，距顶部 --space-2，再空 --space-1
+    padding: calc(var(--space-2) + 1.5rem + var(--space-1)) var(--space-4) var(--space-3);
     // 竖线始终是主题色；嵌套层级只靠背景深浅区分
     border-left: 3px solid var(--color-primary);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     background: var(--color-quote-bg-1);
-    color: var(--color-text-muted);
+    // 引用正文用独立令牌，颜色见 _tokens.scss；开引号仍是主题色
+    color: var(--color-quote-text);
 
     > :first-child { margin-top: 0; }
 
@@ -324,6 +359,17 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
         background: var(--color-quote-bg-3);
       }
     }
+  }
+
+  // 开引号：与 Hero 一言卡片同一枚 SVG（icon.html "quote"），取主题色、
+  // 淡一档作纯装饰。绝对定位在引用块左上角，不参与内容排版
+  .md-quote-mark {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-4);
+    color: var(--color-primary);
+    opacity: .35;
+    pointer-events: none;
   }
 
   // --- 代码 ----------------------------------------------------------------
@@ -778,33 +824,10 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
   // --- 分隔线 --------------------------------------------------------------
 
   // 参考 Fomal 的写法：2px 虚线 + 雪花图标，悬停时图标从左向右移动。
-  // 颜色换成本站令牌：线用专用虚线色，图标用主题色
+  // 颜色换成本站令牌：线用专用虚线色，图标用主题色。
+  // 图形与动效在文件顶部的 md-divider mixin 里，评论区共用同一条线
   hr {
-    position: relative;
-    width: calc(100% - 4px);
-    height: 0;
-    margin: var(--space-7) auto;
-    border: 0;
-    border-top: 2px dashed var(--color-hr-line);
-    overflow: visible;
-
-    &::before {
-      content: "\f2dc";
-      position: absolute;
-      top: -10px;
-      left: 5%;
-      z-index: 1;
-      color: var(--color-primary);
-      font-family: "Font Awesome 6 Free";
-      font-weight: 900;
-      font-size: 20px;
-      line-height: 1;
-      transition: left 1s ease-in-out;
-    }
-
-    &:hover::before {
-      left: calc(95% - 20px);
-    }
+    @include md-divider;
   }
 
   // --- 脚注 ----------------------------------------------------------------

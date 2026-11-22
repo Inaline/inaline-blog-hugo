@@ -1,0 +1,9 @@
+{{- /*
+  引用块：在内容前铺一枚开引号（与 Hero 一言卡片同一枚 icon.html "quote" SVG，§7.5 / §9.4）。
+  图形只做装饰，aria-hidden 由 icon.html 统一输出；嵌套引用各自渲染自己的一枚。
+  颜色 / 尺寸 / 定位见 _markdown.scss 的 .md-quote-mark。
+*/ -}}
+<blockquote>
+  {{ partial "icon.html" (dict "name" "quote" "size" "1.5rem" "class" "md-quote-mark") }}
+  {{ .Text }}
+</blockquote>

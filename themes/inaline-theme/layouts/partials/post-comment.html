@@ -1,0 +1,63 @@
+{{/*
+  单条评论（DESIGN.md §8.8）。
+
+  入参（dict）：
+    comment —— 评论数据：id / name / ago / avatar / content / ip / os / os_icon /
+               browser / browser_icon / replies
+    now     —— 构建时刻，用于把 ago 换算成绝对时间
+    reply   —— true 时渲染为二级回复：头像与字号各收一档，且不再向下嵌套
+
+  结构：头像 / 昵称 / 时间在卡片外；正文、IP / 系统 / 浏览器与回复按钮
+  收进灰色气泡卡片。二级回复同样各自成卡，不共用一张大卡片。
+  回复最多一层：二级评论里的 replies 会被忽略，保证嵌套只有两级。
+  avatar 留空时用名字首字生成圆形占位头像（与侧栏近期评论一致）。
+  正文按 HTML 输出，接入 Waline 后由前端负责清洗。
+*/}}
+{{- $c := .comment -}}
+{{- $now := .now -}}
+{{- $isReply := .reply | default false -}}
+{{- $time := $now.Add (time.ParseDuration $c.ago) -}}
+<article class="post-comment{{ if $isReply }} post-comment--reply{{ else }} post-comment--thread{{ end }}" id="comment-{{ $c.id }}">
+  <span class="post-comment-avatar" aria-hidden="true">
+    {{- if $c.avatar -}}
+      <img src="{{ $c.avatar }}" alt="" loading="lazy" width="{{ if $isReply }}32{{ else }}40{{ end }}" height="{{ if $isReply }}32{{ else }}40{{ end }}">
+    {{- else -}}
+      {{ substr $c.name 0 1 }}
+    {{- end -}}
+  </span>
+
+  <div class="post-comment-main">
+    <header class="post-comment-head">
+      <span class="post-comment-author">{{ $c.name }}</span>
+      <time class="post-comment-time" datetime="{{ $time.Format "2006-01-02T15:04:05Z07:00" }}" title="{{ $time.Format "2006年1月2日 15:04" }}">{{ partial "relative-time.html" $time }}</time>
+    </header>
+
+    <div class="post-comment-bubble">
+      <div class="post-comment-content" data-lightbox-group>{{ $c.content | safeHTML }}</div>
+      <div class="post-comment-bubble-foot">
+        <ul class="post-comment-meta">
+          <li class="post-comment-meta-item" title="IP 归属地">
+            <i class="fa-solid fa-location-dot" aria-hidden="true"></i><span>{{ $c.ip }}</span>
+          </li>
+          <li class="post-comment-meta-item" title="操作系统">
+            <i class="{{ $c.os_icon }}" aria-hidden="true"></i><span>{{ $c.os }}</span>
+          </li>
+          <li class="post-comment-meta-item" title="浏览器">
+            <i class="{{ $c.browser_icon }}" aria-hidden="true"></i><span>{{ $c.browser }}</span>
+          </li>
+        </ul>
+        <button class="post-comment-reply" type="button" aria-label="回复 {{ $c.name }}">
+          <i class="fa-solid fa-reply" aria-hidden="true"></i><span>回复</span>
+        </button>
+      </div>
+    </div>
+
+    {{ if and (not $isReply) $c.replies }}
+      <div class="post-comment-replies">
+        {{ range $c.replies }}
+          {{ partial "post-comment.html" (dict "comment" . "now" $now "reply" true) }}
+        {{ end }}
+      </div>
+    {{ end }}
+  </div>
+</article>

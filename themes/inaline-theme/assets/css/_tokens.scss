@@ -26,6 +26,8 @@
   --header-bg: rgba(22, 24, 29, 0.6);
   --hero-card-bg: rgba(16, 18, 22, 0.4); // Hero 一言卡片玻璃底（§7.5）：仅暗色加深色底
   --page-scrim: rgba(0, 0, 0, .35); // 首页整页背景压暗遮罩：暗色下把封面压下去，夜里不刺眼
+  --post-nav-scrim: rgba(0, 0, 0, .45); // 上一篇 / 下一篇卡片整图压暗：暗色保持原档
+  --lightbox-toolbar-bg: rgba(8, 10, 14, .55); // 图片预览工具栏：暗色加深，亮色叠白（§5.4）
 
   // 社交图标品牌色：取自各家官方色，一排联系方式里才分得开（用法见 _sidebar.scss）。
   // GitHub 的品牌色是近黑，落在暗色卡片上会整个消失——这是唯一一个需要翻色的品牌色，
@@ -56,7 +58,10 @@
   --color-heading-mark-5: #EC4899; // h5 粉
   --color-heading-mark-6: #94A3B8; // h6 灰
 
-  // Markdown 引用块背景（§9.4）：按嵌套层级由浅到深。
+  // Markdown 引用块（§9.4）：正文用独立的灰，与正文色 / muted 都拉开一点；
+  // 引号（.md-quote-mark）仍用主题色，不跟这里走。亮暗两套主题共用该值
+  --color-quote-text: #6A737D;
+  // 背景按嵌套层级由浅到深。
   // 竖线始终用主题色，只有底色逐级加深；半透明叠在父级底色上，自然更深
   --color-quote-bg-1: rgba(250, 93, 25, .10);
   --color-quote-bg-2: rgba(250, 93, 25, .12);
@@ -68,6 +73,9 @@
   // 胶囊底色与标题投影同样属于"照片上的固定色"——坐在图上，两种主题下取值相同，故不进 dark-tokens
   --post-hero-scrim-top: rgba(0, 0, 0, .45);
   --post-hero-scrim-bottom: rgba(0, 0, 0, .72);
+  // 上一篇 / 下一篇卡片的整图压暗（§8.7）：亮色下照片要更亮，压得比暗色浅一档；
+  // 暗色沿用 .45（见 dark-tokens）。同属"压在照片上的色块"，但按主题分档，故进 dark-tokens
+  --post-nav-scrim: rgba(0, 0, 0, .25);
   // 首页整页背景的压暗遮罩。亮色不压：照片原样露出，正文靠卡片自己的不透明底兜住；
   // 暗色才压在照片上（见 dark-tokens）。必须是显式的 transparent 而不是"不定义"——
   // 变量缺失会让 background: var(--page-scrim) 在计算值阶段整条失效。
@@ -81,6 +89,17 @@
   // 页脚会连底色一起丢掉，只剩白字直接压在照片上
   --footer-scrim: rgba(26, 26, 26, .48);
   --footer-blur: 3px;
+
+  // 图片预览（§5.4）：遮罩与控件都坐在照片上，亮暗主题同值。
+  // 遮罩不用纯黑，留一点冷色底，暗部不会死黑
+  --lightbox-backdrop: rgba(8, 10, 14, .92);
+  --lightbox-btn-bg: rgba(255, 255, 255, .10);
+  --lightbox-btn-bg-focus: rgba(255, 255, 255, .20); // 关闭按钮的键盘焦点底色（不画描边）
+  --lightbox-fg: #FFFFFF;
+  --lightbox-fg-muted: rgba(255, 255, 255, .62);
+  // 底部工具栏玻璃：亮色在深色遮罩上叠一层白、毛玻璃偏亮；
+  // 暗色加深（覆写见 dark-tokens）
+  --lightbox-toolbar-bg: rgba(255, 255, 255, .14);
 
   // Hero 中央一言卡片（玻璃拟态，压在封面图上；规格见 §7.5）
   // 浅色不添底：只做毛玻璃，整卡让位给照片；暗色才叠一档深色底（见 dark-tokens）
@@ -200,6 +219,7 @@
   // 层级
   --z-header: 100;
   --z-dropdown: 110;
+  --z-lightbox: 1000; // 图片预览：永远压住 Header 与下拉菜单
 
   // 动效
   --ease: cubic-bezier(.4, 0, .2, 1);

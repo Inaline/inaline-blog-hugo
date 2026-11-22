@@ -1,0 +1,220 @@
+{{/*
+  文章评论区（DESIGN.md §8.8）。
+
+  位置：正文卡片末尾、上一篇 / 下一篇之后，用一条 Markdown 雪花分割线与
+  上方内容分开。评论区当前只做 UI：评论数据是本文件内的演示占位，
+  接入 Waline 后由前端按 data-post-comments 回填（获取真实数据、渲染列表与分页），
+  演示数据随之删除。
+
+  结构约定：
+    · 顶层评论分页；回复最多一层（二级），挂在所属顶层评论下方
+    · 每条评论 = 头像 + 昵称 / 时间（卡片外）+ 灰色气泡卡片
+      （正文、IP / 系统 / 浏览器、右下角回复按钮）
+    · 二级回复同样各自成卡，不共用一张大卡片
+    · 时间用 relative-time.html：1 周内显示“x 分钟 / 小时 / 天前”，
+      超过一周显示具体日期，与文章列表的时间语言一致
+    · 头像留空时用名字首字兜底；博主的头像沿用 hero.avatar
+    · 发布评论表单目前只有 UI：左侧头像、右侧邮箱 / 昵称 / 网址、
+      下方正文（右下角 0/1000 字数提示）、底部表情 / Markdown 指南 / 预览 / 发送，
+      功能待接入 Waline 后实现
+    · 表单下方是“XX 条评论”标题与排序 / 刷新工具条，当前仅 UI
+*/}}
+{{ $now := now }}
+
+{{/* 博主头像与侧栏近期评论同源：网络 URL 原样引用，assets 路径走 resources.Get */}}
+{{ $author := or site.Params.author "博主" }}
+{{ $authorAvatar := "" }}
+{{ with site.Params.hero }}{{ with .avatar }}
+  {{ $authorAvatar = . }}
+  {{ if not (or (hasPrefix . "http://") (hasPrefix . "https://")) }}
+    {{ with resources.Get . }}{{ $authorAvatar = .RelPermalink }}{{ else }}{{ $authorAvatar = "" }}{{ end }}
+  {{ end }}
+{{ end }}{{ end }}
+
+{{/* 演示数据：ago 为相对构建时刻的偏移（Go duration 语法），覆盖分钟 / 小时 / 天 / 日期四档。
+     顶层 5 条，其中 2 条带回复（共 3 条）；真实接入后整块替换为 Waline 的评论树 */}}
+{{ $comments := slice
+  (dict
+    "id" "1204"
+    "name" "阿澈"
+    "ago" "-18m"
+    "avatar" ""
+    "ip" "广东"
+    "os" "macOS 15"
+    "os_icon" "fa-brands fa-apple"
+    "browser" "Safari 18"
+    "browser_icon" "fa-brands fa-safari"
+    "content" "两层结构比平铺清楚多了，回复能看出挂在谁下面。IP 和浏览器信息放在底部也刚好，不抢正文。"
+    "replies" (slice
+      (dict
+        "id" "1205"
+        "name" $author
+        "ago" "-9m"
+        "avatar" $authorAvatar
+        "ip" "广东"
+        "os" "Windows 11"
+        "os_icon" "fa-brands fa-windows"
+        "browser" "Edge 131"
+        "browser_icon" "fa-brands fa-edge"
+        "content" `<span class="post-comment-mention">@阿澈</span> 是的，回复再回复也会收在同一条顶层评论下面，最多只嵌一层。`
+      )
+    )
+  )
+  (dict
+    "id" "1203"
+    "name" "Nana"
+    "ago" "-3h"
+    "avatar" ""
+    "ip" "上海"
+    "os" "iOS 18"
+    "os_icon" "fa-brands fa-apple"
+    "browser" "Safari 18"
+    "browser_icon" "fa-brands fa-safari"
+    "content" "头像、昵称、时间排得挺紧凑的，读起来不费劲。等 Waline 接上后再看真实数据的效果。"
+  )
+  (dict
+    "id" "1201"
+    "name" "老白"
+    "ago" "-26h"
+    "avatar" ""
+    "ip" "浙江"
+    "os" "Windows 11"
+    "os_icon" "fa-brands fa-windows"
+    "browser" "Chrome 131"
+    "browser_icon" "fa-brands fa-chrome"
+    "content" "分页只数顶层评论吧？回复跟着父评论走，不应该单独分页。"
+    "replies" (slice
+      (dict
+        "id" "1202"
+        "name" $author
+        "ago" "-20h"
+        "avatar" $authorAvatar
+        "ip" "广东"
+        "os" "Windows 11"
+        "os_icon" "fa-brands fa-windows"
+        "browser" "Edge 131"
+        "browser_icon" "fa-brands fa-edge"
+        "content" `<span class="post-comment-mention">@老白</span> 对，分页按顶层评论算，回复全部挂在所属楼层下面。`
+      )
+      (dict
+        "id" "1206"
+        "name" "木子"
+        "ago" "-15h"
+        "avatar" ""
+        "ip" "北京"
+        "os" "macOS 15"
+        "os_icon" "fa-brands fa-apple"
+        "browser" "Firefox 132"
+        "browser_icon" "fa-brands fa-firefox-browser"
+        "content" "这个处理方式和大多数博客一致，翻页时不会把一层回复拆散。"
+      )
+    )
+  )
+  (dict
+    "id" "1198"
+    "name" "Kite"
+    "ago" "-72h"
+    "avatar" ""
+    "ip" "四川"
+    "os" "Android 15"
+    "os_icon" "fa-brands fa-android"
+    "browser" "Chrome 131"
+    "browser_icon" "fa-brands fa-chrome"
+    "content" "头像留空时用名字首字兜底，等真实评论进来就能看到 Gravatar 了。"
+  )
+  (dict
+    "id" "1180"
+    "name" "木子"
+    "ago" "-288h"
+    "avatar" ""
+    "ip" "北京"
+    "os" "Windows 10"
+    "os_icon" "fa-brands fa-windows"
+    "browser" "Firefox 132"
+    "browser_icon" "fa-brands fa-firefox-browser"
+    "content" "超过一周就显示具体日期，比一直挂着“12 天前”清楚。这一条正好用来核对时间显示。"
+  )
+}}
+
+<section class="post-comments" id="comments" aria-labelledby="post-comments-title" data-post-comments>
+  <hr class="post-comments-divider" aria-hidden="true">
+
+  <header class="post-comments-head">
+    <h2 class="post-comments-title" id="post-comments-title">
+      <i class="fa-regular fa-comments" aria-hidden="true"></i>
+      <span>评论</span>
+    </h2>
+  </header>
+
+  {{/* 发布评论表单：目前只有 UI，不提交、不改头像。
+       接入 Waline 后按邮箱取头像（data-comment-avatar 是替换头像的挂点），
+       字段名沿用 Waline 的 mail / nick / link / comment */}}
+  <form class="post-comment-form" aria-label="发表评论">
+    <div class="post-comment-form-main">
+      <span class="post-comment-avatar" data-comment-avatar aria-hidden="true">
+        <i class="fa-solid fa-user"></i>
+      </span>
+
+      <div class="post-comment-form-body">
+        <div class="post-comment-form-fields">
+          <input class="post-comment-input" type="email" name="mail" placeholder="邮箱（必填）" aria-label="邮箱" autocomplete="email" required>
+          <input class="post-comment-input" type="text" name="nick" placeholder="昵称（必填）" aria-label="昵称" autocomplete="nickname" required>
+          <input class="post-comment-input" type="url" name="link" placeholder="网址（可选）" aria-label="网址" autocomplete="url">
+        </div>
+
+        <div class="post-comment-editor">
+          <textarea class="post-comment-textarea" name="comment" rows="4" placeholder="说点什么吧…" aria-label="评论内容" aria-describedby="post-comment-counter" maxlength="1000" required></textarea>
+          <span class="post-comment-counter" id="post-comment-counter" data-comment-counter>0/1000</span>
+        </div>
+
+        <div class="post-comment-form-foot">
+          <button class="post-comment-tool" type="button" aria-label="插入表情">
+            <i class="fa-regular fa-face-smile" aria-hidden="true"></i>
+          </button>
+          <div class="post-comment-form-actions">
+            <a class="post-comment-tool" href="https://guides.github.com/features/mastering-markdown/" target="_blank" rel="noopener noreferrer" aria-label="Markdown 语法指南" title="Markdown 语法指南">
+              <i class="fa-brands fa-markdown" aria-hidden="true"></i>
+            </a>
+            <button class="post-comment-action" type="button">
+              <span>预览</span>
+            </button>
+            <button class="post-comment-action post-comment-action--send" type="button">
+              <i class="fa-regular fa-paper-plane" aria-hidden="true"></i><span>发送</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  {{/* 列表头：评论总数 + 排序 / 刷新。当前仅 UI，按钮不改变演示数据顺序 */}}
+  <div class="post-comments-bar">
+    <h3 class="post-comments-list-title">18 条评论</h3>
+    <div class="post-comments-toolbar" role="group" aria-label="评论排序与刷新">
+      <button class="post-comments-sort is-active" type="button" aria-pressed="true">最新</button>
+      <button class="post-comments-sort" type="button" aria-pressed="false">最早</button>
+      <button class="post-comments-refresh" type="button" aria-label="刷新评论">
+        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="post-comment-list">
+    {{ range $comments }}
+      {{ partial "post-comment.html" (dict "comment" . "now" $now) }}
+    {{ end }}
+  </div>
+
+  {{/* 演示分页：接入 Waline 后由前端按真实总数生成，这里先把交互语言定下来 */}}
+  <nav class="post-comments-pager" aria-label="评论分页">
+    <button class="post-comments-page post-comments-page--step" type="button" aria-label="上一页">
+      <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+    </button>
+    <button class="post-comments-page" type="button">1</button>
+    <span class="post-comments-page is-current" aria-current="page">2</span>
+    <button class="post-comments-page" type="button">3</button>
+    <button class="post-comments-page post-comments-page--step" type="button" aria-label="下一页">
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+    </button>
+  </nav>
+</section>

@@ -511,26 +511,33 @@
 }
 
 // ---------------------------------------------------------------------------
-// 目录（.sidebar-toc）
+// 目录（.sidebar-toc）与文章页吸顶组（.sidebar-sticky）
 //
-// 仅文章页出现，排在博主信息卡之后（§8.5）。卡片吸顶；标题行右侧是阅读进度，
-// 列表区独立滚动，标题不跟着滚走。当前项为主题色实心块；父级左侧的
-// chevron 折叠子目录，.expanded / .collapsed 由 post.js 维护。
+// 仅文章页出现，由 sidebar.html 把目录与最新文章包进同一个吸顶组，排在
+// 博主信息卡之后（§8.5）。整组滚到 Header 下沿后吸顶并一直保持，直到最新
+// 文章卡的底部与左侧正文卡片（.post-content）的底部平齐，再随页面滚走。
+// 左右两栏同处一个栅格行，.layout--post .sidebar 被拉满主栏高度，组的
+// sticky 行程正好以主栏底部为界，不需要 JS 参与。
+// 标题行右侧是阅读进度，列表区独立滚动，标题不跟着滚走。当前项为主题色
+// 实心块；父级左侧的 chevron 折叠子目录，.expanded / .collapsed 由 post.js 维护。
 // ---------------------------------------------------------------------------
 
-.sidebar-toc {
+.layout--post .sidebar-sticky:has(.sidebar-toc) {
   position: sticky;
   top: calc(var(--header-height) + var(--space-4));
-  // 吸顶时后面的侧栏卡片会从下面经过，把目录卡抬到它们上面
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  // 吸顶时从博主卡上方经过，抬到上层
   z-index: 1;
   // 与 Header 的收起 / 展开同步位移（Header 自己也用 --duration-base）
   transition: top var(--duration-base) var(--ease);
 }
 
-// Header 向下滚动收起时，目录跟着上移一个 Header 高度，
+// Header 向下滚动收起时，整组跟着上移一个 Header 高度，
 // 不让顶部空出一整条没有内容的区域；Header 展开即回到原位。
 // 用 :has 直接读 Header 的状态，不必再让 JS 维护第二份开关
-body:has(.site-header.is-hidden) .sidebar-toc {
+body:has(.site-header.is-hidden) .layout--post .sidebar-sticky {
   top: var(--space-4);
 }
 
@@ -683,7 +690,7 @@ body:has(.site-header.is-hidden) .sidebar-toc {
   .toc-link,
   .toc-item-toggle,
   .toc-sub-list,
-  .sidebar-toc {
+  .sidebar-sticky {
     transition: none;
   }
 

@@ -1,0 +1,565 @@
+// ---------------------------------------------------------------------------
+// 评论区（DESIGN.md §8.8）
+//
+// 文章页正文卡片末尾、上一篇 / 下一篇之后的评论区。当前只做 UI：
+// 占位数据由 post-comments.html 渲染，接入 Waline 后由前端按
+// data-post-comments 回填真实数据与分页。
+//
+// 结构：顶层评论分页，回复最多一层（二级）。评论之间不画分割线，
+// 靠间距区分；头像 / 昵称 / 时间留在卡片外，正文、设备信息与回复按钮
+// 收进浅色气泡卡片，二级回复各自成卡。
+// ---------------------------------------------------------------------------
+
+.post-comments {
+  // 顶层评论头像直径。二级回复的缩进也以它为基准（头像 + 间距）
+  --comment-avatar-size: 40px;
+}
+
+// 评论区 / 单条评论都是锚点目标（侧栏近期评论、回复通知会指过来）：
+// 落点让开 fixed Header，与正文标题的 scroll-margin 同一档
+.post-comments,
+.post-comment {
+  scroll-margin-top: calc(var(--header-height) + var(--space-4));
+}
+
+// 与 Markdown 正文共用同一条雪花分割线（§9.4）。上间距拉开与文章的呼吸，
+// 下间距收一档，让评论区标题更贴近列表
+.post-comments-divider {
+  @include md-divider;
+  margin: var(--space-7) auto var(--space-5);
+}
+
+.post-comments-head {
+  margin-bottom: var(--space-4);
+}
+
+.post-comments-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.4;
+
+  // 图标与标题同色、比文字稍大：它是标题的标点，不抢主题色
+  i {
+    color: inherit;
+    font-size: 1.0625rem;
+    line-height: 1;
+  }
+}
+
+// --- 发布评论表单 ---
+
+// 当前只有 UI：表单不提交、头像不随邮箱变化。
+// 接入 Waline 后由 JS 按邮箱回填空表单头像（data-comment-avatar 是挂点）
+.post-comment-form {
+  margin-bottom: var(--space-6);
+}
+
+// 左侧头像直接复用评论头像的 .post-comment-avatar：
+// 后续按邮箱取到头像后，JS 把内容换成 <img> 即可，图片裁圆样式同样复用
+.post-comment-form-main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+// 右侧内容列：字段、正文、操作栏依次向下排列
+.post-comment-form-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-comment-form-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+// 输入框与评论气泡同一层底色：亮色下是浅灰，暗色下比卡片深一档
+.post-comment-input,
+.post-comment-textarea {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  transition: border-color var(--duration-fast) var(--ease);
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  // 聚焦只换边框色，不再叠加光圈 / 阴影
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+}
+
+.post-comment-input {
+  height: 40px;
+  padding: 0 var(--space-3);
+  font-size: .875rem;
+}
+
+// 正文编辑区：textarea 右下角叠字数提示，底部多留一档内边距，
+// 输入的文字不会压到提示上
+.post-comment-editor {
+  position: relative;
+  margin-top: var(--space-3);
+}
+
+.post-comment-textarea {
+  display: block;
+  min-height: 104px;
+  padding: var(--space-3) var(--space-3) calc(var(--space-3) + 1.25rem);
+  font-size: .9375rem;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+// 字数限制提示：当前是演示占位 0/1000，接入 Waline 后由前端随输入更新
+.post-comment-counter {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: .75rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.post-comment-form-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.post-comment-form-actions {
+  display: flex;
+  align-items: center;
+  // 窄屏换行时仍靠右；与表情按钮分处两端
+  margin-left: auto;
+  gap: var(--space-2);
+}
+
+// --- 列表头：总数 + 排序 / 刷新 ---
+
+.post-comments-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.post-comments-list-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+// 文字卡片：排序与刷新收进同一个浅色胶囊。
+// 当前排序为主题色实心块；其余项悬停只转文字色
+.post-comments-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.post-comments-sort,
+.post-comments-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: .75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+              background-color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.post-comments-sort.is-active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  cursor: default;
+
+  &:hover {
+    color: var(--color-on-primary);
+  }
+}
+
+// 刷新只有图标；与排序之间留一点间距，避免挤成一串
+.post-comments-refresh {
+  width: 28px;
+  margin-left: var(--space-1);
+  padding: 0;
+  font-size: .875rem;
+}
+
+// --- 评论列表 ---
+
+// 评论之间不再画分割线，靠间距与灰色气泡卡片区分
+.post-comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.post-comment {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+// 圆形头像：图片与名字首字共用这个外框。
+// 底色取 --color-bg 而不是 --color-surface：暗色下 surface 与卡片同值，头像会融进去
+.post-comment-avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--comment-avatar-size);
+  height: var(--comment-avatar-size);
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.post-comment-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// flex 子项默认 min-width: auto：长评论 / 长 URL 会把这一行顶宽
+.post-comment-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-comment-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.post-comment-author {
+  color: var(--color-text);
+  font-size: .9375rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.post-comment-time {
+  color: var(--color-text-muted);
+  font-size: .75rem;
+  line-height: 1.4;
+}
+
+// 灰色气泡卡片：只装正文与设备信息。
+// 头像 / 昵称 / 时间 / 回复按钮都留在卡片外，卡片只负责"说了什么"
+.post-comment-bubble {
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+.post-comment-content {
+  color: var(--color-text);
+  font-size: .9375rem;
+  line-height: 1.75;
+  // 长英文串 / 链接不撑破评论列
+  overflow-wrap: anywhere;
+
+  p {
+    margin: 0 0 .5em;
+
+    &:last-child { margin-bottom: 0; }
+  }
+
+  // 评论里的链接保留下划线：正文不是 .markdown 作用域，拿不到那套点状线
+  a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  // 评论图片不超出正文宽；点击预览由全局 lightbox 接管（§5.4）
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+  }
+}
+
+// 回复里的 @ 提及：主题色 + 稍重，与正文区分开
+.post-comment-mention {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+// 气泡底部行：左侧设备信息，右侧回复按钮。
+// 回复按钮贴着卡片右下角，读长评论时不会和正文混在一起
+.post-comment-bubble-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin-top: var(--space-2);
+}
+
+// 设备信息：只做身份补充，整体弱化，不与正文抢注意力
+.post-comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-muted);
+  font-size: .75rem;
+  line-height: 1.4;
+}
+
+.post-comment-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+
+  i {
+    font-size: .75rem;
+  }
+}
+
+// 回复 / 表情 / 预览共用的基础按钮：默认 muted。
+// 悬停不铺背景色：小操作只把文字 / 图标转成主题色，实心填色留给主按钮
+.post-comment-reply,
+.post-comment-tool,
+.post-comment-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: .75rem;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+              background-color var(--duration-fast) var(--ease),
+              border-color var(--duration-fast) var(--ease);
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  i {
+    font-size: .75rem;
+  }
+}
+
+// 回复与表情：悬停只换文字 / 图标颜色
+.post-comment-reply:hover,
+.post-comment-tool:hover {
+  color: var(--color-primary);
+}
+
+// 回复按钮在气泡右下角
+.post-comment-reply {
+  margin-left: auto;
+}
+
+// 表情按钮只有图标，比文字按钮大一号；32px 点击区保证好按
+.post-comment-tool {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 1.125rem;
+
+  i {
+    font-size: 1.125rem;
+  }
+}
+
+// 预览：outline 按钮，宽度随内容自适应。
+// 默认灰描边灰字，悬停只把边框与文字转成主题色，不铺底
+.post-comment-action {
+  padding: 4px var(--space-3);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: .8125rem;
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+}
+
+// 发送：主题色实心主操作，悬停加深；保留最小宽度，主按钮不至于太窄
+.post-comment-action--send {
+  min-width: 72px;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+
+  &:hover {
+    border-color: var(--color-primary-hover);
+    background: var(--color-primary-hover);
+    color: var(--color-on-primary);
+  }
+}
+
+// 二级评论容器：只负责纵向节奏。
+// 每条回复各自带头像、信息行与灰色气泡卡片，不共用一整块面板
+.post-comment-replies {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+// 二级回复：头像与字号各收一档，与顶层评论拉开层级
+.post-comment--reply {
+  gap: var(--space-2);
+
+  .post-comment-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: .8125rem;
+  }
+
+  .post-comment-author {
+    font-size: .875rem;
+  }
+
+  .post-comment-content {
+    font-size: .875rem;
+  }
+
+  // 二级评论的气泡比顶层再收一档，配合更小的头像把层级压出来
+  .post-comment-bubble {
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+// --- 分页 ---
+
+// 与列表页的 .pager 同一套语言：36px 方形、当前页实心主题色、悬停只换文字色
+.post-comments-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.post-comments-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: .875rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  // 当前页不是可点目标：实心主题色 + 默认光标
+  &.is-current {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    cursor: default;
+  }
+}
+
+// 上一页 / 下一页只有图标，收掉文字内边距保持方形
+.post-comments-page--step {
+  padding: 0;
+  font-size: .8125rem;
+}
+
+// 窄屏：表单三个输入框竖排
+@media (max-width: 768px) {
+  .post-comment-form-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// 减少动态效果：只保留颜色变化，分割线雪花不再移动
+@media (prefers-reduced-motion: reduce) {
+  .post-comment-reply,
+  .post-comment-tool,
+  .post-comment-action,
+  .post-comment-input,
+  .post-comment-textarea,
+  .post-comments-sort,
+  .post-comments-refresh,
+  .post-comments-page,
+  .post-comments-divider::before {
+    transition: none;
+  }
+
+  .post-comments-divider:hover::before {
+    left: 5%;
+  }
+}
