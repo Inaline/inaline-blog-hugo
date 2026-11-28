@@ -1,0 +1,47 @@
+{{ define "main" }}
+{{/* 归档页（§7.13）：顶部大图 → 左侧时间线 + 右侧栏卡片。
+     时间线直接铺在页面灰底上（不套卡片），按年份分组、年份内按日期倒序。 */}}
+{{ partial "archive-hero.html" . }}
+
+{{ $posts := sort (where site.RegularPages "Section" "posts") "Date" "desc" }}
+<div class="container container--wide layout archive-layout">
+  <div class="layout-main">
+    {{ if $posts }}
+      <section class="archive-timeline" aria-label="文章归档时间线">
+        {{ range $posts.GroupByDate "2006" }}
+          <section class="archive-year">
+            <header class="archive-year-head">
+              <h2 class="archive-year-title">{{ .Key }}</h2>
+              <span class="archive-year-count">{{ len .Pages }} 篇</span>
+            </header>
+
+            <ol class="archive-list">
+              {{ range .Pages }}
+                <li class="archive-item">
+                  <time class="archive-date" datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "01-02" }}</time>
+                  <span class="archive-dot" aria-hidden="true"></span>
+                  <div class="archive-body">
+                    <a class="archive-link" href="{{ .RelPermalink }}">{{ .Title }}</a>
+                    {{ with .GetTerms "categories" }}
+                      <div class="archive-item-meta">
+                        <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
+                        {{ range $i, $term := . }}
+                          {{ if $i }}<span class="archive-meta-sep">·</span>{{ end }}
+                          <a href="{{ $term.RelPermalink }}">{{ $term.LinkTitle }}</a>
+                        {{ end }}
+                      </div>
+                    {{ end }}
+                  </div>
+                </li>
+              {{ end }}
+            </ol>
+          </section>
+        {{ end }}
+      </section>
+    {{ else }}
+      <p class="empty-hint">暂无文章</p>
+    {{ end }}
+  </div>
+  {{ partial "sidebar.html" . }}
+</div>
+{{ end }}

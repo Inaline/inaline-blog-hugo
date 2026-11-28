@@ -1,0 +1,431 @@
+// ---------------------------------------------------------------------------
+// 说说页（DESIGN.md §7.14）
+//
+// 结构：一张 .moments-card 里先放封面（.moments-cover），再接动态列表
+// （.moments-list）；右侧沿用通用侧栏。详情页复用同款封面 + 单条
+// .moment-item，下方追加一张 .moments-comments 评论卡。
+// 视觉参考旧站 /shuoshuo/：5:3 大封面、右下角博主信息与头像、头像下探进
+// 列表留白、动态之间用细分割线分开。
+// ---------------------------------------------------------------------------
+
+// --- 卡片外壳 ---
+
+// 封面要贴着卡片顶边圆角，所以由卡片统一裁切；头像下探到列表留白里，
+// 仍在卡片内部，不会被这层 overflow 裁掉
+.moments-card {
+  overflow: hidden;
+  background: var(--color-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+// --- 封面 ---
+
+.moments-cover {
+  position: relative;
+  // 5:3 与旧站一致；高度随主栏宽度伸缩。
+  // 1080px 以下侧栏撤掉后主栏会吃掉整行，5:3 能到 600px 以上，故封顶
+  // 520px：桌面 848 主栏的 509px 不受影响，单栏大屏也不至于变成一张海报告
+  aspect-ratio: 5 / 3;
+  max-height: 520px;
+  // 图片解码完成前的兜底底色，避免闪白
+  background: var(--color-surface);
+}
+
+.moments-cover-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// 从顶部几乎透明压到底部深色：姓名 / 签名坐在最暗的一段上，
+// 同时不把照片整体压灰
+.moments-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--moments-cover-scrim-top) 0%,
+    var(--moments-cover-scrim-bottom) 100%
+  );
+  pointer-events: none;
+}
+
+// 内容块整体下探 32px（头像下沿压到列表留白里）：姓名仍落在封面上，
+// 签名则跟着旧站落到图片下方的白色区域，颜色也改用卡片上的 muted
+.moments-cover-content {
+  position: absolute;
+  top: auto;
+  right: 0;
+  bottom: -32px;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  padding: 0 var(--space-6);
+}
+
+.moments-cover-userinfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  // 名称与签名之间多留一档，签名整体再向下 4px（名称位置不变）
+  gap: var(--space-2);
+  // 相对头像底部上提 8px：签名底边落在封面下 24px 的白卡上
+  margin-bottom: var(--space-2);
+  // 签名过长时在头像左侧折行，不顶着头像往左无限延伸
+  max-width: 60%;
+  text-align: right;
+}
+
+// 没配签名时姓名要留在封面上：把整块文字再上提一截，姓名底边在封面下 4px
+.moments-cover-content--no-bio .moments-cover-userinfo {
+  margin-bottom: 36px;
+}
+
+.moments-cover-name {
+  color: var(--color-over-hero);
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.3;
+  // 封面亮度不可控，给白字一点投影兜底（与词条页标题同一做法）
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+}
+
+// 签名落在图片下方的白卡上，按卡片文字取色；不再需要照片上的投影
+.moments-cover-bio {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.moments-cover-avatar {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border: 3px solid var(--color-over-hero);
+  border-radius: var(--radius-md);
+  background: var(--color-elevated);
+}
+
+.moments-cover-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// --- 动态列表 ---
+
+// 顶部留白接住下探 32px 的头像，再给第一条动态留 16px 呼吸
+.moments-list {
+  padding: calc(32px + var(--space-4)) var(--space-5) var(--space-2);
+}
+
+.moment-item {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.moment-item:last-child {
+  border-bottom: 0;
+}
+
+// 详情页只有一条：底部留一档，卡片不至于贴住动态的日期行
+.moments-card--single .moments-list {
+  padding-bottom: var(--space-4);
+}
+
+.moment-main {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.moment-avatar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.moment-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.moment-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.moment-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+// 作者名沿用旧站评论区的微信蓝；暗色下由 --color-moment-author 翻亮
+.moment-author {
+  color: var(--color-moment-author);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+// 正文复用 Markdown 排版，只把字号与行距收一档：说说比文章短，
+// 1rem / 1.9 在这个宽度里显得松
+.moment-content .markdown {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+}
+
+.moment-content .markdown p {
+  margin-bottom: 0.75em;
+}
+
+// --- 配图网格 ---
+
+.moment-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-2);
+}
+
+.moment-image-item {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.moment-image-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-base) var(--ease);
+}
+
+// 与文章封面的"照片在框里呼吸"同一手感；预览光标由 _lightbox.scss 给
+.moment-image-item:hover img {
+  transform: scale(1.03);
+}
+
+// --- 底部：日期 + 操作 ---
+
+.moment-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.moment-date {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.moment-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+// 次要操作：悬停只把图标与文字转主题色，不铺底色（DESIGN.md §2.2）
+.moment-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  transition: color var(--duration-fast) var(--ease);
+
+  i {
+    font-size: 0.8125rem;
+  }
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+
+// --- 评论预览（§7.14）---
+
+// 旧站的灰色评论框：只有确实有评论的动态才由 moments.js 取消 hidden；
+// 无评论时容器保持 hidden，不占高度，也不出现空框
+.moment-comments {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  // 14px：比正文（15px）小一档，但比日期 / 操作（12px）明显大一档；
+  // 与旧站"正文 14 / 评论 13"的相对关系保持一致，只是整体放大
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.moment-comment + .moment-comment {
+  margin-top: var(--space-1);
+}
+
+// 昵称沿用作者名的微信蓝，正文跟随卡片文字色
+.moment-comment-user {
+  color: var(--color-moment-author);
+  font-weight: 500;
+}
+
+.moment-comment-text {
+  overflow-wrap: anywhere;
+}
+
+// --- 分页（在卡片底部，与最后一条动态用分割线隔开）---
+
+.moments-footer {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+
+  .pager {
+    margin: 0;
+  }
+}
+
+// --- 空态 ---
+
+.moments-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-5);
+  color: var(--color-text-muted);
+  text-align: center;
+
+  i {
+    font-size: 2.5rem;
+    opacity: 0.45;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+// --- 详情页评论区 ---
+
+// 评论区在说说卡下方独立成卡（旧站也是说说卡 + 评论卡两张）
+.moments-comments {
+  margin-top: var(--space-5);
+  padding: var(--space-6);
+  background: var(--color-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+// 上方没有文章正文，不需要再画一条"与正文分开"的雪花线
+.moments-comments .post-comments-divider {
+  display: none;
+}
+
+// --- 窄屏 ---
+
+@media (max-width: 768px) {
+  .moments-cover-content {
+    bottom: -24px;
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
+  }
+
+  .moments-cover-userinfo {
+    margin-bottom: var(--space-1);
+  }
+
+  .moments-cover-content--no-bio .moments-cover-userinfo {
+    margin-bottom: 28px;
+  }
+
+  .moments-cover-name {
+    font-size: 1.25rem;
+  }
+
+  .moments-cover-bio {
+    font-size: 0.75rem;
+  }
+
+  .moments-cover-avatar {
+    width: 48px;
+    height: 48px;
+    border-width: 2px;
+  }
+
+  .moments-list {
+    padding: calc(24px + var(--space-4)) var(--space-4) var(--space-1);
+  }
+
+  .moment-item {
+    padding: var(--space-3) 0;
+  }
+
+  .moment-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .moment-author {
+    font-size: 0.9375rem;
+  }
+
+  .moment-content .markdown {
+    font-size: 0.875rem;
+  }
+
+  .moment-images {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: var(--space-1);
+  }
+
+  .moments-comments {
+    padding: var(--space-4);
+  }
+}
+
+// --- 动效降级：必须留在文件末尾（DESIGN.md §2.2）---
+
+@media (prefers-reduced-motion: reduce) {
+  .moment-image-item img,
+  .moment-action {
+    transition: none;
+  }
+
+  .moment-image-item:hover img {
+    transform: none;
+  }
+}

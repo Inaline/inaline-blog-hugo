@@ -1,7 +1,8 @@
 ---
-title: "动态"
+title: "说说"
 date: 2026-10-04T00:00:00+08:00
 draft: false
----
+description: "记录一些不成篇的短念头。"
 
-动态页占位。内容形式待设计（见 DESIGN.md 阶段 7）。
+# 封面图与封面签名统一在 hugo.yaml 的 params.moments 配置（cover / bio）
+---

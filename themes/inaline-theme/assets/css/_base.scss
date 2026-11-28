@@ -86,6 +86,11 @@ img {
   padding-top: 0;
 }
 
+// 归档页：顶部大图同样从 y=0 起铺，钻到 fixed Header 底下（§7.13）
+.main--archive {
+  padding-top: 0;
+}
+
 // Hero 之后的首页内容，与 Hero 拉开距离
 .hero + .container {
   padding-top: var(--space-6);
@@ -106,4 +111,19 @@ img {
 // 两栏页面（首页 / 分区 / 标签词条 / 文章页正文）改用全站容器宽度：与 Header 左右对齐，见 §7.8 / §8
 .container--wide {
   max-width: var(--container-width);
+}
+
+// 只给读屏的标题 / 说明：视觉上收起，仍留在可访问性树里。
+// 说说页没有可见标题（封面本身就是页面入口），用 h1 补页面语义（§7.14）
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

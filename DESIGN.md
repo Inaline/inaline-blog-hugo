@@ -99,6 +99,10 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --code-dot-red:         #FF5F57;                  // 代码窗口交通灯（§9.4）
 --code-dot-yellow:      #FEBC2E;
 --code-dot-green:       #28C840;
+
+--color-moment-author:  #576B95;                  // 说说作者名（旧站微信蓝；暗色翻亮，见 §7.14）
+--moments-cover-scrim-top:    rgba(0, 0, 0, .08); // 说说封面顶部压暗（§7.14）
+--moments-cover-scrim-bottom: rgba(0, 0, 0, .42); // 说说封面底部压暗（姓名 / 签名）
 ```
 
 社交图标品牌色（同样只在 `:root` 定义）：
@@ -109,8 +113,9 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 ```
 
 > `--brand-github` 是唯一例外：近黑色在暗色卡片上会消失，暗色下翻为 `#FFFFFF`。
-> 压在照片 / 深色上的色块（`--color-over-hero*`、`--post-hero-*`、`--footer-scrim`、`--badge-*`、`--glow-name`）
+> 压在照片 / 深色上的色块（`--color-over-hero*`、`--post-hero-*`、`--footer-scrim`、`--badge-*`、`--glow-name`、`--moments-cover-scrim-*`）
 > 不跟主题翻色——它们坐在图片上，与页面底色无关。
+> `--color-moment-author` 坐在卡片上而不是照片上，暗色下翻为 `#93A9D8`（§7.14）。
 > `--lightbox-toolbar-bg` 是图片预览里的例外：按主题翻色，亮色叠白偏亮、暗色加深（§5.4）。
 
 ### 3.2 中性色与代码窗口
@@ -231,6 +236,8 @@ themes/inaline-theme/
 │   │   ├── _post.scss             # 文章卡片 / 分页 / 标签（§7.7）
 │   │   ├── _markdown.scss         # Markdown 正文排版（§9）
 │   │   ├── _term.scss             # 分类 / 标签词条页顶部标题区（§7.12）
+│   │   ├── _archive.scss          # 归档页：顶部大图 + 时间线（§7.13）
+│   │   ├── _moments.scss          # 说说页：封面卡 + 动态流 + 详情评论卡（§7.14）
 │   │   ├── _article.scss          # 文章页：顶部大图 / 标题区 / 正文两栏 / 信息卡（§8）
 │   │   ├── _comments.scss         # 文章评论区：两级评论 / 表单 / 分页（§8.8）
 │   │   ├── _carousel.scss         # 首页轮播图（§7.10）
@@ -247,7 +254,8 @@ themes/inaline-theme/
 │   │   ├── format.js              # 评论预览的轻量 Markdown（§8.8）
 │   │   ├── comment.js             # 文章页评论区：渲染 / 分页 / 排序 / 表单（§8.8）
 │   │   ├── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
-│   │   └── pages/post.js          # 文章页：目录高亮 / 折叠 / 阅读进度（§8.5）
+│   │   ├── pages/post.js          # 文章页：目录高亮 / 折叠 / 阅读进度（§8.5）
+│   │   └── pages/moments.js       # 说说列表：有评论的动态展示前 5 条预览（§7.14）
 │   ├── images/cover/              # cover1–3.jpg，Hero 背景与卡片兜底同池
 │   └── fonts/
 │       ├── HYTangMeiRen55W.woff2   # 正文手写体（全字集，preload）
@@ -260,6 +268,9 @@ themes/inaline-theme/
     ├── _markup/render-table.html      # 表格外层滚动容器（§9.4）
     ├── _markup/render-passthrough.html # 数学公式构建时渲染（§9.6）
     ├── posts/page.html            # 文章页（§8，覆盖通用 page.html）
+    ├── archives/section.html      # 归档页：顶部大图 + 时间线（§7.13）
+    ├── moments/section.html       # 说说列表：封面卡 + 动态流（§7.14）
+    ├── moments/page.html          # 说说详情：单条动态 + 评论区（§7.14）
     └── partials/
         ├── head.html              # meta、主题内联脚本、字体、CSS
         ├── header.html            # Header 外壳
@@ -267,6 +278,10 @@ themes/inaline-theme/
         ├── icon.html              # 主题自绘 SVG 图标（引号 + CC + 社交品牌）
         ├── page-background.html   # 整页背景：首页 / 分类 / 标签词条页（§7.1 / §7.12）
         ├── term-hero.html         # 分类 / 标签词条页顶部标题区（§7.12）
+        ├── archive-hero.html      # 归档页顶部大图与统计（§7.13）
+        ├── moments-cover.html     # 说说页封面：封面图 + 博主信息 + 头像（§7.14）
+        ├── moment-item.html       # 单条动态：头像 / 正文 / 配图 / 日期与操作（§7.14）
+        ├── author-avatar.html     # 博主头像解析：侧栏 / 说说共用（§7.8 / §7.14）
         ├── hero.html              # Hero 内容（§7.2–§7.6）
         ├── carousel.html          # 首页轮播图容器与条目解析（§7.10）
         ├── carousel-body.html     # 轮播卡片文字区（§7.10）
@@ -276,6 +291,7 @@ themes/inaline-theme/
         ├── article-meta.html      # 文章末尾信息卡（§8.6）
         ├── post-nav.html          # 上一篇 / 下一篇（§8.7）
         ├── post-comments.html     # 文章评论区骨架：分割线 / 标题 / 表单 / 列表 / 分页（§8.8）
+        ├── comment-scripts.html   # 评论脚本：emoji / format / comment（文章页与说说详情共用，§8.8）
         ├── pager.html             # 分页（§7.7）
         ├── sidebar.html           # 右侧栏容器（§7.8）
         ├── sidebar-toc.html       # 侧栏目录卡片（仅文章页，§8.5）
@@ -304,14 +320,14 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页页脚背景（§7.1）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页 / 归档页 / 说说页页脚背景（§7.1 / §7.13 / §7.14）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `lightbox.js`：全局图片预览（§5.4），点击监听用事件委托，动态内容无需重新初始化；暴露 `window.inalineLightboxInit`。
 - `waline.js`：Waline API 薄封装（§8.8 / §7.11），只负责拼地址、解析 `{ errno, errmsg, data }`、归一错误与按邮箱生成头像地址；不碰 DOM。覆盖评论列表 / 发表、评论数（单篇 / 全站）、近期评论、阅读量计数器读写。
 - `emoji.js`：评论区表情包（§8.8），读取 `params.waline.emoji`，按需拉取 `@waline/emojis` 预设的 `info.json`，渲染选择器，并把 `:key:` / 颜文字转成安全 HTML。
 - `format.js`：评论预览用的轻量 Markdown（§8.8），先转义再生成 HTML，不参与存储。
-- `comment.js`：文章评论区 UI（§8.8），由文章页模板按需引入；从 `data-post-comments` 读取配置，渲染评论树并接管分页 / 排序 / 刷新 / 表单 / 预览。
+- `comment.js`：评论区 UI（§8.8），由文章页 / 说说详情页模板按需引入；从 `data-post-comments` 读取配置，渲染评论树并接管分页 / 排序 / 刷新 / 表单 / 预览。
 - `waline-stats.js`：全站 Waline 数据回填（§7.11），`baseof.html` 在 Waline 可用时全局加载；负责访问 / 访客埋点、文章卡片阅读量与评论量、侧栏评论总数与近期评论、页脚统计。与 `waline.js` 一样只在 `data-waline-server` 存在时启动。
-- `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前有 `home.js`、`post.js`）。
+- `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前有 `home.js`、`post.js`、`moments.js`）。
 - 每个模块写成幂等 `init()`，事件用 `dataset.bound` 防重复绑定；后续接入 Swup 时在 `page:view` 再次调用同一 `init()` 即可。
 - 全局入口暴露为 `window.inalineInit`，首页 / 文章页入口暴露为 `window.inalinePageInit`，评论区入口暴露为 `window.inalineCommentInit`，统计回填入口暴露为 `window.inalineWalineStatsInit`。
 - 防闪烁的主题初始化脚本单独内联在 `head.html`，不进 `main.js`。
@@ -376,7 +392,7 @@ themes/inaline-theme/
 | `data-lightbox-caption` | 覆盖图注；缺省取 `alt` |
 
 - 点击时现算分组：Waline 等后插入的 DOM 无需重新初始化；`init()` 幂等，后续接入 Swup 时在 `page:view` 再调用即可。
-- 说说：每张动态卡加 `data-lightbox-group`，卡内多图即可左右切换；头像放进 `data-lightbox-ignore` 子树。
+- 说说：每条动态（`.moment-item`）加 `data-lightbox-group`，卡内多图即可左右切换；头像放进 `data-lightbox-ignore` 子树（§7.14）。
 - 评论：每条评论的正文容器加 `data-lightbox-group`（本条评论的图片成组）；希望所有评论图片共用一组时，把属性加到评论列表容器上。评论里的 `.wl-emoji` 也自动忽略，点表情不会打开大图。
 - 图片被链接包着时点击仍打开预览；带 Ctrl / Cmd / Shift / Alt 的点击不接管，保留浏览器打开链接的习惯。
 - 点击监听在 `document` 捕获阶段，先于 `data-card-href` 的整卡跳转（§7.7）执行；`preventDefault` 后卡片监听按约定让路。
@@ -535,7 +551,7 @@ menu:
 | 初始图 | `params.hero.initial_cover`：封面路径 → 固定从它开始；`random` → 每次随机；留空 → 第一张 |
 | 兜底 | `random` 时模板先做一次构建期随机（无 JS 兜底），`home.js` 在每次载入时重摇 |
 | 切换按钮 | 卡片左下角左右箭头，仅当封面多于一张时渲染 |
-| 封面记忆 | `main.js` 只在首页把当前激活封面的 `data-cover` 写入 localStorage（键 `inaline-page-bg`，含随机初始图与箭头切换）；分类 / 标签词条页的 `data-page-bg="term"` 只读不写，有记录时还原一次背景，避免覆盖首页选择。文章页不渲染 `.page-bg`，`body` 保持 `--color-bg` 灰底；页脚输出 `data-footer-covers`，`main.js` 读回记录、校验其属于封面池后写入 `--footer-cover` 并加 `has-cover-bg`，未记录 / 失效时退回封面池第一张（页脚外观见 §7.9） |
+| 封面记忆 | `main.js` 只在首页把当前激活封面的 `data-cover` 写入 localStorage（键 `inaline-page-bg`，含随机初始图与箭头切换）；分类 / 标签词条页的 `data-page-bg="term"` 只读不写，有记录时还原一次背景，避免覆盖首页选择。文章页 / 归档页 / 说说页不渲染 `.page-bg`，`body` 保持 `--color-bg` 灰底；页脚输出 `data-footer-covers`，`main.js` 读回记录、校验其属于封面池后写入 `--footer-cover` 并加 `has-cover-bg`，未记录 / 失效时退回封面池第一张（页脚外观见 §7.9） |
 
 **硬约束**：
 
@@ -610,7 +626,7 @@ menu:
 
 ### 7.7 文章卡片与分页 ✅
 
-首页、分区页、分类 / 标签词条页共用一套卡片。
+首页、分区页、分类 / 标签词条页共用一套卡片；说说页使用自己的动态卡（§7.14）。
 
 | 项 | 规格 |
 | --- | --- |
@@ -698,7 +714,7 @@ menu:
 
 深色毛玻璃条：`--footer-scrim` + `backdrop-filter: blur(--footer-blur) saturate(1.08)`，白字 `--color-over-hero-soft`，`0.875rem / 1.6`，居中，上下 `--space-6`。它是全站唯一不随主题翻色的深色块。
 
-首页页脚压在整页背景图上。文章页页脚由 `main.js` 把首页上次展示的封面写进 `--footer-cover`：`.has-cover-bg` 状态用 `linear-gradient(var(--footer-scrim), var(--footer-scrim))` 盖在图上（`background-size: cover`、居中、不重复），并取消无意义的毛玻璃；没有记录 / JS 不可用时退回普通深色玻璃。其余内页的页脚压在页面底色上（§7.1）。
+首页页脚压在整页背景图上。文章页、归档页与说说页（列表 / 详情）页脚由 `main.js` 把首页上次展示的封面写进 `--footer-cover`：`.has-cover-bg` 状态用 `linear-gradient(var(--footer-scrim), var(--footer-scrim))` 盖在图上（`background-size: cover`、居中、不重复），并取消无意义的毛玻璃；没有记录 / JS 不可用时退回普通深色玻璃。其余内页的页脚压在页面底色上（§7.1）。
 
 六行自上而下全部可选，任一行留空 / 关闭即不渲染：
 
@@ -741,7 +757,7 @@ menu:
 | 埋点 | 每次页面载入向 Waline Counter +1：当前路径（供文章卡片显示阅读量）、站点累计访问、今日访问；访客数另算 |
 | 访客去重 | localStorage 无 `inaline-visitor` 且可写时，累计访客 +1；`inaline-visitor-day` 不是当天时，今日访客 +1。只能近似唯一访客：清缓存 / 换浏览器会重复计；存储不可用时只统计访问量，不写访客数 |
 | 存储路径 | `__site__` 累计访问、`__site__/visitors` 累计访客、`__site__/<YYYY-MM-DD>` 今日访问、`__site__/<YYYY-MM-DD>/visitors` 今日访客；计数类型统一 `time`（Waline 的 SQLite 模型只持久化 `time` / `reactionN`，自定义类型不会落库） |
-| 卡片统计 | 按 `[data-post-card]` 的 `data-post-path` 收集同页路径，`type=count` 批量取评论数、`/api/article` 批量取阅读量，回填 `[data-post-stat]`；同页只发一次请求 |
+| 卡片统计 | 按 `[data-post-card]` 的 `data-post-path` 收集同页路径，`type=count` 批量取评论数、`/api/article` 批量取阅读量，回填 `[data-post-stat]`；同页只发一次请求。说说列表的动态卡同样走这套标记（§7.14） |
 | 侧栏 | `[data-sidebar-stat="comments"]` 取全站已通过评论总数；`[data-sidebar-comments]` 请求 `type=recent`，渲染头像 / 昵称 / 相对时间 / 两行正文，链接到文章 `#comment-<顶层评论 id>` 锚点 |
 | 页脚 | 一次批量读四个站点计数器，回填 `data-footer-stat`；数字按 `zh-CN` 分组 |
 | 失败降级 | 请求失败只输出 `console.warn`，占位符保持不动；无 JS 时不做静态降级 |
@@ -760,8 +776,43 @@ menu:
 | 标题 | `.term-title`：`clamp(1.75rem, 4vw, 2.5rem)`、白色、居中；`display: flex` 让图标与文字同排，文字列 `text-wrap: balance`；背景图亮度不可控，加一档文字投影兜底（与首页 Hero 文案一致） |
 | 类型图标 | 标题文字前的 `.term-title-icon`（`aria-hidden`，`0.8em`，`--color-over-hero-soft`）：分类用 `fa-regular fa-folder-open`，标签用 `fa-solid fa-tags`，与文章页分类 / 标签组的图标一致 |
 | 统计 | 复用 `.post-meta` / `.post-meta-item` / `.post-meta-sep`，居中排一行：文章数（`fa-folder-open`）、总字数（`fa-file-lines`，正文去空白字符数求和，`format-number.html` 只加千分位、不折 k / M）、最近更新（`fa-calendar`，取各篇 `.Lastmod` 最大值；无有效日期时该项不渲染） |
-| 列表 | 标题区下方复用首页两栏布局（`container--wide` + `.layout`）：文章卡片 + 右侧栏 + 分页；`.term-hero + .container` 只补 `--space-6` 上边距 |
+| 列表 | 标题区下方复用首页两栏布局（`container--wide` + `.layout`）：文章卡片 + 右侧栏 + 分页；`.term-hero + .container` 只补 `--space-6` 上边距。列表与统计只取 `posts` 分区，说说等内容不进入词条页（§7.14） |
 | 分页 | 复用 §7.7 的 `pager.html`；因页面带 `body.has-hero`，页码白底与省略号白色样式自动生效 |
+
+### 7.13 归档页 ✅（demo）
+
+归档页（`/archives/`）不铺整页背景：顶部是文章页同款大图（无波浪），下方内容直接落在灰色页面底上。左侧是按年份分组的时间线，右侧沿用侧栏卡片；页脚像文章页一样显示封面背景。
+
+| 项 | 规格 |
+| --- | --- |
+| 模板 | `layouts/archives/section.html` 渲染 `partials/archive-hero.html`，下方左侧时间线 + `partials/sidebar.html` |
+| 顶部大图 | 复用 `.post-hero` 结构与 `.post-hero-image` / 压暗遮罩；封面取封面池第一张（`post-cover.html`，归档页无 front matter cover）；标题区在图上垂直居中（与词条页视觉一致），没有浪花，大图底部直接接灰底 |
+| 标题区 | `.archive-hero .post-header`：标题 `clamp(1.75rem, 4vw, 2.5rem)`、白色居中，标题前放 `fa-solid fa-box-archive` 归档图标（与导航一致）；统计复用文章页 `.post-meta`：文章数 / 总字数 / 最近更新 |
+| 页面状态 | `body.has-post-hero`（Header 顶部透明）+ `.main--archive`（`padding-top: 0`）；不渲染 `.page-bg`，正文落在 `--color-bg` 灰底 |
+| 两栏 | `.container--wide` + `.layout`：左侧 `.layout-main` 直接平铺时间线，右侧 `.sidebar` 卡片；≤1080px 时按全局规则撤掉侧栏 |
+| 时间线 | `site.RegularPages` 中 `Section == "posts"` 的文章按日期倒序，`GroupByDate "2006"` 分年；年份标题 + 篇数；条目为「日期（`01-02`）/ 轴点 / 标题 + 分类」三列网格，左侧竖轴贯穿本年列表，轴点用主题色描边；无分页，全部文章一次铺开 |
+| 页脚 | `footer.html` 对归档页输出 `data-footer-covers`，`main.js` 按首页记忆封面写入 `--footer-cover`（§7.9） |
+
+### 7.14 说说页 ✅
+
+说说页（`/moments/`）聚合 `content/moments/` 下的常规页：一条动态就是一篇文章，列表只显示这个分区；首页、归档、分类 / 标签词条页仍只取 `posts`（§7.7 / §7.12 / §7.13）。页面不铺整页背景，也不套文章页的大图：Header 保持常驻，顶部是一张横跨主栏的封面卡，下方同一张卡里接动态列表；右侧沿用通用侧栏。
+
+| 项 | 规格 |
+| --- | --- |
+| 模板 | `layouts/moments/section.html`（列表）与 `layouts/moments/page.html`（详情）；封面 `partials/moments-cover.html`，条目 `partials/moment-item.html` |
+| 数据 | `content/moments/` 下的常规页，按 `.Date` 倒序，复用 `pagination.pagerSize` 分页；只有一页时不渲染分页条 |
+| 封面 | `.moments-card` 顶部 5:3 封面（高度封顶 520px，避免侧栏撤掉后单栏大屏把封面拉成海报）：图片取 `params.moments.cover`（网络 URL / assets 路径），未配置回退分区 front matter 的 cover，再回退封面池第一张（`post-cover.html` 的 `cover` 入参）；底部 `--moments-cover-scrim-*` 渐变压暗 |
+| 封面信息 | 内容块整体下探 32px：姓名（`params.author`）留在封面上（白字 + 投影），签名（`params.moments.bio`，缺省分区 `bio`，再缺省 `params.description`）落到图片下方的白色区域、取 `--color-text-muted`；博主头像 64px 再向下压一截，与列表留白咬合。无签名时整块文字额外上提，姓名不会掉到白卡上 |
+| 卡片 | 封面与列表同在一张 `.moments-card`（`--color-elevated` + `--shadow-sm` + `--radius-lg`）；列表左右内边距 `--space-5`，条目之间 1px `--color-border` 分割线 |
+| 条目 | `.moment-item`：左侧 48px 方形头像（`author-avatar.html`，与侧栏博主卡同源），右侧作者名（`--color-moment-author`，沿用旧站微信蓝）→ 正文（复用 `.markdown`，字号收一档）→ 可选配图网格 → 底部日期 / 评论 / 详情 |
+| 配图 | front matter `images`：网络 URL、assets 路径或页面资源；正方形缩略图自适应网格；支持 `{ src, alt }` 写法。每条动态的图片归一个 `data-lightbox-group`，头像在 `data-lightbox-ignore` 子树（§5.4） |
+| 操作 | 评论链接指向详情页 `#comments`，评论数由 `waline-stats.js` 按 `data-post-card` / `data-post-path` 回填（§7.11）；进入详情页只走「详情」链接。整卡不跳转：不设 `data-card-href` / `cursor: pointer`，避免与正文选字、看图冲突（与旧站一致）。Waline 未配置 / 关闭时评论操作与详情评论区整块不渲染 |
+| 评论预览 | 列表页由 `js/pages/moments.js` 接管：先 `count` 批量判断哪些动态有评论，没有评论的容器保持 `hidden`；有评论的动态各请求一页评论（顶层 + 一层回复），按时间倒序取最新 5 条，以「昵称：纯文本」装进浅灰圆角框（`--color-bg`，`0.875rem / 1.6`）显示在日期 / 操作行下方。正文只用 `textContent` 输出，避免把评论 HTML 注入列表；请求失败保持隐藏，不影响卡片 |
+| 详情 | `/moments/<slug>/` 复用同款封面与单条动态，下方追加独立评论卡：复用 `post-comments.html`，隐藏与上方内容重复的雪花分割线；评论区 path 与列表统计共用同一条 `RelPermalink` |
+| 标题 | 说说卡不展示 title；标题只用于浏览器标签 / RSS（archetype 默认生成日期时间），缺失时 `head.html` 用日期兜底；页面用 `.visually-hidden` 的 h1 保留语义 |
+| 空态 | 无说说时在卡内显示图标与"还没有说说"提示 |
+| 页脚 | 像文章页 / 归档页一样由 `footer.html` 输出 `data-footer-covers`、`main.js` 写入封面背景（§7.9）；列表页与详情页都生效 |
+| 可访问性 | 列表页无可见标题，用 `.visually-hidden` 的 h1 提供页面名称；详情页同样输出隐藏 h1；作者名与日期均为文本，评论 / 详情操作保留可见文字 |
 
 ---
 
@@ -864,7 +915,7 @@ menu:
 
 ### 8.8 评论区 ✅（Waline）
 
-上一篇 / 下一篇之后的评论区，仍在 `.post-content` 卡片内，用一条 Markdown 雪花分割线（§9.4，与正文 `hr` 共用 `md-divider` mixin）与上方内容分开。模板只输出结构骨架、`data-*` 配置与表情包 JSON；`comment.js` 按 `data-post-comments` 请求 Waline，渲染评论树并接管分页 / 排序 / 刷新 / 发布表单；表情由 `emoji.js` 管理，发布前的 Markdown 预览由 `format.js` 渲染，HTTP 细节集中在 `waline.js`（`window.InalineWaline`）。
+上一篇 / 下一篇之后的评论区，仍在 `.post-content` 卡片内，用一条 Markdown 雪花分割线（§9.4，与正文 `hr` 共用 `md-divider` mixin）与上方内容分开。说说详情页复用同一套评论区，放在动态卡下方的独立白卡里，并隐藏这条分割线（§7.14）。模板只输出结构骨架、`data-*` 配置与表情包 JSON；页面模板通过 `comment-scripts.html` 统一加载 `emoji.js` / `format.js` / `comment.js`。`comment.js` 按 `data-post-comments` 请求 Waline，渲染评论树并接管分页 / 排序 / 刷新 / 发布表单；表情由 `emoji.js` 管理，发布前的 Markdown 预览由 `format.js` 渲染，HTTP 细节集中在 `waline.js`（`window.InalineWaline`）。
 
 **配置与文件**
 

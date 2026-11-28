@@ -1,0 +1,38 @@
+{{ define "main" }}
+{{/* 说说详情（DESIGN.md §7.14）：同款封面 + 单条动态，下方接评论区。
+     旧站的"详情"其实也是这张说说卡只显示一条，再跟一张评论卡；
+     这里沿用同样的结构，评论区复用文章页的 post-comments.html。 */}}
+{{ $label := .Title }}
+{{ if not $label }}
+  {{ if not .Date.IsZero }}
+    {{ $label = printf "%s 的说说" (.Date.Format "2006年1月2日 15:04") }}
+  {{ else }}
+    {{ $label = "说说" }}
+  {{ end }}
+{{ end }}
+<h1 class="visually-hidden">{{ $label }}</h1>
+
+<div class="container container--wide layout moments-layout moments-detail">
+  <div class="layout-main">
+    <article class="moments-card moments-card--single">
+      {{ partial "moments-cover.html" . }}
+      <div class="moments-list">
+        {{ partial "moment-item.html" (dict "page" . "detail" true) }}
+      </div>
+    </article>
+
+    {{ $waline := site.Params.waline }}
+    {{ if and $waline $waline.server (ne $waline.enable false) }}
+      <div class="moments-comments">
+        {{ partial "post-comments.html" . }}
+      </div>
+    {{ end }}
+  </div>
+
+  {{ partial "sidebar.html" . }}
+</div>
+{{ end }}
+
+{{ define "page-scripts" }}
+  {{ partial "comment-scripts.html" . }}
+{{ end }}

@@ -1,0 +1,49 @@
+{{/*
+  归档页顶部（DESIGN.md §7.13）
+
+  结构与文章页顶部大图共用 .post-hero：整幅封面 + 压暗遮罩 + 居中标题区；
+  区别是归档页没有正文卡片、没有浪花，大图下方直接接灰色时间线。
+  封面取封面池第一张（归档页没有自己的 front matter cover）。
+
+  统计与词条页同一套口径：文章数 / 总字数 / 最近更新；只统计 posts 分区。
+*/}}
+{{ $posts := where site.RegularPages "Section" "posts" }}
+{{ $count := len $posts }}
+{{ $chars := 0 }}
+{{ $latest := time.AsTime "0001-01-01T00:00:00Z" }}
+{{ range $posts }}
+  {{ $chars = add $chars (countrunes (replaceRE `\s+` "" (.Content | plainify))) }}
+  {{ if .Lastmod.After $latest }}{{ $latest = .Lastmod }}{{ end }}
+{{ end }}
+{{ $cover := partial "post-cover.html" (dict "page" . "index" 0) }}
+
+<section class="post-hero archive-hero">
+  {{ with $cover }}
+    <img class="post-hero-image" src="{{ . }}" alt="" fetchpriority="high" decoding="async">
+  {{ end }}
+
+  <header class="container post-header">
+    <h1 class="post-title">
+      <i class="fa-solid fa-box-archive archive-title-icon" aria-hidden="true"></i>
+      <span>{{ .Title }}</span>
+    </h1>
+    <div class="post-meta">
+      <span class="post-meta-item">
+        <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
+        <span>共 {{ $count }} 篇文章</span>
+      </span>
+      <div class="post-meta-sep" aria-hidden="true"></div>
+      <span class="post-meta-item">
+        <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
+        <span>总字数：{{ partial "format-number.html" (dict "value" $chars "unit" false) }} 字</span>
+      </span>
+      {{ if gt $latest.Year 1 }}
+        <div class="post-meta-sep" aria-hidden="true"></div>
+        <span class="post-meta-item">
+          <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+          <span>最近更新：<time datetime="{{ $latest.Format "2006-01-02" }}">{{ $latest.Format "2006年1月2日" }}</time></span>
+        </span>
+      {{ end }}
+    </div>
+  </header>
+</section>

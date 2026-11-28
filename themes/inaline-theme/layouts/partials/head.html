@@ -1,6 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ site.Title }}</title>
+{{/* 无标题页面（如说说）用日期兜底，避免标题里只剩一个孤零零的分隔点 */}}
+{{ $pageTitle := .Title }}
+{{ if and (not .IsHome) (not $pageTitle) (not .Date.IsZero) }}{{ $pageTitle = .Date.Format "2006年1月2日 15:04" }}{{ end }}
+<title>{{ if not .IsHome }}{{ with $pageTitle }}{{ . }} · {{ end }}{{ end }}{{ site.Title }}</title>
 {{ with or .Description (.Summary | plainify) site.Params.description }}<meta name="description" content="{{ . | truncate 160 }}">{{ end }}
 {{ with site.Params.author }}<meta name="author" content="{{ . }}">{{ end }}
 

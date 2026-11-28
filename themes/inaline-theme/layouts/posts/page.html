@@ -90,16 +90,6 @@
   {{ $js := resources.Get "js/pages/post.js" | minify | fingerprint }}
   <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 
-  {{/* 评论区（§8.8）：表情 → Markdown 预览 → UI；
-       waline.js 由 baseof 全局加载，defer 脚本按文档顺序执行，
-       comment.js 依赖 waline.js 与上方的 emoji / format 全局对象 */}}
-  {{ $waline := site.Params.waline }}
-  {{ if and $waline $waline.server (ne $waline.enable false) }}
-    {{ $emojiJS := resources.Get "js/emoji.js" | minify | fingerprint }}
-    <script src="{{ $emojiJS.RelPermalink }}" integrity="{{ $emojiJS.Data.Integrity }}" defer></script>
-    {{ $formatJS := resources.Get "js/format.js" | minify | fingerprint }}
-    <script src="{{ $formatJS.RelPermalink }}" integrity="{{ $formatJS.Data.Integrity }}" defer></script>
-    {{ $commentJS := resources.Get "js/comment.js" | minify | fingerprint }}
-    <script src="{{ $commentJS.RelPermalink }}" integrity="{{ $commentJS.Data.Integrity }}" defer></script>
-  {{ end }}
+  {{/* 评论区（§8.8）：表情 → Markdown 预览 → UI，与说说详情页共用同一组脚本 */}}
+  {{ partial "comment-scripts.html" . }}
 {{ end }}

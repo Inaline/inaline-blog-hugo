@@ -4,6 +4,9 @@
   {{ partial "head.html" . }}
 </head>
 {{ $postHero := and .IsPage (eq .Type "posts") }}
+{{/* 归档页也带顶部大图（§7.13），Header 与文章页一样转透明态 */}}
+{{ $archivePage := and .IsSection (eq .Section "archives") }}
+{{ $heroPage := or $postHero $archivePage }}
 {{/* 分类 / 标签词条页也铺整页背景（§7.12） */}}
 {{ $isTerm := eq .Kind "term" }}
 {{ $pageBg := or .IsHome $isTerm }}
@@ -11,14 +14,14 @@
      阅读量 / 评论数 / 近期评论 / 页脚统计的脚本，占位符保持原样 */}}
 {{ $waline := site.Params.waline }}
 {{ $walineEnabled := and $waline $waline.server (ne $waline.enable false) }}
-<body{{ if $pageBg }} class="has-hero"{{ else if $postHero }} class="has-post-hero"{{ end }}{{ if $walineEnabled }} data-waline-server="{{ $waline.server }}"{{ end }}>
+<body{{ if $pageBg }} class="has-hero"{{ else if $heroPage }} class="has-post-hero"{{ end }}{{ if $walineEnabled }} data-waline-server="{{ $waline.server }}"{{ end }}>
   {{/* 整页背景（首页 / 分类 / 标签词条页）。必须是 body 的第一个子元素——它靠负
        z-index 落到"画布之上、内容之下"，中间隔一个带 transform / filter / opacity
-       的祖先就会被困住。文章页不放整页背景：背景图只在页脚出现
+       的祖先就会被困住。文章页 / 归档页不放整页背景：背景图只在页脚出现
        （footer.html + main.js）。 */}}
   {{ if $pageBg }}{{ partial "page-background.html" . }}{{ end }}
   {{ partial "header.html" . }}
-  <main class="main{{ if .IsHome }} main--home{{ else if $isTerm }} main--term{{ else if $postHero }} main--post{{ end }}">
+  <main class="main{{ if .IsHome }} main--home{{ else if $isTerm }} main--term{{ else if $archivePage }} main--archive{{ else if $postHero }} main--post{{ end }}">
     {{ block "main" . }}{{ end }}
   </main>
   {{ partial "footer.html" . }}

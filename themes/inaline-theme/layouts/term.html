@@ -1,10 +1,12 @@
 {{ define "main" }}
-{{/* 分类 / 标签词条页（§7.12）：顶部统一用压在整页背景图上的标题区。 */}}
+{{/* 分类 / 标签词条页（§7.12）：顶部统一用压在整页背景图上的标题区。
+     列表只取 posts 分区，说说等内容不进入词条页（§7.14）。 */}}
+{{ $pages := where .RegularPages "Section" "posts" }}
 {{ partial "term-hero.html" . }}
 <div class="container container--wide layout">
   <div class="layout-main">
-    {{ if .RegularPages }}
-      {{ $paginator := .Paginate .RegularPages }}
+    {{ if $pages }}
+      {{ $paginator := .Paginate $pages }}
       <section class="post-list">
         {{ range $i, $page := $paginator.Pages }}
           {{/* index 只用来轮换兜底封面：每页从池子第一张重新开始（3 张图在一页里

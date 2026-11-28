@@ -1,0 +1,213 @@
+// ---------------------------------------------------------------------------
+// 归档页（DESIGN.md §7.13）
+//
+// 顶部大图复用 .post-hero（见 _article.scss），但没有正文卡片与浪花：
+// 大图下方直接铺灰色页面底，左侧时间线、右侧侧栏卡片。
+// 时间线不套白卡，年份是分段标题，条目 = 日期 / 轴点 / 标题 + 分类。
+// ---------------------------------------------------------------------------
+
+// --- 顶部大图里的标题区 ---
+
+// 与文章页的贴底标题不同，归档页把标题区在图上垂直居中（与词条页的视觉一致）。
+// 两级选择器压过 _article.scss 后导入的 .post-hero 的 flex-end。
+.post-hero.archive-hero {
+  justify-content: center;
+}
+
+.archive-hero .post-header {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  // 上下对称：整块标题区正好落在图片中央；顶部同时避开 fixed Header
+  padding: calc(var(--header-height) + var(--space-2)) 0;
+  text-align: center;
+  color: var(--color-over-hero);
+}
+
+.archive-hero .post-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+  color: var(--color-over-hero);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.35;
+  // 标题落在图片中部，压暗遮罩不如文章页底部重，补一档文字投影
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+
+  span {
+    text-wrap: balance;
+  }
+}
+
+// 归档标识：比标题低一档、退成柔白（与词条页标题图标同一套处理）
+.archive-title-icon {
+  flex: none;
+  color: var(--color-over-hero-soft);
+  font-size: .8em;
+}
+
+.archive-hero .post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-over-hero-soft);
+  font-size: 0.9375rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+}
+
+// --- 两栏骨架 ---
+
+// 大图与时间线之间的呼吸；.layout 负责左主栏 + 右侧栏
+.archive-layout {
+  padding-top: var(--space-6);
+}
+
+// --- 时间线 ---
+
+.archive-timeline {
+  // 日期列宽与轴线位置绑在一起：轴心 = 日期列 + 列间距 + 轴点半径
+  --archive-date-width: 64px;
+  --archive-gap: var(--space-3);
+  --archive-line-offset: calc(var(--archive-date-width) + var(--archive-gap) + 5px);
+}
+
+.archive-year + .archive-year {
+  margin-top: var(--space-8);
+}
+
+// 年份标题：直接铺在灰底上，不加卡片和分割线
+.archive-year-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.archive-year-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 2.25rem;
+  font-weight: 400;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.archive-year-count {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+// 竖轴只覆盖本年的条目，年份标题不会被线穿过
+.archive-list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.archive-list::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--archive-line-offset);
+  width: 1px;
+  background: var(--color-border);
+}
+
+.archive-item {
+  display: grid;
+  grid-template-columns: var(--archive-date-width) 10px minmax(0, 1fr);
+  column-gap: var(--archive-gap);
+  align-items: start;
+  padding: var(--space-3) 0;
+}
+
+.archive-date {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+// 轴点：底色挖空轴线，主题色描边做节点
+.archive-dot {
+  position: relative;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  margin-top: 6px;
+  border: 2px solid var(--color-primary);
+  border-radius: 50%;
+  background: var(--color-bg);
+}
+
+.archive-body {
+  min-width: 0;
+}
+
+.archive-link {
+  color: var(--color-text);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  transition: color var(--duration-fast) var(--ease);
+
+  &:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+}
+
+.archive-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+
+  i {
+    font-size: 0.6875rem;
+  }
+
+  a {
+    color: var(--color-text-muted);
+
+    &:hover {
+      color: var(--color-primary);
+    }
+  }
+}
+
+.archive-meta-sep {
+  opacity: .55;
+}
+
+@media (max-width: 768px) {
+  .archive-timeline {
+    --archive-date-width: 46px;
+    --archive-gap: var(--space-2);
+  }
+
+  .archive-year-title {
+    font-size: 1.75rem;
+  }
+
+  .archive-link {
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .archive-link {
+    transition: none;
+  }
+}

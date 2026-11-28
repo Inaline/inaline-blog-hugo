@@ -34,6 +34,9 @@
   // 所以它单独出现在这里，跟 --color-bg 这些一起翻
   --brand-github: #FFFFFF;
 
+  // 说说作者名（§7.14）：旧站的微信蓝在深色卡上对比不足，翻亮一档
+  --color-moment-author: #93A9D8;
+
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .25), 0 2px 6px rgba(0, 0, 0, .3);
   --shadow-md: 0 6px 18px rgba(0, 0, 0, .45);
   --shadow-header: 0 2px 8px rgba(0, 0, 0, .45);
@@ -124,6 +127,13 @@
   --brand-bilibili: #00AEEC;
   --brand-github: #181717;
   --brand-qq: #12B7F5;
+
+  // 说说（§7.14）：作者名沿用旧站评论区的微信蓝；它坐在卡片上，
+  // 暗色下需要翻亮才读得清，故暗色值在 dark-tokens 覆写。
+  // 封面压暗遮罩站在照片上，两种主题同值，不进 dark-tokens
+  --color-moment-author: #576B95;
+  --moments-cover-scrim-top: rgba(0, 0, 0, .08);
+  --moments-cover-scrim-bottom: rgba(0, 0, 0, .42);
 
   // 封面角标（§7.7，当前只有"置顶"）：压在封面图上的白底角标。
   // 两种主题下取值相同，故**不进 dark-tokens**——它坐在照片上而不是页面底色上，

@@ -1,0 +1,121 @@
+{{/*
+  单条动态（DESIGN.md §7.14）
+
+  参数：page   —— content/moments/ 下的常规页
+        detail —— true 时渲染详情页版本：整卡不跳转、不显示"详情"，
+                  评论按钮只带文字（评论数由下方评论区加载后显示）
+
+  结构：方形头像 + 右侧作者 / 正文 / 配图 / 底部（日期 + 评论 + 详情）；
+  列表页有评论时再跟一条评论预览（js/pages/moments.js 填充）。
+  整卡不跳转：列表页只有「详情」链接进入详情页（旧站行为），评论数由
+  waline-stats.js 按 data-post-card / data-post-path 批量回填。
+  配图取 front matter 的 images（字符串或 { src, alt }），卡内图片归一个
+  lightbox 分组，头像放进 data-lightbox-ignore 子树。
+*/}}
+
+{{- $page := .page -}}
+{{- $detail := .detail | default false -}}
+{{- $avatar := partial "author-avatar.html" $page -}}
+{{- $name := site.Params.author -}}
+{{- $waline := site.Params.waline -}}
+{{- $commentsEnabled := and $waline $waline.server (ne $waline.enable false) -}}
+
+<article class="moment-item"
+  data-lightbox-group
+  {{ if not $detail }}
+    data-post-card
+    data-post-path="{{ $page.RelPermalink }}"
+  {{ end }}>
+  <div class="moment-main">
+    <div class="moment-avatar" data-lightbox-ignore>
+      {{ with $avatar }}
+        <img src="{{ . }}" alt="{{ $name }}" width="48" height="48" loading="lazy" referrerpolicy="no-referrer">
+      {{ else }}
+        <i class="fa-regular fa-user" aria-hidden="true"></i>
+      {{ end }}
+    </div>
+
+    <div class="moment-body">
+      <div class="moment-head">
+        {{ with $name }}<span class="moment-author">{{ . }}</span>{{ end }}
+      </div>
+
+      {{ with $page.Content }}
+        <div class="moment-content markdown">{{ . }}</div>
+      {{ end }}
+
+      {{ with $page.Params.images }}
+        {{ $page := $page }}
+        <div class="moment-images">
+          {{ range $image := . }}
+            {{ $src := "" }}
+            {{ $alt := "" }}
+            {{ if reflect.IsMap $image }}
+              {{ with $image.src }}{{ $src = . }}{{ end }}
+              {{ with $image.alt }}{{ $alt = . }}{{ end }}
+            {{ else }}
+              {{ $src = $image }}
+            {{ end }}
+
+            {{ $url := "" }}
+            {{ with $src }}
+              {{ if or (hasPrefix . "http://") (hasPrefix . "https://") }}
+                {{ $url = . }}
+              {{ else }}
+                {{ with $page.Resources.GetMatch . }}
+                  {{ $url = .RelPermalink }}
+                {{ else }}
+                  {{ with resources.Get . }}
+                    {{ $url = .RelPermalink }}
+                  {{ else }}
+                    {{ warnf "moment-item: %s 的配图找不到资源 %q" $page.RelPermalink . }}
+                  {{ end }}
+                {{ end }}
+              {{ end }}
+            {{ end }}
+
+            {{ with $url }}
+              <div class="moment-image-item">
+                <img src="{{ . }}" alt="{{ $alt }}" loading="lazy">
+              </div>
+            {{ end }}
+          {{ end }}
+        </div>
+      {{ end }}
+
+      <div class="moment-footer">
+        {{ if not $page.Date.IsZero }}
+          <time class="moment-date" datetime="{{ $page.Date.Format "2006-01-02T15:04:05Z07:00" }}">{{ $page.Date.Format "2006-01-02 15:04" }}</time>
+        {{ else }}
+          <span class="moment-date"></span>
+        {{ end }}
+
+        <div class="moment-actions">
+          {{ if $commentsEnabled }}
+            <a class="moment-action" href="{{ $page.RelPermalink }}#comments">
+              <i class="fa-regular fa-comment" aria-hidden="true"></i>
+              {{ if $detail }}
+                <span>评论</span>
+              {{ else }}
+                <span class="visually-hidden">评论：</span>
+                <span data-post-stat="comments">—</span>
+              {{ end }}
+            </a>
+          {{ end }}
+          {{ if not $detail }}
+            <a class="moment-action" href="{{ $page.RelPermalink }}">
+              <i class="fa-solid fa-link" aria-hidden="true"></i>
+              <span>详情</span>
+            </a>
+          {{ end }}
+        </div>
+      </div>
+
+      {{/* 评论预览：只在列表页、且 Waline 可用时输出容器；有没有评论由
+           js/pages/moments.js 判断，没有评论时容器保持 hidden，不占位 */}}
+      {{ if and $commentsEnabled (not $detail) }}
+        <div class="moment-comments" data-moment-comments data-comment-path="{{ $page.RelPermalink }}" hidden></div>
+      {{ end }}
+    </div>
+  </div>
+</article>

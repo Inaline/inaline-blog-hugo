@@ -1,0 +1,28 @@
+{{/*
+  博主头像地址（侧栏博主卡、说说页封面 / 动态卡共用）。
+
+  解析顺序与侧栏一致：params.sidebar.profile.avatar 优先，留空沿用
+  params.hero.avatar；网络地址（http/https）原样返回，assets 路径走
+  resources.Get（找不到构建告警并返回空字符串）。
+*/}}
+
+{{- $avatar := "" -}}
+{{- with site.Params.sidebar -}}
+  {{- with .profile -}}
+    {{- with .avatar -}}{{ $avatar = . }}{{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $avatar -}}
+  {{- with site.Params.hero -}}
+    {{- with .avatar -}}{{ $avatar = . }}{{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if and $avatar (not (or (hasPrefix $avatar "http://") (hasPrefix $avatar "https://"))) -}}
+  {{- with resources.Get $avatar -}}
+    {{- $avatar = .RelPermalink -}}
+  {{- else -}}
+    {{- warnf "author-avatar: 找不到头像资源 %q" $avatar -}}
+    {{- $avatar = "" -}}
+  {{- end -}}
+{{- end -}}
+{{- return $avatar -}}

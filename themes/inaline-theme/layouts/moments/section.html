@@ -1,0 +1,46 @@
+{{ define "main" }}
+{{/* 说说页（DESIGN.md §7.14）：只聚合 content/moments/ 下的常规页。
+     一张卡片里先放封面，再接按日期倒序的动态列表；右侧沿用侧栏。
+     页面没有可见标题，封面上的博主信息承担视觉入口，h1 只留给读屏。 */}}
+{{ $pages := sort .RegularPages "Date" "desc" }}
+<h1 class="visually-hidden">{{ .Title }}</h1>
+
+<div class="container container--wide layout moments-layout">
+  <div class="layout-main">
+    <div class="moments-card">
+      {{ partial "moments-cover.html" . }}
+
+      {{ if $pages }}
+        {{ $paginator := .Paginate $pages }}
+        <div class="moments-list">
+          {{ range $paginator.Pages }}
+            {{ partial "moment-item.html" (dict "page" . "detail" false) }}
+          {{ end }}
+        </div>
+
+        {{ if gt $paginator.TotalPages 1 }}
+          <div class="moments-footer">
+            {{ partial "pager.html" $paginator }}
+          </div>
+        {{ end }}
+      {{ else }}
+        <div class="moments-empty">
+          <i class="fa-regular fa-comment-dots" aria-hidden="true"></i>
+          <p>还没有说说，去记录一点什么吧。</p>
+        </div>
+      {{ end }}
+    </div>
+  </div>
+
+  {{ partial "sidebar.html" . }}
+</div>
+{{ end }}
+
+{{ define "page-scripts" }}
+  {{/* 评论预览（§7.14）：只拉有评论的动态，按时间倒序展示最新 5 条 */}}
+  {{ $waline := site.Params.waline }}
+  {{ if and $waline $waline.server (ne $waline.enable false) }}
+    {{ $js := resources.Get "js/pages/moments.js" | minify | fingerprint }}
+    <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+  {{ end }}
+{{ end }}

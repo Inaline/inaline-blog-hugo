@@ -94,9 +94,9 @@
   }
 
   /**
-   * 文章页页脚背景（DESIGN.md §7.1）：整页背景取消后，背景图只在页脚出现。
-   * 取首页上次展示的封面（同 PAGE_BG_KEY），校验它属于封面池后写进
-   * --footer-cover；没有记录 / 记录失效时退回封面池第一张。
+   * 文章页 / 归档页 / 说说页页脚背景（DESIGN.md §7.1 / §7.13 / §7.14）：
+   * 整页背景取消后，背景图只在页脚出现。取首页上次展示的封面（同 PAGE_BG_KEY），
+   * 校验它属于封面池后写进 --footer-cover；没有记录 / 记录失效时退回封面池第一张。
    */
   function initFooterCover() {
     var footer = document.querySelector('.site-footer[data-footer-covers]');
@@ -397,6 +397,8 @@
       '.term-list',
       '.carousel',
       '.post-list > .post-card',
+      '.moments-card',
+      '.moments-comments',
       '.sidebar > .sidebar-card',
       '.pager',
       '.post-header',
