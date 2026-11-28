@@ -125,7 +125,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 | `--color-border` | `#E5E7EB` | `#2C313A` | 描边 / 分割 |
 | `--header-bg` | `rgba(255,255,255,.6)` | `rgba(22,24,29,.6)` | Header 与下拉面板 |
 | `--hero-card-bg` | `transparent` | `rgba(16,18,22,.4)` | Hero 玻璃卡底色 |
-| `--page-scrim` | `transparent` | `rgba(0,0,0,.35)` | 首页整页背景压暗 |
+| `--page-scrim` | `transparent` | `rgba(0,0,0,.35)` | 整页背景（首页 / 分类 / 标签词条页）压暗 |
 | `--code-window-bg` | `#FFFFFF` | `#2B2B2B` | 代码窗口代码区底色（须与 Chroma `.chroma` 背景一致） |
 | `--code-window-bar` | `#F0F0F0` | `#3C3F41` | 代码窗口条底色 |
 | `--code-window-border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.10)` | 代码窗口描边 |
@@ -225,11 +225,12 @@ themes/inaline-theme/
 │   │   ├── _chroma-light.scss     # JetBrains Light 代码配色
 │   │   ├── _chroma-dark.scss      # JetBrains Dark（Darcula）代码配色
 │   │   ├── _base.scss             # reset + 基础排版 + 容器
-│   │   ├── _page-bg.scss          # 首页整页背景（§7.1）
+│   │   ├── _page-bg.scss          # 整页背景：首页 / 分类 / 标签词条页（§7.1 / §7.12）
 │   │   ├── _header.scss           # Header（§6）
 │   │   ├── _hero.scss             # Hero（§7.2–§7.6）
 │   │   ├── _post.scss             # 文章卡片 / 分页 / 标签（§7.7）
 │   │   ├── _markdown.scss         # Markdown 正文排版（§9）
+│   │   ├── _term.scss             # 分类 / 标签词条页顶部标题区（§7.12）
 │   │   ├── _article.scss          # 文章页：顶部大图 / 标题区 / 正文两栏 / 信息卡（§8）
 │   │   ├── _comments.scss         # 文章评论区：两级评论 / 表单 / 分页（§8.8）
 │   │   ├── _carousel.scss         # 首页轮播图（§7.10）
@@ -253,7 +254,7 @@ themes/inaline-theme/
 │       └── JetBrainsLxgwNerdMono-Regular.subset.woff2  # 代码等宽体（子集，不 preload）
 └── layouts/
     ├── baseof.html
-    ├── home.html / page.html / section.html / taxonomy.html / term.html
+    ├── home.html / page.html / section.html / taxonomy.html / term.html  # term：分类 / 标签词条页顶部 + 列表（§7.12）
     ├── _markup/render-codeblock.html  # 代码块 macOS 窗口外壳（§9.4）
     ├── _markup/render-blockquote.html # 引用块开引号（§9.4）
     ├── _markup/render-table.html      # 表格外层滚动容器（§9.4）
@@ -264,7 +265,8 @@ themes/inaline-theme/
         ├── header.html            # Header 外壳
         ├── nav-item.html          # 菜单项递归渲染（§6.5）
         ├── icon.html              # 主题自绘 SVG 图标（引号 + CC + 社交品牌）
-        ├── page-background.html   # 首页整页背景（§7.1）
+        ├── page-background.html   # 整页背景：首页 / 分类 / 标签词条页（§7.1 / §7.12）
+        ├── term-hero.html         # 分类 / 标签词条页顶部标题区（§7.12）
         ├── hero.html              # Hero 内容（§7.2–§7.6）
         ├── carousel.html          # 首页轮播图容器与条目解析（§7.10）
         ├── carousel-body.html     # 轮播卡片文字区（§7.10）
@@ -302,7 +304,7 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页页脚背景（§7.1）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页页脚背景（§7.1）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `lightbox.js`：全局图片预览（§5.4），点击监听用事件委托，动态内容无需重新初始化；暴露 `window.inalineLightboxInit`。
 - `waline.js`：Waline API 薄封装（§8.8 / §7.11），只负责拼地址、解析 `{ errno, errmsg, data }`、归一错误与按邮箱生成头像地址；不碰 DOM。覆盖评论列表 / 发表、评论数（单篇 / 全站）、近期评论、阅读量计数器读写。
 - `emoji.js`：评论区表情包（§8.8），读取 `params.waline.emoji`，按需拉取 `@waline/emojis` 预设的 `info.json`，渲染选择器，并把 `:key:` / 颜文字转成安全 HTML。
@@ -351,7 +353,7 @@ themes/inaline-theme/
 | 项 | 规格 |
 | --- | --- |
 | 入口 | `main.js` 的 `initReveal()`，幂等；在 `window.inalineInit` 中一并复用 |
-| 目标 | `.page-header`、`.page-content`、`.term-list`、`.carousel`、`.post-list > .post-card`、`.sidebar > .sidebar-card`、`.pager`、`.post-header`、`.post-content`、`.site-footer` |
+| 目标 | `.page-header`、`.page-content`、`.term-list`、`.carousel`、`.post-list > .post-card`、`.sidebar > .sidebar-card`、`.pager`、`.post-header`、`.term-header`、`.post-content`、`.site-footer` |
 | 样式 | `.reveal` → `opacity: 0`；`.is-visible` 播放 `reveal-in`：`--duration-reveal`、`--ease-out`、`opacity 0 → 1`、`translate 24px → 0`，`animation-fill-mode: both` |
 | 首屏 | `getBoundingClientRect()` 判断已在视口内的元素，按 DOM 顺序每项 +50ms（上限 300ms）直接进场 |
 | 滚动 | 其余元素交给 `IntersectionObserver`：`rootMargin: 0 0 -8% 0`、`threshold: 0`，进场后立即 `unobserve`；同一批进场的元素按 40ms 依次错开（上限 200ms） |
@@ -404,7 +406,7 @@ themes/inaline-theme/
 ### 6.1 整体布局
 
 - 固定顶部：`position: fixed`，高度 `--header-height`（56px），`z-index: var(--z-header)`。
-  用 `fixed` 而非 `sticky`，首页整页背景和 Hero 才能从 `y=0` 铺满并钻到 Header 底下。
+  用 `fixed` 而非 `sticky`，整页背景（首页 / 分类 / 标签词条页）和首页 Hero 才能从 `y=0` 铺满并钻到 Header 底下。
 - 背景 `--header-bg` + `backdrop-filter: blur(--header-blur)`；用 `--shadow-header` 分层，不用分割线。
 - 内部三栏 Grid：`grid-template-columns: 1fr auto 1fr`，容器 `--container-width`，左右内边距 `--space-5`。中间导航绝对居中，不因左右宽度不等而偏移。
 - 进场：`.header-inner` 从上方 8px 淡入落位，`--duration-reveal`（§5.3）；`prefers-reduced-motion` 下直接显示。
@@ -518,12 +520,13 @@ menu:
 首页自上而下：整页固定背景 → Hero（作者徽章 + 一言卡片 + 下滚箭头）→ 两栏内容（文章列表顶部的轮播图 + 文章列表 + 右侧栏）→ 页脚。轮播图只在第一页渲染（§7.10）。
 `params.description` 不在页面渲染，只作为 `<meta name="description">` 的来源。
 
-### 7.1 首页整页背景 ✅
+### 7.1 首页 / 词条页整页背景 ✅
 
-首页背景不是 Hero 的背景，而是**整个首页**的固定背景：从首屏一直铺到页脚，滚动时图像不动。文章页不铺整页背景，记得住的封面只在页脚出现（见下表「封面记忆」）。
+整页背景不是某一个 Hero 的背景，而是**整个页面**的固定背景：从首屏一直铺到页脚，滚动时图像不动。首页与分类 / 标签词条页（§7.12）使用同一套图层；文章页不铺整页背景，记得住的封面只在页脚出现（见下表「封面记忆」）。
 
 | 项 | 规格 |
 | --- | --- |
+| 使用页面 | 首页（`data-page-bg="home"`）与分类 / 标签词条页（§7.12，`data-page-bg="term"`）；后者不参与首页封面记忆 |
 | 容器 | `.page-bg`：`position: fixed`，`top/left/right: 0`，`height: 100vh` + `100lvh`，`z-index: -1`，`pointer-events: none`，底色 `--color-bg` |
 | 图层 | 每张封面一个 `.page-bg-layer`（`position: absolute; inset: 0`），`background-size: cover`、`center`、`no-repeat`；`opacity: 0`，`.is-active` 时 `1`；每层带 `data-cover`（`RelPermalink`），供记忆 / 还原 |
 | 切换 | JS 挪 `.is-active`，`opacity` 600ms 交叉淡入；`prefers-reduced-motion` 下直接换 |
@@ -532,12 +535,12 @@ menu:
 | 初始图 | `params.hero.initial_cover`：封面路径 → 固定从它开始；`random` → 每次随机；留空 → 第一张 |
 | 兜底 | `random` 时模板先做一次构建期随机（无 JS 兜底），`home.js` 在每次载入时重摇 |
 | 切换按钮 | 卡片左下角左右箭头，仅当封面多于一张时渲染 |
-| 封面记忆 | `main.js` 在首页把当前激活封面的 `data-cover` 写入 localStorage（键 `inaline-page-bg`，含随机初始图与箭头切换）。文章页不渲染 `.page-bg`，`body` 保持 `--color-bg` 灰底；页脚输出 `data-footer-covers`，`main.js` 读回记录、校验其属于封面池后写入 `--footer-cover` 并加 `has-cover-bg`，未记录 / 失效时退回封面池第一张（页脚外观见 §7.9） |
+| 封面记忆 | `main.js` 只在首页把当前激活封面的 `data-cover` 写入 localStorage（键 `inaline-page-bg`，含随机初始图与箭头切换）；分类 / 标签词条页的 `data-page-bg="term"` 只读不写，有记录时还原一次背景，避免覆盖首页选择。文章页不渲染 `.page-bg`，`body` 保持 `--color-bg` 灰底；页脚输出 `data-footer-covers`，`main.js` 读回记录、校验其属于封面池后写入 `--footer-cover` 并加 `has-cover-bg`，未记录 / 失效时退回封面池第一张（页脚外观见 §7.9） |
 
 **硬约束**：
 
 - `.page-bg` 必须是 `<body>` 的第一个子元素。它靠负 `z-index` 落在画布之上、内容之下，中间不能隔带 `transform` / `filter` / `opacity` 的祖先。
-- 首页 `body.has-hero` 必须透明，否则常规流背景会把负层级图层整块盖掉。
+- 带整页背景的页面（首页 / 分类 / 标签词条页）`body.has-hero` 必须透明，否则常规流背景会把负层级图层整块盖掉。
 - 背景图 URL 由模板写进内联 `style`，不写进 SCSS：Hugo 不改写 SCSS 的 `url()`，而样式表会被指纹化。
 - `height` 取 `100lvh` 而非 `inset: 0`：避免 iOS 地址栏收放时盒子重排、`cover` 重新取景导致图片跳动。
 
@@ -607,7 +610,7 @@ menu:
 
 ### 7.7 文章卡片与分页 ✅
 
-首页、分区页、标签词条页共用一套卡片。
+首页、分区页、分类 / 标签词条页共用一套卡片。
 
 | 项 | 规格 |
 | --- | --- |
@@ -744,6 +747,22 @@ menu:
 | 失败降级 | 请求失败只输出 `console.warn`，占位符保持不动；无 JS 时不做静态降级 |
 | 幂等 | 与其它脚本一致用 init + `dataset` 标记防重复；`window.inalineWalineStatsInit` 供未来 Swup 复用；同一页面只在首次 init 时埋点 |
 
+### 7.12 分类 / 标签词条页 ✅
+
+分类词条页（`/categories/<term>/`）与标签词条页（`/tags/<term>/`）共用同一套顶部：都与首页共用整页固定背景（§7.1），不铺文章页的大图；顶部沿用文章页标题区的排版（§8.2），但去掉大图与波浪，标题和统计直接压在连续的背景图上。
+
+| 项 | 规格 |
+| --- | --- |
+| 模板 | `layouts/term.html` 统一渲染 `partials/term-hero.html`，下方复用文章卡片 + 侧栏 + 分页 |
+| URL | `hugo.yaml` 的 `permalinks.term` 把 `:slug` 映射到 `/tags/:slug/` 与 `/categories/:slug/`；中文词条在 `content/<taxonomy>/<中文词条>/_index.md` 写 `slug`，`title` 保留中文；旧中文地址写 `aliases` 生成跳转。ASCII 词条没有词条页时回退为小写标题（如 `/tags/hugo/`） |
+| 整页背景 | `baseof.html` 给 term 页加 `body.has-hero` 并渲染 `page-background.html`；`data-page-bg="term"`，不参与首页封面记忆；`main.js` 读取首页记住的封面做一次性还原，没有记录 / 记录失效时用构建期那张；`<main>` 加 `.main--term`（`padding-top: 0`） |
+| 标题区 | `.term-hero`：`display: flex` 垂直居中，`min-height: --post-hero-height`（与文章页大图同高），顶部内边距 `calc(--header-height + --space-5)` 给 fixed Header 让位；没有大图、没有波浪，背景图连续到页脚 |
+| 标题 | `.term-title`：`clamp(1.75rem, 4vw, 2.5rem)`、白色、居中；`display: flex` 让图标与文字同排，文字列 `text-wrap: balance`；背景图亮度不可控，加一档文字投影兜底（与首页 Hero 文案一致） |
+| 类型图标 | 标题文字前的 `.term-title-icon`（`aria-hidden`，`0.8em`，`--color-over-hero-soft`）：分类用 `fa-regular fa-folder-open`，标签用 `fa-solid fa-tags`，与文章页分类 / 标签组的图标一致 |
+| 统计 | 复用 `.post-meta` / `.post-meta-item` / `.post-meta-sep`，居中排一行：文章数（`fa-folder-open`）、总字数（`fa-file-lines`，正文去空白字符数求和，`format-number.html` 只加千分位、不折 k / M）、最近更新（`fa-calendar`，取各篇 `.Lastmod` 最大值；无有效日期时该项不渲染） |
+| 列表 | 标题区下方复用首页两栏布局（`container--wide` + `.layout`）：文章卡片 + 右侧栏 + 分页；`.term-hero + .container` 只补 `--space-6` 上边距 |
+| 分页 | 复用 §7.7 的 `pager.html`；因页面带 `body.has-hero`，页码白底与省略号白色样式自动生效 |
+
 ---
 
 ## 8. 文章页 ✅
@@ -849,11 +868,11 @@ menu:
 
 **配置与文件**
 
-- `hugo.yaml` 的 `params.waline`：`enable`（总开关）、`server`（服务地址）、`page_size`（每页顶层评论数）、`avatar_prefix`（表单头像前缀）、`emoji`（表情选项卡）。缺少 `server` 或 `enable: false` 时，评论区与相关脚本都不渲染 / 不加载。
-- `waline.js`：`create({ server })` 返回 `list()` / `add()`。`list()` 把 `sort: 'newest' | 'oldest'` 映射到 Waline 的 `insertedAt_desc` / `insertedAt_asc`，统一返回 `{ comments, page, pageSize, totalPages, count }`；`add()` 透传评论字段；`avatarUrl(mail, prefix, nick)` 复刻 Waline 服务端默认头像规则：纯数字昵称或 `<数字>@qq.com` 取 QQ 头像，其余走 `avatar_prefix + MD5(trim + lowercase mail)`。
+- `hugo.yaml` 的 `params.waline`：`enable`（总开关）、`server`（服务地址）、`page_size`（每页顶层评论数）、`avatar_prefix`（表单头像 hash 前缀）、`avatar_params`（原样拼在 hash 后的查询串，如 `?d=monsterid`）、`emoji`（表情选项卡）。缺少 `server` 或 `enable: false` 时，评论区与相关脚本都不渲染 / 不加载。
+- `waline.js`：`create({ server })` 返回 `list()` / `add()`。`list()` 把 `sort: 'newest' | 'oldest'` 映射到 Waline 的 `insertedAt_desc` / `insertedAt_asc`，统一返回 `{ comments, page, pageSize, totalPages, count }`；`add()` 透传评论字段；`avatarUrl(mail, prefix, nick, params)` 复刻服务端头像规则：纯数字昵称或 `<数字>@qq.com` 取 QQ 头像，其余走 `avatar_prefix + MD5(trim + lowercase mail) + avatar_params`。
 - `emoji.js`：读取 `params.waline.emoji`。图片包支持 `preset`（`@waline/emojis@1.4.0/<name>` 简写或完整目录 URL，运行时读取 `<preset>/info.json`）与 `folder + items` 自定义包；文本包用 `type: "text"` + `items`。对外暴露 `load()` / `toHtml()` / `protect()` / `restore()`；某个图片包加载失败只跳过该包，颜文字仍可用。
 - `format.js`：预览用轻量 Markdown。先转义再生成 HTML，支持段落 / 换行、标题、引用、有序 / 无序列表、分隔线、围栏代码、行内代码、粗体、斜体、删除线、链接与图片；链接只放行 http(s) / 相对路径 / mailto / 锚点。预览是近似效果，最终以服务端渲染为准。
-- `comment.js`：幂等 `init()`，暴露 `window.inalineCommentInit`；从 section 的 `data-waline-server` / `data-comment-path` / `data-comment-page-size` / `data-comment-avatar-prefix` 与 `[data-comment-emoji-config]` 读配置。发布成功后把昵称 / 邮箱 / 网址写进 `localStorage` 的 `inaline-comment-user`，下次自动回填。
+- `comment.js`：幂等 `init()`，暴露 `window.inalineCommentInit`；从 section 的 `data-waline-server` / `data-comment-path` / `data-comment-page-size` / `data-comment-avatar-prefix` / `data-comment-avatar-params` 与 `[data-comment-emoji-config]` 读配置。发布成功后把昵称 / 邮箱 / 网址写进 `localStorage` 的 `inaline-comment-user`，下次自动回填。
 - 无 JS 时列表停在「评论加载中…」并显示 `<noscript>` 提示：评论依赖服务端数据，不做静态降级。
 
 | 项 | 规格 |
@@ -862,7 +881,7 @@ menu:
 | 结构 | 顶层评论分页；回复最多一层（二级），挂在所属顶层评论下方；每条评论的头像 / 昵称 / 时间在卡片外，正文、设备信息与回复按钮收进灰色气泡卡片；评论之间不画分割线，靠间距区分；二级评论的 `children` 不再向下渲染，保证嵌套只有两级 |
 | 标题 | `fa-regular fa-comments` + "评论"，不显示总数 |
 | 发布表单 | 标题与列表之间；左侧 40px 头像，右侧邮箱 / 昵称 / 网址三个字段（每个由左侧标签插槽 + 右侧输入框组成），下方正文 textarea，底部表情按钮与预览 / 发送按钮。发送为 `type="submit"`，由 `comment.js` 提交到 Waline；表情与预览均已接入 |
-| 表单头像 | 复用 `.post-comment-avatar` 外框：`--color-bg` 底 + `fa-user`；昵称 / 邮箱输入（共用 250ms 防抖）后按 `avatarUrl` 换成头像。规则与服务端一致：纯数字昵称或 `<数字>@qq.com` 取 `https://q1.qlogo.cn/g?b=qq&nk=<数字>&s=100`，其余走 Libravatar；图片加载失败退回 `fa-user` |
+| 表单头像 | 复用 `.post-comment-avatar` 外框：`--color-bg` 底 + `fa-user`；昵称 / 邮箱输入（共用 250ms 防抖）后按 `avatarUrl` 换成头像。规则与服务端一致：纯数字昵称或 `<数字>@qq.com` 取 `https://q1.qlogo.cn/g?b=qq&nk=<数字>&s=100`，其余走 WeAvatar（`avatar_prefix` + MD5 + `avatar_params`，本仓库配 `?d=monsterid`）；服务端 `waline/.env` 的 `GRAVATAR_STR` 需返回同样的规则；图片加载失败退回 `fa-user` |
 | 表单字段 | 三列 grid（`≤768px` 单列），`name` 取 `mail` / `nick` / `link`，`autocomplete` 对应 email / nickname / url；每个字段是 `label` 包裹的外框：左侧 `.post-comment-field-label` 标签插槽（邮箱 / 昵称 / 网址，muted、`--color-bg` 灰底、左右 `--space-2` 内边距、右侧 1px `--color-border` 竖线），右侧透明底输入框铺满剩余宽度；外框高 40px、输入区 `--color-elevated` 白底（暗色为抬升层）+ 1px `--color-border` + `--radius-md`；`:focus-within` 只把外框边框转主题色，不改文字颜色；输入框自身无描边、不加光圈 / 阴影；占位提示只显示「必填」/「可选」 |
 | 回复上下文 | 点评论的「回复」后，字段与正文之间出现 `.post-comment-reply-hint`，显示 `回复 @昵称` 与取消按钮；textarea 占位变成 `回复 @昵称…`，焦点移到表单。提交时带 `pid`（直接回复对象）与 `rid`（顶层评论），服务端把回复挂到顶层评论下；回复成功后留在当前页并滚回父评论 |
 | 表单正文 | textarea 最小高 104px、纵向可拉伸，内边距 `--space-3`（底部多留一档放字数提示）；与字段同底色、同描边，聚焦反馈一致；加 `maxlength="1000"` |

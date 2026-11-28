@@ -1,0 +1,54 @@
+{{/*
+  分类 / 标签词条页顶部（DESIGN.md §7.12）
+
+  排版沿用文章页标题区：词条名居中，下方一行统计信息；
+  区别是没有大图、没有波浪——词条页和首页一样用整页固定背景
+  （page-background.html），标题区直接压在背景图上。
+
+  标题前的图标用来区分词条类型：分类用文件夹，标签用 tags。
+
+  统计只取三项，全部由本词条的文章在构建时算出，不额外发请求：
+    文章数 / 总字数 / 最近更新
+  字数为正文去掉空白后的字符数，与文章卡片、文章页同一算法；
+  最近更新取各篇 .Lastmod 的最大值（未配置 lastmod 时 Hugo 回退到 date）。
+*/}}
+{{ $pages := .RegularPages }}
+{{ $count := len $pages }}
+{{ $chars := 0 }}
+{{ $latest := time.AsTime "0001-01-01T00:00:00Z" }}
+{{ range $pages }}
+  {{ $chars = add $chars (countrunes (replaceRE `\s+` "" (.Content | plainify))) }}
+  {{ if .Lastmod.After $latest }}{{ $latest = .Lastmod }}{{ end }}
+{{ end }}
+
+{{/* 与文章页的分类 / 标签组图标保持一致 */}}
+{{ $iconClass := "fa-solid fa-tags" }}
+{{ if eq .Data.Plural "categories" }}{{ $iconClass = "fa-regular fa-folder-open" }}{{ end }}
+
+<header class="term-hero">
+  <div class="container term-header">
+    <h1 class="term-title">
+      <i class="{{ $iconClass }} term-title-icon" aria-hidden="true"></i>
+      <span>{{ .Title }}</span>
+    </h1>
+    <div class="post-meta">
+      <span class="post-meta-item">
+        <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
+        <span>共 {{ $count }} 篇文章</span>
+      </span>
+      <div class="post-meta-sep" aria-hidden="true"></div>
+      <span class="post-meta-item">
+        <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
+        {{/* 分类总量可能上万，仍只加千分位逗号，不折成 k / M（与文章页一致） */}}
+        <span>总字数：{{ partial "format-number.html" (dict "value" $chars "unit" false) }} 字</span>
+      </span>
+      {{ if gt $latest.Year 1 }}
+        <div class="post-meta-sep" aria-hidden="true"></div>
+        <span class="post-meta-item">
+          <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+          <span>最近更新：<time datetime="{{ $latest.Format "2006-01-02" }}">{{ $latest.Format "2006年1月2日" }}</time></span>
+        </span>
+      {{ end }}
+    </div>
+  </div>
+</header>

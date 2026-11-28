@@ -13,7 +13,7 @@
  *   client.recent(5);                           // → 近期评论数组
  *   client.views(['/posts/a/']);                // → [阅读量]
  *   client.increment('/posts/a/', 'time');      // 阅读量 +1
- *   InalineWaline.avatarUrl('a@b.com', 'https://seccdn.libravatar.org/avatar/', '123456');
+ *   InalineWaline.avatarUrl('a@b.com', 'https://weavatar.com/avatar/', '123456', '?d=monsterid');
  */
 (function (global) {
   'use strict';
@@ -22,7 +22,7 @@
     newest: 'insertedAt_desc',
     oldest: 'insertedAt_asc'
   };
-  var DEFAULT_AVATAR_PREFIX = 'https://seccdn.libravatar.org/avatar/';
+  var DEFAULT_AVATAR_PREFIX = 'https://weavatar.com/avatar/';
 
   /** 服务端返回的非 0 errno、HTTP 错误与断网，都收成这一种错误 */
   function WalineError(message, code, status) {
@@ -206,10 +206,12 @@
    * 按昵称 / 邮箱生成头像地址，规则与 Waline 服务端默认的 avatarUrl 一致：
    *  1. nick 是纯数字          → QQ 头像（nk=nick）
    *  2. mail 是 <数字>@qq.com  → QQ 头像（nk=数字）
-   *  3. 其他                   → avatar_prefix + MD5(trim + lowercase mail)
-   * 表单头像因此能和列表里服务端返回的头像保持一致。
+   *  3. 其他                   → avatar_prefix + MD5(trim + lowercase mail) + params
+   * params 是原样拼在 hash 后的查询串（如 '?d=monsterid'，自带 ?），
+   * 各头像服务参数名不同，所以不解析、不补 ?。表单头像因此能和列表里
+   * 服务端返回的头像保持一致。
    */
-  function avatarUrl(mail, prefix, nick) {
+  function avatarUrl(mail, prefix, nick, params) {
     var normalizedMail = String(mail || '').trim().toLowerCase();
     var normalizedNick = String(nick || '').trim();
 
@@ -222,7 +224,7 @@
 
     var base = String(prefix || DEFAULT_AVATAR_PREFIX);
     if (!/\/$/.test(base)) base += '/';
-    return base + md5(normalizedMail);
+    return base + md5(normalizedMail) + (typeof params === 'string' ? params : '');
   }
 
   function qqAvatar(number) {
@@ -230,7 +232,6 @@
   }
 
   // -------------------------------------------------------------------------
-  // MD5（RFC 1321），只用于按邮箱拼 Gravatar / Libravatar 地址。
   // 核心算法取自 blueimp-md5（MIT）；输入先转 UTF-8 再按二进制字符串计算。
   // -------------------------------------------------------------------------
   function md5(input) {

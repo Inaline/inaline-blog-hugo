@@ -385,8 +385,8 @@
 // 4. 前景转白 —— 封面图是深色调，亮色模式下的正文色（#1F2328）压上去读不出来
 //
 // 滚动后 .is-scrolled 生效，:not() 失配，上述四条自动全部还原。
-// 只在首页（body.has-hero）和带顶部大图的文章页（body.has-post-hero）生效：
-// 其他页面顶部没有封面，转白会变成白底白字。
+// 只在带整页背景的首页 / 分类 / 标签词条页（body.has-hero）和带顶部大图的
+// 文章页（body.has-post-hero）生效：其他页面顶部没有封面，转白会变成白底白字。
 // ---------------------------------------------------------------------------
 body.has-hero .site-header:not(.is-scrolled),
 body.has-post-hero .site-header:not(.is-scrolled) {

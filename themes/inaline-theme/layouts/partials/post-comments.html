@@ -13,14 +13,16 @@
 {{ $waline := site.Params.waline }}
 {{ if and $waline $waline.server (ne $waline.enable false) }}
   {{ $pageSize := default 10 $waline.page_size }}
-  {{ $avatarPrefix := default "https://seccdn.libravatar.org/avatar/" $waline.avatar_prefix }}
+  {{ $avatarPrefix := default "https://weavatar.com/avatar/" $waline.avatar_prefix }}
+  {{ $avatarParams := default "" $waline.avatar_params }}
   {{ $emoji := default (slice) $waline.emoji }}
 <section class="post-comments" id="comments" aria-labelledby="post-comments-title"
   data-post-comments
   data-waline-server="{{ $waline.server }}"
   data-comment-path="{{ .RelPermalink }}"
   data-comment-page-size="{{ $pageSize }}"
-  data-comment-avatar-prefix="{{ $avatarPrefix }}">
+  data-comment-avatar-prefix="{{ $avatarPrefix }}"
+  data-comment-avatar-params="{{ $avatarParams }}">
   {{/* 表情包配置：comment.js 读取这段 JSON 渲染选择器 */}}
   <script type="application/json" data-comment-emoji-config>{{ $emoji | jsonify | safeJS }}</script>
 

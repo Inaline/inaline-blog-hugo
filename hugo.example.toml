@@ -35,6 +35,13 @@ hasCJKLanguage = true
 [pagination]
   pagerSize = 10
 
+# 分类 / 标签词条页 URL：:slug 取词条页 front matter 的 slug
+# （content/tags/<词条>/_index.md）。中文词条要显式配 slug，否则会回退成中文路径；
+# ASCII 词条没有词条页时回退为小写标题，例如 /tags/hugo/ 不受影响。
+[permalinks.term]
+  tags = "/tags/:slug/"
+  categories = "/categories/:slug/"
+
 [params]
   # 站点描述（写入 <meta name="description">）与作者名。
   # author 同时是 Hero 徽章与侧栏博主卡的默认名称
@@ -58,14 +65,18 @@ hasCJKLanguage = true
   # enable：false 时评论区、统计回填与相关脚本都不渲染 / 不加载。
   # page_size：每页顶层评论数。回复挂在父评论下，不单独分页。
   # avatar_prefix：表单预览头像的前缀，仅用于非 QQ 情况，
-  #   需与 Waline 服务端的头像服务一致；默认 Libravatar。
+  #   需与 Waline 服务端的头像服务一致；默认 WeAvatar。
+  # avatar_params：原样拼在头像 hash 后面的查询串，用来指定默认头像等。
+  #   各服务参数名不同（d / default / …），所以这里写整段字符串而不是值，
+  #   需自带 ?，留空则不拼。需与服务端 GRAVATAR_STR 保持一致。
   #   昵称为纯数字或邮箱为 <数字>@qq.com 时自动取 QQ 头像（复刻 Waline 默认规则）。
   # ---------------------------------------------------------------------------
   [params.waline]
     enable = true
     server = "http://localhost:8360"
     page_size = 10
-    avatar_prefix = "https://seccdn.libravatar.org/avatar/"
+    avatar_prefix = "https://weavatar.com/avatar/"
+    avatar_params = "?d=monsterid"
 
     # 表情选项卡，按数组顺序显示：
     # - 图片表情包：preset 写 @waline/emojis 的预设名（qq / alus / bilibili …），

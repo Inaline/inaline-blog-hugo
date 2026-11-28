@@ -64,6 +64,36 @@
   }
 
   /**
+   * 分类 / 标签词条页背景（DESIGN.md §7.12）：不参与封面切换，也不写记忆，
+   * 但沿用首页上次选中的封面，让首页 → 词条页的背景保持连续；
+   * 没有记录 / 记录不在封面池里时保留模板构建期选好的那张。
+   */
+  function initPageBgRestore() {
+    var bg = document.querySelector('.page-bg[data-page-bg="term"]');
+    if (!bg || bg.dataset.bgRestoreBound === 'true') return;
+    bg.dataset.bgRestoreBound = 'true';
+
+    var cover = '';
+    try {
+      cover = localStorage.getItem(PAGE_BG_KEY) || '';
+    } catch (e) {
+      /* 隐私模式下 localStorage 不可用，保留构建期封面 */
+    }
+    if (!cover) return;
+
+    var target = null;
+    var layers = bg.querySelectorAll('.page-bg-layer');
+    Array.prototype.forEach.call(layers, function (layer) {
+      if (layer.getAttribute('data-cover') === cover) target = layer;
+    });
+    if (!target || target.classList.contains('is-active')) return;
+
+    var active = bg.querySelector('.page-bg-layer.is-active');
+    if (active) active.classList.remove('is-active');
+    target.classList.add('is-active');
+  }
+
+  /**
    * 文章页页脚背景（DESIGN.md §7.1）：整页背景取消后，背景图只在页脚出现。
    * 取首页上次展示的封面（同 PAGE_BG_KEY），校验它属于封面池后写进
    * --footer-cover；没有记录 / 记录失效时退回封面池第一张。
@@ -370,6 +400,7 @@
       '.sidebar > .sidebar-card',
       '.pager',
       '.post-header',
+      '.term-header',
       '.post-content',
       '.site-footer'
     ].join(',');
@@ -426,6 +457,7 @@
   function init() {
     initThemeToggle();
     initPageBgMemory();
+    initPageBgRestore();
     initFooterCover();
     initHeaderScroll();
     initFooterUptime();

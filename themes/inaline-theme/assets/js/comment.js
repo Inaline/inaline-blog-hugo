@@ -30,6 +30,7 @@
   var path = data.commentPath || window.location.pathname;
   var pageSize = parseInt(data.commentPageSize, 10) || 10;
   var avatarPrefix = data.commentAvatarPrefix || '';
+  var avatarParams = data.commentAvatarParams || '';
   var reducedMotion = !!(window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
@@ -694,7 +695,8 @@
     var url = window.InalineWaline.avatarUrl(
       fields.mail.value.trim(),
       avatarPrefix,
-      fields.nick.value.trim()
+      fields.nick.value.trim(),
+      avatarParams
     );
     if (!url) {
       resetFormAvatar();

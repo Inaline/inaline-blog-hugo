@@ -1,9 +1,10 @@
 {{/*
-  首页整页背景：铺满视口的固定封面图层 + 压暗遮罩
+  整页背景：铺满视口的固定封面图层 + 压暗遮罩
 
-  它是**首页**的背景，不是 Hero 的背景——从首屏一直铺到页脚，滚动时图像固定不动
-  （.page-bg 用 position: fixed，见 _page-bg.scss）。
-  文章页不放整页背景：背景图只在页脚出现（footer.html + main.js，§7.1）。
+  它铺在**首页与分类 / 标签词条页**（§7.1 / §7.12）上，不是某一个 Hero 的背景——
+  从首屏一直铺到页脚，滚动时图像固定不动（.page-bg 用 position: fixed，
+  见 _page-bg.scss）。文章页不放整页背景：背景图只在页脚出现
+  （footer.html + main.js，§7.1）。
 
   三件事的理由，都写在这里，以后别再走回头路：
 
@@ -26,7 +27,8 @@
      根层叠上下文里才有这个位置；中间隔一个带 transform / filter / opacity
      的祖先，它就被困住，或者干脆被那个祖先的背景盖掉。
 
-  B. 首页 body 必须透明（_page-bg.scss 的 body.has-hero）。
+  B. 带整页背景的页面（首页 / 分类 / 标签词条页）body 必须透明
+     （_page-bg.scss 的 body.has-hero）。
      body 的背景是"常规流块级背景"，绘制顺序在负层级之后，不透明就会把
      整个图层盖死。
 
@@ -55,7 +57,9 @@
   {{ end }}
 {{ end }}{{ end }}{{ end }}
 
-<div class="page-bg" data-page-bg="home"{{ if $random }} data-cover-random="true"{{ end }}>
+{{/* data-page-bg：home 才参与封面记忆（main.js 的 initPageBgMemory）。
+     分类 / 标签词条页用 term，避免它把首页记住的封面覆盖掉。 */}}
+<div class="page-bg" data-page-bg="{{ if .IsHome }}home{{ else }}term{{ end }}"{{ if $random }} data-cover-random="true"{{ end }}>
   {{ range $i, $img := $covers }}
   <div class="page-bg-layer{{ if eq $i $initial }} is-active{{ end }}" data-cover="{{ $img.RelPermalink }}" style="background-image: url('{{ $img.RelPermalink }}')"></div>
   {{ end }}

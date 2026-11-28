@@ -10,8 +10,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  // 画布底色。首页的整页背景图层（z-index: -1）就压在这层之上，
-  // 首页 body 透明后它是唯一的兜底：iOS 橡皮筋过卷露出来的、以及图片解码前
+  // 画布底色。整页背景图层（z-index: -1，首页 / 分类 / 标签词条页）就压在这层之上，
+  // 页面 body 透明后它是唯一的兜底：iOS 橡皮筋过卷露出来的、以及图片解码前
   // 闪出来的，都是它，不能是浏览器默认的白。
   background-color: var(--color-bg);
   // 与 body 的 transition 同步：内容短于视口时（body 盒比画布矮）切主题，
@@ -78,6 +78,11 @@ img {
 
 // 文章页：顶部大图同样从 y=0 起铺，钻到 fixed Header 底下（§8）
 .main--post {
+  padding-top: 0;
+}
+
+// 分类 / 标签词条页：标题区与整页背景同样从 y=0 起铺（§7.12）
+.main--term {
   padding-top: 0;
 }
 

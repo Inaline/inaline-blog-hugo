@@ -1,0 +1,71 @@
+// ---------------------------------------------------------------------------
+// 分类 / 标签词条页（DESIGN.md §7.12）
+//
+// 词条页和首页一样使用整页背景（page-background.html），没有文章页的大图。
+// 顶部沿用文章页标题区的排版：词条名居中，下方一行统计信息；区别是去掉波浪，
+// 标题区直接浮在连续的背景图上，与列表之间只留一档呼吸。
+// 标题前的图标区分词条类型：分类 = 文件夹，标签 = tags。
+//
+// 结构见 layouts/partials/term-hero.html + layouts/term.html。
+// ---------------------------------------------------------------------------
+
+.term-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  // 与文章页顶部大图同高，两种页面切换时标题区的节奏一致
+  min-height: var(--post-hero-height);
+  // Header 是 fixed：顶部留出高度；底部留白同时承担与列表之间的间隔
+  padding: calc(var(--header-height) + var(--space-5)) 0 var(--space-6);
+  text-align: center;
+  color: var(--color-over-hero);
+}
+
+.term-header {
+  width: 100%;
+}
+
+.term-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+  color: var(--color-over-hero);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.35;
+  // 背景图亮度不可控，给文字一点投影兜底（与首页 Hero 文案同一做法）
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+
+  // 长词条名折成两行时尽量让两行长度均衡
+  span {
+    text-wrap: balance;
+  }
+}
+
+// 标题前的小图标：比标题低一档、退成柔白，形状本身承担"分类 / 标签"的区分
+.term-title-icon {
+  flex: none;
+  color: var(--color-over-hero-soft);
+  font-size: .8em;
+}
+
+// 统计行复用文章页的 .post-meta / .post-meta-item / .post-meta-sep，
+// 这里只改成压在照片上的颜色、居中和间距；下边距归零，由 .term-hero 控制留白
+.term-hero .post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-over-hero-soft);
+  font-size: 0.9375rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+}
+
+// 标题区结束就是列表：没有大图也没有波浪，背景图连续，
+// 只留一档上边距，避免统计信息贴到第一张卡片
+.term-hero + .container {
+  padding-top: var(--space-6);
+}
