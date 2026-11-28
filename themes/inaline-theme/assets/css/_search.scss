@@ -1,0 +1,445 @@
+// ---------------------------------------------------------------------------
+// 全屏搜索（DESIGN.md §7.15）
+//
+// 浮层初态只有一块居中的胶囊搜索框；聚焦后上移，输入变化 300ms 防抖后
+// 才展示结果。结果是首页同款 .post-card（最多 5 条），搜索页同样沿用这套卡片。
+// 搜索索引尚未接入（⏳）：浮层先用最近 5 篇占位；搜索页默认空态，
+// 输入后展示全部文章占位，并做前端分页。
+// ---------------------------------------------------------------------------
+
+// --- 浮层骨架 ---------------------------------------------------------------
+
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-search);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--color-text);
+  background: var(--color-bg);
+  outline: none;
+}
+
+.search-overlay[hidden] {
+  display: none;
+}
+
+body.search-open {
+  overflow: hidden;
+}
+
+// 当前页面封面 → 虚化；初态只露一层雾，不抢搜索框
+.search-overlay-bg {
+  position: fixed;
+  inset: -40px;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--color-bg);
+  background-image: var(--search-cover, none);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: blur(26px) saturate(.9);
+  transform: scale(1.04);
+  animation: search-bg-in var(--duration-slower) var(--ease-out) both;
+}
+
+.search-overlay-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--search-veil);
+  animation: search-veil-in var(--duration-slower) var(--ease) both;
+}
+
+// 初态居中；聚焦后 top / transform 一起过渡到页面顶部
+.search-overlay-main {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(100% - 48px);
+  max-width: 900px;
+  transform: translate(-50%, -50%);
+  transition: top var(--duration-slow) var(--ease-out),
+              transform var(--duration-slow) var(--ease-out);
+}
+
+.search-overlay.is-active .search-overlay-main {
+  top: var(--space-7);
+  transform: translate(-50%, 0);
+}
+
+// --- 搜索框 -----------------------------------------------------------------
+
+// 胶囊形；只用 1px 边框与底色区分层级，不加阴影
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 64px;
+  padding: 0 var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-elevated);
+  box-shadow: none;
+  transition: border-color var(--duration-fast) var(--ease);
+}
+
+.search-field:focus-within {
+  border-color: var(--color-primary);
+}
+
+.search-field > i {
+  flex: none;
+  color: var(--color-primary);
+  font-size: 1rem;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 62px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+.search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.search-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: .95rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+              background-color var(--duration-fast) var(--ease);
+}
+
+.search-close:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.search-close:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+// 浮层里的搜索框：聚焦后吸顶，结果从下面滚过
+.search-overlay .search-field {
+  position: sticky;
+  top: var(--space-5);
+  z-index: 2;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding-right: var(--space-2);
+  animation: search-field-in var(--duration-slower) var(--ease-out) both;
+}
+
+// --- 结果区（首页同款文章卡）----------------------------------------------
+
+.search-overlay-results {
+  width: 100%;
+  max-width: 848px;
+  margin: var(--space-5) auto 0;
+  animation: search-results-in var(--duration-slow) var(--ease-out) both;
+}
+
+.search-overlay-results[hidden] {
+  display: none;
+}
+
+.search-overlay-more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-5);
+  padding-bottom: var(--space-7);
+}
+
+.search-more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-primary);
+  font-size: .9375rem;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.search-more-link:hover {
+  color: var(--color-primary-hover);
+}
+
+.search-more-link i {
+  font-size: .75rem;
+}
+
+// --- 搜索页 -----------------------------------------------------------------
+
+// 与首页 / 列表页一致的两栏骨架：左侧空态 / 结果，右侧通用侧栏
+.search-page-layout {
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-8);
+}
+
+// 默认不展示文章：左侧只留一个居中的空态提示
+.search-page-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 848px;
+  min-height: 320px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.search-page-empty i {
+  margin-bottom: var(--space-1);
+  color: var(--color-primary);
+  font-size: 1.5rem;
+  opacity: .8;
+}
+
+.search-page-empty p {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+}
+
+// 结果区：输入后才展开；列表沿用首页文章卡
+.search-page-results {
+  scroll-margin-top: calc(var(--header-height) + var(--space-4));
+}
+
+.search-page-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  max-width: 848px;
+  margin: 0 auto var(--space-5);
+}
+
+.search-page-title {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.search-page-count {
+  color: var(--color-text-muted);
+  font-size: .875rem;
+}
+
+.search-page-post-list {
+  max-width: 848px;
+  margin: 0 auto;
+}
+
+.search-page-pager {
+  // 站点分页器默认 margin-top: --space-6；在结果卡后保持同一档
+  max-width: 848px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+// hidden 必须压过组件自身的 display / flex
+.search-page-empty[hidden],
+.search-page-results[hidden],
+.search-page-pager[hidden],
+.search-page-post-list .post-card[hidden] {
+  display: none;
+}
+
+// 顶部大图：标题 + 大搜索框，不再放统计 / 标签
+.search-hero {
+  min-height: clamp(340px, 36vw, 440px);
+}
+
+.search-hero .post-header {
+  padding-bottom: var(--space-6);
+}
+
+.search-title-icon {
+  flex: none;
+  color: var(--color-over-hero-soft);
+  font-size: .8em;
+}
+
+.search-hero-field {
+  width: 100%;
+  max-width: 640px;
+  margin: var(--space-5) auto 0;
+}
+
+.search-hero .search-field {
+  text-align: left;
+}
+
+// --- 动效 -------------------------------------------------------------------
+
+@keyframes search-bg-in {
+  from { opacity: 0; transform: scale(1.09); }
+  to { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes search-veil-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes search-field-in {
+  from { opacity: 0; transform: translateY(22px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes search-results-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+// --- 响应式 -----------------------------------------------------------------
+
+@media (max-width: 768px) {
+  .search-overlay-main {
+    width: calc(100% - 32px);
+  }
+
+  .search-overlay .search-field {
+    width: 100%;
+  }
+
+  .search-field {
+    min-height: 56px;
+    padding: 0 var(--space-4);
+  }
+
+  .search-input {
+    height: 54px;
+    font-size: 1.05rem;
+  }
+
+  .search-overlay .search-field {
+    padding-right: var(--space-2);
+  }
+
+  .search-overlay-results,
+  .search-page-empty,
+  .search-page-post-list,
+  .search-page-head {
+    max-width: 100%;
+  }
+
+  .search-page-empty {
+    min-height: 240px;
+  }
+
+  .search-page-layout {
+    padding-top: var(--space-5);
+  }
+
+  .search-hero {
+    min-height: 360px;
+  }
+
+  .search-hero .post-header {
+    padding-bottom: var(--space-5);
+  }
+
+  .search-hero-field {
+    margin-top: var(--space-4);
+  }
+
+  // 搜索语境里的首页卡片改为上下排，缩略图铺满
+  .search-overlay-results .post-card,
+  .search-overlay-results .post-card--flip,
+  .search-page-post-list .post-card,
+  .search-page-post-list .post-card--flip {
+    flex-direction: column;
+  }
+
+  .search-overlay-results .post-card-cover,
+  .search-overlay-results .post-card--flip .post-card-cover,
+  .search-page-post-list .post-card-cover,
+  .search-page-post-list .post-card--flip .post-card-cover {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    clip-path: none;
+    -webkit-clip-path: none;
+  }
+
+  .search-overlay-results .post-card-body,
+  .search-overlay-results .post-card--flip .post-card-body,
+  .search-page-post-list .post-card-body,
+  .search-page-post-list .post-card--flip .post-card-body {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 560px) {
+  .search-page-title {
+    font-size: 1.5rem;
+  }
+
+  .search-overlay-main {
+    top: 50%;
+  }
+
+  .search-overlay.is-active .search-overlay-main {
+    top: var(--space-5);
+  }
+
+  .search-hero {
+    min-height: 340px;
+  }
+
+  .search-hero-field {
+    max-width: 100%;
+  }
+}
+
+// --- 动效降级 ---------------------------------------------------------------
+
+@media (prefers-reduced-motion: reduce) {
+  .search-overlay-bg,
+  .search-overlay-veil,
+  .search-overlay .search-field,
+  .search-overlay-results {
+    animation: none;
+  }
+
+  .search-overlay-main,
+  .search-field,
+  .search-close,
+  .search-more-link {
+    transition: none;
+  }
+}

@@ -568,7 +568,7 @@
 }
 
 // 圆形头像：图片与名字首字共用这个外框。
-// 底色取 --color-bg 而不是 --color-surface：暗色下 surface 与卡片同值，头像会融进去
+// 底色取 --color-bg 而不是 --color-surface：bg 与 elevated 在两套主题下都保持一档明度差，头像不会融进去
 .post-comment-avatar {
   flex: none;
   display: inline-flex;
@@ -871,7 +871,7 @@
   }
 }
 
-// 发送：主题色实心主操作，悬停加深；保留最小宽度，主按钮不至于太窄
+// 发送：主题色实心主操作，悬停换 --color-primary-hover（亮色加深 / 暗色提亮）；保留最小宽度，主按钮不至于太窄
 .post-comment-action--send {
   min-width: 72px;
   border-color: var(--color-primary);

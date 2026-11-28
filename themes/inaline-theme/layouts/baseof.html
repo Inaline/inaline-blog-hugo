@@ -11,7 +11,9 @@
 {{ $postHero := or (and .IsPage (eq .Type "posts")) (and .IsPage (eq .Type "custom") (eq .Layout "hero")) }}
 {{/* 归档页与分类 / 标签索引页也带顶部大图（§7.12 / §7.13），Header 转透明态 */}}
 {{ $archivePage := and .IsSection (eq .Section "archives") }}
-{{ $heroPage := or $postHero $archivePage $isTaxonomy }}
+{{/* 搜索页（§7.15）同样带顶部大图与透明 Header */}}
+{{ $searchPage := and .IsSection (eq .Section "search") }}
+{{ $heroPage := or $postHero $archivePage $isTaxonomy $searchPage }}
 {{/* Waline 总开关：缺 server 或 enable: false 时，全站都不输出评论区骨架、
      阅读量 / 评论数 / 近期评论 / 页脚统计的脚本，占位符保持原样 */}}
 {{ $waline := site.Params.waline }}
@@ -23,7 +25,8 @@
        （footer.html + main.js）。 */}}
   {{ if $pageBg }}{{ partial "page-background.html" . }}{{ end }}
   {{ partial "header.html" . }}
-  <main class="main{{ if .IsHome }} main--home{{ else if $isTerm }} main--term{{ else if $archivePage }} main--archive{{ else if $isTaxonomy }} main--taxonomy{{ else if $postHero }} main--post{{ end }}">
+  {{ partial "search-overlay.html" . }}
+  <main class="main{{ if .IsHome }} main--home{{ else if $isTerm }} main--term{{ else if $archivePage }} main--archive{{ else if $isTaxonomy }} main--taxonomy{{ else if $searchPage }} main--search{{ else if $postHero }} main--post{{ end }}">
     {{ block "main" . }}{{ end }}
   </main>
   {{ partial "footer.html" . }}
@@ -35,6 +38,10 @@
   {{/* 图片预览（§5.4）：全站生效，动态插入的评论图片也能用 */}}
   {{ $lightbox := resources.Get "js/lightbox.js" | minify | fingerprint }}
   <script src="{{ $lightbox.RelPermalink }}" integrity="{{ $lightbox.Data.Integrity }}" defer></script>
+
+  {{/* 全屏搜索浮层（§7.15）：开合 / 焦点 / ⌘ K；搜索数据待接入 */}}
+  {{ $searchJS := resources.Get "js/search.js" | minify | fingerprint }}
+  <script src="{{ $searchJS.RelPermalink }}" integrity="{{ $searchJS.Data.Integrity }}" defer></script>
 
   {{ if $walineEnabled }}
     {{/* Waline API 封装 + 全站数据回填（§7.11）：

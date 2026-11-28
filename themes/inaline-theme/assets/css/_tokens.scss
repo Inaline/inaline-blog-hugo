@@ -4,18 +4,28 @@
 // 暗色模式通过覆写同名变量实现，组件样式无需感知主题。
 // ---------------------------------------------------------------------------
 
-// 暗色令牌：媒体查询兜底与 data-theme 显式覆盖共用同一份定义
+// 暗色令牌（石墨）：中性灰底，去掉冷灰蓝；卡片层比底板 / 页面底高一档。
+// 媒体查询兜底与 data-theme 显式覆盖共用同一份定义
 @mixin dark-tokens {
   color-scheme: dark;
 
-  --color-bg: #16181D;
-  --color-surface: #1E2127;
-  --color-elevated: #1E2127; // 抬升层（文章卡片、浮层等）：暗色下与 surface 同值，只比背景高一档
-  --color-text: #E6E7E9;
-  --color-text-muted: #9AA1AC;
-  --color-border: #2C313A;
+  // 主题色仍是品牌橙，只把暗底上的变体微调：
+  // 悬停提亮而不是加深（暗底上再往深里走会糊进背景），弱强调与虚线略提一档
+  --color-primary-hover: #FF7A3D;
+  --color-primary-soft: rgba(250, 93, 25, 0.12);
+  --color-hr-line: rgba(250, 93, 25, 0.42);
 
-  // 代码窗口（§9.4）：暗色窗口配 JetBrains Dark（Darcula）的 #2B2B2B
+  --color-bg: #171717;
+  --color-surface: #1F1F1F;
+  --color-elevated: #262626; // 抬升层（文章卡片、浮层等）：比 surface 和页面底都高一档
+  --color-text: #E9E6E2;
+  --color-text-muted: #A7A39D;
+  --color-border: #343434;
+
+  // 引用正文：亮色 #6A737D 压在深底上太沉，暗色单独提亮；引号仍用主题色
+  --color-quote-text: #B6B1AA;
+
+  // 代码窗口（§9.4）：保持 JetBrains Dark（Darcula）配色，不随中性色翻色
   --code-window-bg: #2B2B2B;
   --code-window-bar: #3C3F41; // Darcula 工具栏色，与 #2B2B2B 代码区拉开一档
   --code-window-border: rgba(255, 255, 255, .10);
@@ -23,9 +33,10 @@
   --code-window-fg-strong: rgba(255, 255, 255, .85);
   --code-window-line: #606366;
   --code-scrollbar: rgba(255, 255, 255, .25);
-  --header-bg: rgba(22, 24, 29, 0.6);
-  --hero-card-bg: rgba(16, 18, 22, 0.4); // Hero 一言卡片玻璃底（§7.5）：仅暗色加深色底
-  --page-scrim: rgba(0, 0, 0, .35); // 整页背景压暗遮罩（首页 / 分类 / 标签词条页）：暗色下把封面压下去，夜里不刺眼
+  --header-bg: rgba(23, 23, 23, 0.62);
+  --hero-card-bg: rgba(12, 12, 12, 0.42); // Hero 一言卡片玻璃底（§7.5）：仅暗色加深色底
+  --page-scrim: rgba(0, 0, 0, .42); // 整页背景压暗遮罩（首页 / 分类 / 标签词条页）：暗色下把封面压下去，夜里不刺眼
+  --search-veil: rgba(10, 10, 11, .80); // 全屏搜索遮罩：叠在虚化封面上，暗色下压深（§7.15）
   --post-nav-scrim: rgba(0, 0, 0, .45); // 上一篇 / 下一篇卡片整图压暗：暗色保持原档
   --lightbox-toolbar-bg: rgba(8, 10, 14, .55); // 图片预览工具栏：暗色加深，亮色叠白（§5.4）
 
@@ -34,8 +45,8 @@
   // 所以它单独出现在这里，跟 --color-bg 这些一起翻
   --brand-github: #FFFFFF;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .25), 0 2px 6px rgba(0, 0, 0, .3);
-  --shadow-md: 0 6px 18px rgba(0, 0, 0, .45);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .35), 0 2px 6px rgba(0, 0, 0, .28);
+  --shadow-md: 0 8px 22px rgba(0, 0, 0, .45);
   --shadow-header: 0 2px 8px rgba(0, 0, 0, .45);
   --shadow-dropdown: 0 2px 8px rgba(0, 0, 0, .4), 0 10px 28px rgba(0, 0, 0, .5);
 }
@@ -45,10 +56,10 @@
 
   // 品牌色
   --color-primary: #FA5D19;
-  --color-primary-hover: #E14E0E;
-  --color-primary-soft: rgba(250, 93, 25, 0.10); // 弱强调底色（Markdown mark 高亮等）
+  --color-primary-hover: #E14E0E; // 亮色悬停加深；暗色在 dark-tokens 覆写为提亮
+  --color-primary-soft: rgba(250, 93, 25, 0.10); // 弱强调底色（Markdown mark 高亮等）；暗色微调至 .12
   --color-primary-highlight: rgba(250, 93, 25, 0.30); // 加粗文本下缘的荧光条（§9）
-  --color-hr-line: rgba(250, 93, 25, 0.38); // 分割线虚线（§9.4）：比 primary-soft 深，2px 虚线才看得清
+  --color-hr-line: rgba(250, 93, 25, 0.38); // 分割线虚线（§9.4）：比 primary-soft 深，2px 虚线才看得清；暗色微调至 .42
   // Markdown 标题前四角星的层级色（§9.2）。亮暗主题共用——取中间调，
   // 图形小、纯装饰，在两种底色上都要看得清
   --color-heading-mark-1: #FA5D19; // h1 主题橙
@@ -59,7 +70,7 @@
   --color-heading-mark-6: #94A3B8; // h6 灰
 
   // Markdown 引用块（§9.4）：正文用独立的灰，与正文色 / muted 都拉开一点；
-  // 引号（.md-quote-mark）仍用主题色，不跟这里走。亮暗两套主题共用该值
+  // 引号（.md-quote-mark）仍用主题色，不跟这里走。亮色用该值，暗色在 dark-tokens 提亮
   --color-quote-text: #6A737D;
   // 背景按嵌套层级由浅到深。
   // 竖线始终用主题色，只有底色逐级加深；半透明叠在父级底色上，自然更深
@@ -80,6 +91,9 @@
   // 暗色才压在照片上（见 dark-tokens）。必须是显式的 transparent 而不是"不定义"——
   // 变量缺失会让 background: var(--page-scrim) 在计算值阶段整条失效。
   --page-scrim: transparent;
+
+  // 全屏搜索遮罩：叠在虚化封面之上；亮色用浅色雾面，暗色在 dark-tokens 加深（§7.15）
+  --search-veil: rgba(245, 245, 245, .82);
 
   // 页脚毛玻璃条（见 _footer.scss）。与 --color-over-hero / --badge-bg 同类——
   // 它是"压在封面图上的色块"，两种主题下取值相同，故**不进 dark-tokens**：
@@ -224,6 +238,7 @@
   // 层级
   --z-header: 100;
   --z-dropdown: 110;
+  --z-search: 900; // 全屏搜索：压住 Header 与下拉菜单，低于图片预览
   --z-lightbox: 1000; // 图片预览：永远压住 Header 与下拉菜单
 
   // 动效

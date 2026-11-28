@@ -833,8 +833,8 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
     font-variant-numeric: tabular-nums;
   }
 
-  // 表头铺一层比正文行深（亮色）/ 深一档（暗色）的底，和表格内容区分开；
-  // --color-surface 在暗色下与 elevated 同值，这里用 --color-bg 才能两套主题都看得出来
+  // 表头铺一层与卡片拉开明度差的底，和表格内容区分开；
+  // 用 --color-bg：亮色是浅灰、暗色是更深的页面底，两套主题下都与 elevated 有区分
   th {
     background: var(--color-bg);
     color: var(--color-text);

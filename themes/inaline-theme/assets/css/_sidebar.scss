@@ -339,8 +339,8 @@
   height: 32px;
   overflow: hidden;
   border-radius: 50%;
-  // 用页面底色而不是 --color-surface：暗色下 surface 与 elevated 同值，
-  // 头像圆会整个融进卡片；bg 与 elevated 在两套主题下都保持一档明度差
+  // 用页面底色而不是 --color-surface：bg 与 elevated 在两套主题下都保持一档明度差，
+  // 头像圆不会融进卡片
   background: var(--color-bg);
   color: var(--color-text-muted);
   font-size: 0.8125rem;

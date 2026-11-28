@@ -57,14 +57,14 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 
 ### 3.1 品牌色与固定色
 
-以下令牌**不随主题翻色**，只在 `:root` 定义：
+以下令牌以 `:root` 为基准；除下方注明的四个暗色微调外，不随主题翻色：
 
 ```scss
 --color-primary:        #FA5D19;                  // 主题色
---color-primary-hover:  #E14E0E;                  // 悬停加深
---color-primary-soft:   rgba(250, 93, 25, .10);   // 弱强调底色（Markdown mark 高亮等）
+--color-primary-hover:  #E14E0E;                  // 亮色悬停加深；暗色 #FF7A3D（提亮）
+--color-primary-soft:   rgba(250, 93, 25, .10);   // 弱强调底色（Markdown mark 高亮等）；暗色 .12
 --color-primary-highlight: rgba(250, 93, 25, .30); // strong 下缘的荧光条（§9.3）
---color-hr-line:          rgba(250, 93, 25, .38); // 分割线虚线（§9.4）
+--color-hr-line:          rgba(250, 93, 25, .38); // 分割线虚线（§9.4）；暗色 .42
 
 // Markdown 标题前四角星的层级色（§9.2）：亮暗主题共用，纯装饰
 --color-heading-mark-1: #FA5D19;  // h1 橙
@@ -75,7 +75,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --color-heading-mark-6: #94A3B8;  // h6 灰
 
 // Markdown 引用块背景（§9.4）：按嵌套层级由浅到深，竖线始终用主题色
---color-quote-text:     #6A737D;                // 引用正文（引号仍用主题色，亮暗共用）
+--color-quote-text:     #6A737D;                // 引用正文（引号仍用主题色）；暗色 #B6B1AA
 --color-quote-bg-1: rgba(250, 93, 25, .10);  // 一级
 --color-quote-bg-2: rgba(250, 93, 25, .12);  // 二级
 --color-quote-bg-3: rgba(250, 93, 25, .14);  // 三级及更深
@@ -104,6 +104,10 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --moments-cover-scrim-bottom: rgba(0, 0, 0, .42); // 动态封面底部压暗（姓名 / 签名）
 ```
 
+> 暗色的四个微调在 `dark-tokens` 覆写：`--color-primary-hover: #FF7A3D`、
+> `--color-primary-soft: rgba(250,93,25,.12)`、`--color-hr-line: rgba(250,93,25,.42)`、
+> `--color-quote-text: #B6B1AA`。主题色、标题星色、引用底色与代码窗口的 JetBrains 配色不翻。
+
 社交图标品牌色（同样只在 `:root` 定义）：
 
 ```scss
@@ -120,15 +124,16 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 
 | 变量 | 亮色 | 暗色 | 用途 |
 | --- | --- | --- | --- |
-| `--color-bg` | `#F5F5F5` | `#16181D` | 页面底色 / 画布兜底 |
-| `--color-surface` | `#EBEBEB` | `#1E2127` | 贴身底板（行内代码等） |
-| `--color-elevated` | `#FFFFFF` | `#1E2127` | 抬升层（卡片、浮层） |
-| `--color-text` | `#1F2328` | `#E6E7E9` | 正文 |
-| `--color-text-muted` | `#6B7280` | `#9AA1AC` | 次要文字 |
-| `--color-border` | `#E5E7EB` | `#2C313A` | 描边 / 分割 |
-| `--header-bg` | `rgba(255,255,255,.6)` | `rgba(22,24,29,.6)` | Header 与下拉面板 |
-| `--hero-card-bg` | `transparent` | `rgba(16,18,22,.4)` | Hero 玻璃卡底色 |
-| `--page-scrim` | `transparent` | `rgba(0,0,0,.35)` | 整页背景（首页 / 分类 / 标签词条页）压暗 |
+| `--color-bg` | `#F5F5F5` | `#171717` | 页面底色 / 画布兜底 |
+| `--color-surface` | `#EBEBEB` | `#1F1F1F` | 贴身底板（行内代码等） |
+| `--color-elevated` | `#FFFFFF` | `#262626` | 抬升层（卡片、浮层） |
+| `--color-text` | `#1F2328` | `#E9E6E2` | 正文 |
+| `--color-text-muted` | `#6B7280` | `#A7A39D` | 次要文字 |
+| `--color-border` | `#E5E7EB` | `#343434` | 描边 / 分割 |
+| `--header-bg` | `rgba(255,255,255,.6)` | `rgba(23,23,23,.62)` | Header 与下拉面板 |
+| `--hero-card-bg` | `transparent` | `rgba(12,12,12,.42)` | Hero 玻璃卡底色 |
+| `--page-scrim` | `transparent` | `rgba(0,0,0,.42)` | 整页背景（首页 / 分类 / 标签词条页）压暗 |
+| `--search-veil` | `rgba(245,245,245,.82)` | `rgba(10,10,11,.80)` | 全屏搜索遮罩（§7.15） |
 | `--code-window-bg` | `#FFFFFF` | `#2B2B2B` | 代码窗口代码区底色（须与 Chroma `.chroma` 背景一致） |
 | `--code-window-bar` | `#F0F0F0` | `#3C3F41` | 代码窗口条底色 |
 | `--code-window-border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.10)` | 代码窗口描边 |
@@ -137,8 +142,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 | `--code-window-line` | `#A8A8A8` | `#606366` | 代码行号 |
 | `--code-scrollbar` | `rgba(0,0,0,.25)` | `rgba(255,255,255,.25)` | 代码区滚动条 |
 
-**层级语义**：`--color-surface` 是同级内容里的贴身底板，必须比页面底色和抬升层都深一档；
-`--color-elevated` 是离地的一层，亮色下为纯白，靠底色差与阴影分层。暗色下两者同值。
+**层级语义**：`--color-surface` 是同级内容里的贴身底板，必须在页面底色与卡片层上都看得见——亮色下比页面底深、比白卡深，暗色下比页面底浅、比卡片层深。`--color-elevated` 是离地的一层：亮色下为纯白，靠底色差与阴影分层；暗色下比页面底和 surface 都浅一档（`#262626` / `#1F1F1F`），卡片直接由明度差浮起来。
 
 ### 3.3 字体
 
@@ -176,6 +180,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --shadow-md: 0 6px 18px rgba(0,0,0,.08);
 --shadow-header: 0 2px 8px rgba(0,0,0,.06);
 --shadow-dropdown: 0 2px 8px rgba(0,0,0,.06), 0 10px 28px rgba(0,0,0,.10);
+// 暗色把 --shadow-sm / --shadow-md 加重，卡片抬起更明显（见 dark-tokens）
 
 // 发光（压在照片上，两种主题同值）
 --glow-halo:  0 0 12px rgba(250,93,25,.45);         // 外围光晕（当前无引用，预留）
@@ -199,7 +204,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --header-blur: 20px;
 
 // 层级
---z-header: 100; --z-dropdown: 110; --z-lightbox: 1000;
+--z-header: 100; --z-dropdown: 110; --z-search: 900; --z-lightbox: 1000;
 
 // 动效
 --ease: cubic-bezier(.4, 0, .2, 1);
@@ -243,11 +248,13 @@ themes/inaline-theme/
 │   │   ├── _carousel.scss         # 首页轮播图（§7.10）
 │   │   ├── _sidebar.scss          # 两栏骨架 + 侧栏（§7.8 / §8.5）
 │   │   ├── _footer.scss           # 页脚（§7.9）
+│   │   ├── _search.scss           # 全屏搜索浮层 + 搜索页（§7.15）
 │   │   ├── _motion.scss           # 进入 / 滚动进场动效（§5.3）
 │   │   └── _lightbox.scss         # 图片预览（§5.4）
 │   ├── js/
 │   │   ├── main.js                # 全局：主题、封面记忆（§7.1）、Header 滚动态、页脚运行时长、整卡跳转、复制、代码窗口、进场动效
 │   │   ├── lightbox.js            # 全局：图片预览分组 / 缩放 / 切换（§5.4）
+│   │   ├── search.js              # 全局：搜索浮层开合 / 焦点 / ⌘ K（§7.15）
 │   │   ├── waline.js              # Waline API 封装：列表 / 发表 / 计数 / 近期评论 / 错误 / 头像（§8.8 / §7.11）
 │   │   ├── waline-stats.js        # 全站 Waline 数据回填：阅读量 / 评论数 / 近期评论 / 页脚统计（§7.11）
 │   │   ├── emoji.js               # 评论区表情包：预设拉取 / 选择器 / 颜文字（§8.8）
@@ -255,7 +262,8 @@ themes/inaline-theme/
 │   │   ├── comment.js             # 评论区：渲染 / 分页 / 排序 / 表单（§8.8 / §10）
 │   │   ├── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
 │   │   ├── pages/post.js          # 文章页 / 自定义 hero 页：目录高亮 / 折叠 / 阅读进度（§8.5 / §10）
-│   │   └── pages/moments.js       # 动态列表：有评论的动态展示前 5 条预览（§7.14）
+│   │   ├── pages/moments.js       # 动态列表：有评论的动态展示前 5 条预览（§7.14）
+│   │   └── pages/search.js        # 搜索页：q 状态 / 300ms 防抖 / 前端分页（§7.15）
 │   ├── images/cover/              # cover1–3.jpg，Hero 背景与卡片兜底同池
 │   └── fonts/
 │       ├── HYTangMeiRen55W.woff2   # 正文手写体（全字集，preload）
@@ -269,6 +277,7 @@ themes/inaline-theme/
     ├── _markup/render-passthrough.html # 数学公式构建时渲染（§9.6）
     ├── posts/page.html            # 文章页（§8，覆盖通用 page.html）
     ├── archives/section.html      # 归档页：顶部大图 + 时间线（§7.13）
+    ├── search/section.html        # 搜索页：大图 + 搜索框 + 全部文章（§7.15）
     ├── moments/section.html       # 动态列表：封面卡 + 动态流（§7.14）
     ├── moments/page.html          # 动态详情：单条动态 + 评论区（§7.14）
     ├── custom/hero.html           # 自定义页 · 带顶部大图（§10）
@@ -278,6 +287,8 @@ themes/inaline-theme/
     └── partials/
         ├── head.html              # meta、主题内联脚本、字体、CSS
         ├── header.html            # Header 外壳
+        ├── search-overlay.html    # 全屏搜索浮层（§7.15）
+        ├── search-hero.html       # 搜索页顶部大图与搜索框（§7.15）
         ├── nav-item.html          # 菜单项递归渲染（§6.5）
         ├── icon.html              # 主题自绘 SVG 图标（引号 + CC + 社交品牌）
         ├── page-background.html   # 整页背景：首页 / 分类 / 标签词条页（§7.1 / §7.12）
@@ -327,16 +338,17 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页 / 自定义页 / 归档页 / 分类标签索引页 / 动态页页脚背景（§7.1 / §7.12 / §7.13 / §7.14 / §10）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页 / 自定义页 / 归档页 / 分类标签索引页 / 搜索页 / 动态页页脚背景（§7.1 / §7.12 / §7.13 / §7.14 / §7.15 / §10）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `lightbox.js`：全局图片预览（§5.4），点击监听用事件委托，动态内容无需重新初始化；暴露 `window.inalineLightboxInit`。
+- `search.js`：全局全屏搜索浮层（§7.15），负责开合 / 焦点锁 / ⌘·Ctrl K；初态只显示居中搜索框，聚焦后上移，输入变化 300ms 防抖后展示结果；搜索索引与过滤尚未接入（⏳），结果先用最近 5 篇占位。暴露 `window.inalineSearchInit`。
 - `waline.js`：Waline API 薄封装（§8.8 / §7.11），只负责拼地址、解析 `{ errno, errmsg, data }`、归一错误与按邮箱生成头像地址；不碰 DOM。覆盖评论列表 / 发表、评论数（单篇 / 全站）、近期评论、阅读量计数器读写。
 - `emoji.js`：评论区表情包（§8.8），读取 `params.waline.emoji`，按需拉取 `@waline/emojis` 预设的 `info.json`，渲染选择器，并把 `:key:` / 颜文字转成安全 HTML。
 - `format.js`：评论预览用的轻量 Markdown（§8.8），先转义再生成 HTML，不参与存储。
 - `comment.js`：评论区 UI（§8.8 / §10），由文章页 / 动态详情页 / 自定义页模板按需引入；从 `data-post-comments` 读取配置，渲染评论树并接管分页 / 排序 / 刷新 / 表单 / 预览。
 - `waline-stats.js`：全站 Waline 数据回填（§7.11），`baseof.html` 在 Waline 可用时全局加载；负责访问 / 访客埋点、文章卡片阅读量与评论量、侧栏评论总数与近期评论、页脚统计。与 `waline.js` 一样只在 `data-waline-server` 存在时启动。
-- `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前有 `home.js`、`post.js`、`moments.js`）。
+- `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前有 `home.js`、`post.js`、`moments.js`、`search.js`）。`search.js` 负责搜索页的 `?q=` 回填、300ms 防抖与前端每页 10 篇分页（§7.15）。
 - 每个模块写成幂等 `init()`，事件用 `dataset.bound` 防重复绑定；后续接入 Swup 时在 `page:view` 再次调用同一 `init()` 即可。
-- 全局入口暴露为 `window.inalineInit`，首页 / 文章页入口暴露为 `window.inalinePageInit`，评论区入口暴露为 `window.inalineCommentInit`，统计回填入口暴露为 `window.inalineWalineStatsInit`。
+- 全局入口暴露为 `window.inalineInit`，首页 / 文章页入口暴露为 `window.inalinePageInit`，评论区入口暴露为 `window.inalineCommentInit`，统计回填入口暴露为 `window.inalineWalineStatsInit`，搜索浮层入口暴露为 `window.inalineSearchInit`。
 - 防闪烁的主题初始化脚本单独内联在 `head.html`，不进 `main.js`。
 
 ---
@@ -506,16 +518,16 @@ menu:
 | 按钮 | 图标 | 行为 |
 | --- | --- | --- |
 | 主题切换 | 亮色 `fa-moon` / 暗色 `fa-sun` | 切换 `data-theme` 并写入 `localStorage` |
-| 搜索 | `fa-magnifying-glass` | 当前仅 UI，点击无反应（⏳ 面板后续实现） |
+| 搜索 | `fa-magnifying-glass` | 打开全屏搜索浮层（§7.15）：初态居中，聚焦上移，输入后展示结果；⌘ / Ctrl K 直接聚焦输入框，Esc 关闭；搜索索引待接入（⏳） |
 
 - 按钮内图标 `0.875rem`（FA 字形比 MDI 满，整体收一档）。
 - 主题图标纯 CSS 切换：`.icon-when-light` / `.icon-when-dark` 按 `data-theme` 显隐。
 - 悬停：`::before` 由中心生长出主题色实心填充，图标转白；不加发光、内高光与外光晕。
 - `prefers-reduced-motion` 下取消生长过渡，填充直接显示。
 
-### 6.7 首页 / 文章页 / 自定义 hero 页顶部态
+### 6.7 带顶部大图的页面顶部态
 
-首页、带顶部大图的文章页与自定义 hero 页未滚动时，Header 完全让位给封面图；滚动后自动恢复常驻样式。
+首页、带顶部大图的文章页、自定义 hero 页、归档页、分类 / 标签索引页与搜索页未滚动时，Header 完全让位给封面图；滚动后自动恢复常驻样式。
 
 | 属性 | 顶部态（未滚动） | 滚动后 / 无封面内页 |
 | --- | --- | --- |
@@ -527,7 +539,7 @@ menu:
 | 导航项悬停 | `--color-over-hero`，下划线仍为主题色 | `--color-primary` |
 | 图标按钮悬停 | 主题色填充 + 白图标 + 辉光 | 同左 |
 
-由 `body.has-hero`（首页）与 `body.has-post-hero`（文章页）限定，两者均由 `baseof.html` 添加；滚动后 `.is-scrolled` 生效，`:not()` 失配即还原。
+由 `body.has-hero`（首页）与 `body.has-post-hero`（文章页 / 自定义 hero 页 / 归档页 / 分类标签索引页 / 搜索页）限定，两者均由 `baseof.html` 添加；滚动后 `.is-scrolled` 生效，`:not()` 失配即还原。
 
 ### 6.8 Header JS
 
@@ -535,6 +547,8 @@ menu:
 
 1. `initThemeToggle()`：点击 `.theme-toggle` 切换 `data-theme` 并持久化。
 2. `initHeaderScroll()`：`scroll > 8px` 时加 `.is-scrolled`；按滚动方向切换 `.is-hidden`；焦点在 Header 内时不收起。
+
+搜索按钮的开合在独立 `search.js` 里（§7.15），不塞进 Header 模块：它还要处理全屏焦点锁、Esc / ⌘K 与 body 滚动锁。
 
 ---
 
@@ -553,12 +567,12 @@ menu:
 | 容器 | `.page-bg`：`position: fixed`，`top/left/right: 0`，`height: 100vh` + `100lvh`，`z-index: -1`，`pointer-events: none`，底色 `--color-bg` |
 | 图层 | 每张封面一个 `.page-bg-layer`（`position: absolute; inset: 0`），`background-size: cover`、`center`、`no-repeat`；`opacity: 0`，`.is-active` 时 `1`；每层带 `data-cover`（`RelPermalink`），供记忆 / 还原 |
 | 切换 | JS 挪 `.is-active`，`opacity` 600ms 交叉淡入；`prefers-reduced-motion` 下直接换 |
-| 遮罩 | `.page-bg::after` 铺满，背景 `--page-scrim`；亮色透明，暗色 35% 黑 |
+| 遮罩 | `.page-bg::after` 铺满，背景 `--page-scrim`；亮色透明，暗色 42% 黑 |
 | 配置 | `params.hero.covers`：assets 路径列表；未配置 / 全部解析失败回退内置 `images/cover/cover1.jpg` |
 | 初始图 | `params.hero.initial_cover`：封面路径 → 固定从它开始；`random` → 每次随机；留空 → 第一张 |
 | 兜底 | `random` 时模板先做一次构建期随机（无 JS 兜底），`home.js` 在每次载入时重摇 |
 | 切换按钮 | 卡片左下角左右箭头，仅当封面多于一张时渲染 |
-| 封面记忆 | `main.js` 只在首页把当前激活封面的 `data-cover` 写入 localStorage（键 `inaline-page-bg`，含随机初始图与箭头切换）；分类 / 标签词条页的 `data-page-bg="term"` 只读不写，有记录时还原一次背景，避免覆盖首页选择。文章页 / 自定义页 / 归档页 / 动态页不渲染 `.page-bg`，`body` 保持 `--color-bg` 灰底；页脚输出 `data-footer-covers`，`main.js` 读回记录、校验其属于封面池后写入 `--footer-cover` 并加 `has-cover-bg`，未记录 / 失效时退回封面池第一张（页脚外观见 §7.9 / §10） |
+| 封面记忆 | `main.js` 只在首页把当前激活封面的 `data-cover` 写入 localStorage（键 `inaline-page-bg`，含随机初始图与箭头切换）；分类 / 标签词条页的 `data-page-bg="term"` 只读不写，有记录时还原一次背景，避免覆盖首页选择。文章页 / 自定义页 / 归档页 / 搜索页 / 动态页不渲染 `.page-bg`，`body` 保持 `--color-bg` 灰底；页脚输出 `data-footer-covers`，`main.js` 读回记录、校验其属于封面池后写入 `--footer-cover` 并加 `has-cover-bg`，未记录 / 失效时退回封面池第一张（页脚外观见 §7.9 / §10） |
 
 **硬约束**：
 
@@ -721,7 +735,7 @@ menu:
 
 深色毛玻璃条：`--footer-scrim` + `backdrop-filter: blur(--footer-blur) saturate(1.08)`，白字 `--color-over-hero-soft`，`0.875rem / 1.6`，居中，上下 `--space-6`。它是全站唯一不随主题翻色的深色块。
 
-首页页脚压在整页背景图上。文章页、自定义页（hero / plain）、归档页、分类 / 标签索引页与动态页（列表 / 详情）页脚由 `main.js` 把首页上次展示的封面写进 `--footer-cover`：`.has-cover-bg` 状态用 `linear-gradient(var(--footer-scrim), var(--footer-scrim))` 盖在图上（`background-size: cover`、居中、不重复），并取消无意义的毛玻璃；没有记录 / JS 不可用时退回普通深色玻璃。其余内页的页脚压在页面底色上（§7.1）。
+首页页脚压在整页背景图上。文章页、自定义页（hero / plain）、归档页、分类 / 标签索引页、搜索页与动态页（列表 / 详情）页脚由 `main.js` 把首页上次展示的封面写进 `--footer-cover`：`.has-cover-bg` 状态用 `linear-gradient(var(--footer-scrim), var(--footer-scrim))` 盖在图上（`background-size: cover`、居中、不重复），并取消无意义的毛玻璃；没有记录 / JS 不可用时退回普通深色玻璃。其余内页的页脚压在页面底色上（§7.1）。
 
 六行自上而下全部可选，任一行留空 / 关闭即不渲染：
 
@@ -832,6 +846,24 @@ menu:
 | 页脚 | 像文章页 / 归档页一样由 `footer.html` 输出 `data-footer-covers`、`main.js` 写入封面背景（§7.9）；列表页与详情页都生效 |
 | 可访问性 | 列表页无可见标题，用 `.visually-hidden` 的 h1 提供页面名称；详情页同样输出隐藏 h1；作者名与日期均为文本，评论 / 详情操作保留可见文字 |
 
+### 7.15 全屏搜索浮层与搜索页 ✅（UI；搜索后端待接入 ⏳）
+
+Header 右侧搜索按钮打开全屏浮层；**初态只有一块居中的胶囊搜索框**，聚焦后搜索框上移到顶部，输入变化 **300ms 防抖**后展开结果。结果区沿用首页文章卡（`.post-card`，最多 5 篇），底部「查看全部文章」→ `/search/?q=…`。搜索索引 / 过滤尚未接入（⏳）：浮层先用最近 5 篇占位；搜索页**默认不展示文章**，输入 / 带 `?q=` 进入后才展开两栏结果（左文章、右侧栏），前端每页 10 篇分页。接入后替换列表数据即可，交互与版式不变。
+
+| 项 | 规格 |
+| --- | --- |
+| 入口 | `.search-toggle` 打开 `#search-overlay`；点击入口时搜索框保持居中且不自动聚焦；⌘ / Ctrl K 直接打开并聚焦输入框；Esc / 胶囊内关闭按钮 / 点浮层空白收起；打开时锁 body 滚动、Tab 锁在浮层内，关闭后焦点回到触发元素 |
+| 初态 | 只有搜索框 + 关闭按钮：无品牌、无标签、无键位提示、无文章列表；背景取当前页面封面 → `filter: blur(26px)` → `--search-veil`（亮色浅雾 / 暗色深雾），封面淡入时长 `--duration-slower`（900ms）；搜索框同时从下方 22px、`scale(.985)` 淡入，时长同为 900ms |
+| 搜索框 | 胶囊形（`border-radius: 999px`）、`--color-elevated` 底、1px `--color-border` 描边；**不加阴影**，只用边框与底色区分层级；聚焦转主题色；内高 64px（≤768px 为 56px）；关闭按钮在同一胶囊右端 |
+| 聚焦 | 输入框聚焦后浮层加 `.is-active`：搜索框从视口中央过渡到顶部（`--duration-slow` / `--ease-out`），并 sticky 在顶部，结果在下方滚动；空输入时结果区保持隐藏 |
+| 结果 | 输入变化后 300ms 展示 `.search-overlay-results`（淡入上移 `--duration-slow`）；内容为 `posts` 前 5 篇，复用 `post-card.html`（首页同款封面 / 元信息 / 标题 / 摘要）；不额外包卡片；底部「查看全部文章」→ `/search/?q=…`（JS 把当前输入拼进链接） |
+| 搜索页 | `/search/`：`content/search/_index.md` + `layouts/search/section.html`；归档式大图里只留标题 + 大搜索框（无统计 / 标签）。**默认只显示空态提示**，输入 / 带 `?q=` 进入后展开结果；结果区沿用站点两栏骨架：左侧 `post-card` 文章列表，右侧 `partials/sidebar.html` 通用侧栏 |
+| 分页 | 搜索页结果前端分页，每页 10 篇；翻页复用站点 `.pager` / `.pager-link` / `.pager-link.is-current` / `.pager-link--step` 视觉，页内切换并滚回结果顶部，URL 只保留 `?q=` |
+| URL | 浮层 `data-search-more` 链接随输入写成 `/search/?q=<关键词>`；搜索页 `pages/search.js` 读取 `?q=` 回填输入框并展开结果，输入 / 清空时用 `history.replaceState` 同步 `?q=`；分页不写 URL |
+| 页面状态 | `body.has-post-hero`（Header 顶部透明）+ `.main--search`（`padding-top: 0`）；`footer.html` 对搜索页输出 `data-footer-covers`；搜索页复用同一浮层 |
+| 令牌 | 新增 `--search-veil`（§3.2）与 `--z-search`（§3.4）；其余复用现有字体 / 色板 / 圆角 / 阴影 / 动效 |
+| 待接入 | ⏳ 搜索索引与真实过滤、真实结果计数；`[data-search-results]`、`[data-search-page-results]`、`[data-search-page-list]` 与 `post-card.html` 是接入点 |
+
 ---
 
 ## 8. 文章页 ✅
@@ -868,7 +900,7 @@ menu:
 
 ### 8.4 Header 顶部态
 
-文章页与自定义 hero 页带 `body.has-post-hero`，顶部 Header 与首页一致：透明、无毛玻璃、无阴影、白字；滚动超过 8px 加 `.is-scrolled` 后恢复常驻样式（§6.7 / §10）。
+文章页与自定义 hero 页（以及归档 / 索引 / 搜索页）带 `body.has-post-hero`，顶部 Header 与首页一致：透明、无毛玻璃、无阴影、白字；滚动超过 8px 加 `.is-scrolled` 后恢复常驻样式（§6.7 / §10）。
 
 ### 8.5 侧栏目录 ✅
 
@@ -1034,10 +1066,10 @@ menu:
 | --- | --- |
 | 列表 | `padding-left: 1.6em`；条目间 `.25em`；`::marker` 主题色，序号等宽 |
 | 任务列表 | `li:has(> input[type="checkbox"])` 去圆点；checkbox `accent-color: --color-primary` |
-| 引用 | 左侧 3px 主题色竖线（各层级同色）、`--color-quote-bg-1` 淡底、右侧两角 `--radius-md`（竖线所在的左上 / 左下保持直角，竖线不会被圆角吃掉），文字用 `--color-quote-text`（`#6A737D`，亮暗共用）；嵌套引用竖线不变，底色按层级换 `--color-quote-bg-2` / `--color-quote-bg-3`，由浅到深；`render-blockquote.html` 在内容前铺一枚开引号（复用 `icon.html` 的 `quote` SVG，`1.5rem`，主题色 @ `opacity: .35`，绝对定位在左上角，上内边距为它留位） |
+| 引用 | 左侧 3px 主题色竖线（各层级同色）、`--color-quote-bg-1` 淡底、右侧两角 `--radius-md`（竖线所在的左上 / 左下保持直角，竖线不会被圆角吃掉），文字用 `--color-quote-text`（亮色 `#6A737D`，暗色 `#B6B1AA`）；嵌套引用竖线不变，底色按层级换 `--color-quote-bg-2` / `--color-quote-bg-3`，由浅到深；`render-blockquote.html` 在内容前铺一枚开引号（复用 `icon.html` 的 `quote` SVG，`1.5rem`，主题色 @ `opacity: .35`，绝对定位在左上角，上内边距为它留位） |
 | 行内代码 | `--font-mono`、`--color-surface` 底、1px 描边、`--radius-sm` |
 | 代码块 | 由 `render-codeblock.html` 包成 macOS 代码窗口（见下节）；Chroma 只输出类名（`noClasses: false`、`lineNos: true`），配色见 `_chroma.scss` |
-| 表格 | 渲染钩子 `render-table.html` 包一层 `.table-scroll`：表格 `width: 100%` 与父级同宽，内容超宽时由包装层横向滚动；包装层 1px `--color-border` 描边 + `--radius-md` 圆角，表头 / 行底色与滚动内容一起被圆角裁切；`.9375rem / 1.6`；单元格下边框、表头 `--color-bg` 底 + 加粗 + 不换行（与正文行区分；不用 `--color-surface`，暗色下会与 elevated 同值）；默认不做斑马纹，鼠标移入行铺原来斑马纹那一档 `--color-bg` 浅底；`caption` 左对齐 muted 小字 |
+| 表格 | 渲染钩子 `render-table.html` 包一层 `.table-scroll`：表格 `width: 100%` 与父级同宽，内容超宽时由包装层横向滚动；包装层 1px `--color-border` 描边 + `--radius-md` 圆角，表头 / 行底色与滚动内容一起被圆角裁切；`.9375rem / 1.6`；单元格下边框、表头 `--color-bg` 底 + 加粗 + 不换行（与正文行区分；用 `--color-bg`，亮暗两套主题下都与 elevated 保持明度差）；默认不做斑马纹，鼠标移入行铺原来斑马纹那一档 `--color-bg` 浅底；`caption` 左对齐 muted 小字 |
 | 图片 / 图注 | 图片 `max-width: 100%` + `--radius-md`；独占段落的图片居中成块，与文字同段时保持行内；`figure` 居中，`figcaption` muted 小字；点击图片打开预览（§5.4），`data-lightbox-*` 可指定大图、图注或跳过 |
 | 分隔线 | 参考 Fomal：`2px` 虚线（`--color-hr-line`）+ 雪花图标（FA `\f2dc`，`--color-primary`）；图标默认在左 5%，悬停 1s 移到右 5%，`prefers-reduced-motion` 下不移动。样式抽成 `md-divider` mixin，评论区（§8.8）共用 |
 | 脚注 | `.footnotes` 顶部细线 + muted 小字；隐藏 Goldmark 自带 `<hr>`；`.footnote-ref` 主题色、无下划线；序号 marker 弱化 |

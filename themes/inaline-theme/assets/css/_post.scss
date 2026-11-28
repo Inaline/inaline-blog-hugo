@@ -36,7 +36,7 @@
   // 卡面取 --color-elevated（纯白）：亮色下页面底色是浅灰（--color-bg），
   // 白卡与灰底本身就画出了卡片轮廓，阴影只再补一点"浮起来"的体感——
   // 不像纯白页面那样，整张卡的边界全靠阴影去描（轻了糊、重了脏）。
-  // 暗色下 elevated 与 surface 同值，卡面仍比背景高一档，观感与改造前一致
+  // 暗色下 elevated 比 surface / 背景再高一档，卡面与灰底同样靠明度差分层
   background: var(--color-elevated);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
