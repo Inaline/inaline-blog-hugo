@@ -1,0 +1,27 @@
+{{/*
+  友链卡片图片解析（DESIGN.md §10）
+
+  参数：page  —— 当前页面（仅用于构建告警定位）
+        src   —— 网络地址（http/https/协议相对）或 assets 路径
+        label —— 告警里的图片说明（如「站点 "X" 的图标」）
+
+  规则与 post-cover.html / author-avatar.html 一致：网络地址原样返回，
+  assets 路径走 resources.Get；找不到时构建告警并返回空字符串，
+  由 shortcode 渲染占位视觉。
+*/}}
+{{- $page := .page -}}
+{{- $label := .label | default "图片" -}}
+{{- $url := "" -}}
+{{- with .src -}}
+  {{- $src := . -}}
+  {{- if or (hasPrefix $src "http://") (hasPrefix $src "https://") (hasPrefix $src "//") -}}
+    {{- $url = $src -}}
+  {{- else -}}
+    {{- with resources.Get $src -}}
+      {{- $url = .RelPermalink -}}
+    {{- else -}}
+      {{- warnf "link-image: %s 的 %s 找不到资源 %q" $page.RelPermalink $label $src -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $url -}}

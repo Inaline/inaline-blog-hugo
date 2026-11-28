@@ -3,7 +3,8 @@
 <head>
   {{ partial "head.html" . }}
 </head>
-{{ $postHero := and .IsPage (eq .Type "posts") }}
+{{/* 文章页与自定义 hero 页都带顶部大图（§8 / §10），Header 顶部态一致 */}}
+{{ $postHero := or (and .IsPage (eq .Type "posts")) (and .IsPage (eq .Type "custom") (eq .Layout "hero")) }}
 {{/* 归档页也带顶部大图（§7.13），Header 与文章页一样转透明态 */}}
 {{ $archivePage := and .IsSection (eq .Section "archives") }}
 {{ $heroPage := or $postHero $archivePage }}

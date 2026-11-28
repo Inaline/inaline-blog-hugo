@@ -1,0 +1,36 @@
+{{/*
+  自定义页面 · 带顶部大图（DESIGN.md §10）
+
+  front matter 约定：
+    type: custom
+    layout: hero
+    comments: true   # 可选；为 true 时才渲染评论区
+
+  结构与文章页一致：顶部大图（标题区叠在图上）→ 正文卡片 + 文章侧栏
+  （博主卡 + 目录 + 最新文章）→ 信息卡 → 评论区。没有上一篇 / 下一篇：
+  自定义页面不属于 posts 分区，也没有相邻页的概念。
+*/}}
+{{ define "main" }}
+<article class="post-page">
+  {{ partial "post-hero.html" . }}
+
+  <div class="container container--wide layout layout--post">
+    <div class="layout-main">
+      <div class="post-content">
+        <div class="markdown">{{ .Content }}</div>
+        {{ partial "article-meta.html" . }}
+        {{ if .Params.comments }}{{ partial "post-comments.html" . }}{{ end }}
+      </div>
+    </div>
+    {{ partial "sidebar.html" . }}
+  </div>
+</article>
+{{ end }}
+
+{{ define "page-scripts" }}
+  {{/* 目录滚动高亮（§8.5） */}}
+  {{ $js := resources.Get "js/pages/post.js" | minify | fingerprint }}
+  <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+
+  {{ if .Params.comments }}{{ partial "comment-scripts.html" . }}{{ end }}
+{{ end }}

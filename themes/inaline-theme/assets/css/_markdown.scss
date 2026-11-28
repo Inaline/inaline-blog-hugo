@@ -250,10 +250,48 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
 
   h1 {
     --heading-mark: var(--color-heading-mark-1);
+    // 下划线 / 雪花的定位基准
+    position: relative;
     margin: var(--space-8) 0 var(--space-4);
-    padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--color-border);
+    // 比原来多留一档：雪花压在线上，上方要留出净空，不压到字
+    padding-bottom: var(--space-3);
     font-size: 1.875rem;
+
+    // 下划线 + 雪花放在同一个伪元素里：线用背景渐变画（实线，与分割线同色同宽），
+    // 雪花作为内容骑在线上。悬停时 h1 整体右移，伪元素反向平移抵消，线留在原地；
+    // 雪花另用 padding-left 滑到线的右端（与 §9.4 分割线同一套动作）。
+    &::after {
+      content: "\f2dc";
+      position: absolute;
+      // 20px 高的盒子，垂直中心落在原 2px 描边的中线上（h1 底边再下 1px）
+      bottom: -11px;
+      left: 0;
+      right: 0;
+      height: 20px;
+      // 2px 实线画在盒子垂直中线：上、下各 1px，硬切色带
+      background-image: linear-gradient(
+        to bottom,
+        transparent calc(50% - 1px),
+        var(--color-hr-line) calc(50% - 1px),
+        var(--color-hr-line) calc(50% + 1px),
+        transparent calc(50% + 1px)
+      );
+      padding-left: 5%;
+      color: var(--color-primary);
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 20px;
+      white-space: nowrap;
+      transition: padding-left 1s ease-in-out,
+                  transform var(--duration-base) var(--ease);
+    }
+
+    // 标题右移时在线条之上滑动：线由伪元素的反向平移留在原位
+    &:hover::after {
+      transform: translateX(calc(-1 * var(--space-2)));
+      padding-left: calc(95% - 20px);
+    }
   }
 
   // 四角星的颜色随层级递进；图形本身由公共 ::before 绘制
@@ -1105,6 +1143,16 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
     transition: none;
 
     &:hover { transform: none; }
+  }
+
+  // h1 的线 / 雪花：标题不再位移，伪元素也不该反向补偿或滑动
+  .markdown h1::after {
+    transition: none;
+  }
+
+  .markdown h1:hover::after {
+    transform: none;
+    padding-left: 5%;
   }
 
   .code-window-wrap,

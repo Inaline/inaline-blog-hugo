@@ -13,7 +13,7 @@
 | --- | --- |
 | 站点语言 | 简体中文 |
 | 主题色 | `#FA5D19` |
-| 布局基调 | 列表页两栏（文章列表 + 右侧栏）；文章页为顶部大图（标题区叠在图上）+ 两栏正文卡片；首页为整页封面背景 + 通栏 Hero |
+| 布局基调 | 列表页两栏（文章列表 + 右侧栏）；文章页为顶部大图（标题区叠在图上）+ 两栏正文卡片；首页为整页封面背景 + 通栏 Hero；自定义页按带大图的 hero / 不带大图的 plain 两套模板渲染（§10） |
 | 响应式 | ⏳ 统一在后续阶段实现；当前只有两栏 → 单栏的断点降级 |
 | 技术形态 | Hugo 静态生成（SSR），无前端框架 |
 
@@ -236,8 +236,10 @@ themes/inaline-theme/
 │   │   ├── _term.scss             # 分类 / 标签词条页顶部标题区（§7.12）
 │   │   ├── _archive.scss          # 归档页：顶部大图 + 时间线（§7.13）
 │   │   ├── _moments.scss          # 动态页：封面卡 + 动态流 + 详情评论卡（§7.14）
-│   │   ├── _article.scss          # 文章页：顶部大图 / 标题区 / 正文两栏 / 信息卡（§8）
-│   │   ├── _comments.scss         # 文章评论区：两级评论 / 表单 / 分页（§8.8）
+│   │   ├── _article.scss          # 文章页 / 自定义 hero 页：顶部大图 / 标题区 / 正文两栏 / 信息卡（§8 / §10）
+│   │   ├── _custom.scss           # 自定义 plain 页的外层正文卡（§10）
+│   │   ├── _links.scss            # 友链站点卡片网格 / 卡片（§10）
+│   │   ├── _comments.scss         # 评论区：两级评论 / 表单 / 分页（§8.8 / §10）
 │   │   ├── _carousel.scss         # 首页轮播图（§7.10）
 │   │   ├── _sidebar.scss          # 两栏骨架 + 侧栏（§7.8 / §8.5）
 │   │   ├── _footer.scss           # 页脚（§7.9）
@@ -250,9 +252,9 @@ themes/inaline-theme/
 │   │   ├── waline-stats.js        # 全站 Waline 数据回填：阅读量 / 评论数 / 近期评论 / 页脚统计（§7.11）
 │   │   ├── emoji.js               # 评论区表情包：预设拉取 / 选择器 / 颜文字（§8.8）
 │   │   ├── format.js              # 评论预览的轻量 Markdown（§8.8）
-│   │   ├── comment.js             # 文章页评论区：渲染 / 分页 / 排序 / 表单（§8.8）
+│   │   ├── comment.js             # 评论区：渲染 / 分页 / 排序 / 表单（§8.8 / §10）
 │   │   ├── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
-│   │   ├── pages/post.js          # 文章页：目录高亮 / 折叠 / 阅读进度（§8.5）
+│   │   ├── pages/post.js          # 文章页 / 自定义 hero 页：目录高亮 / 折叠 / 阅读进度（§8.5 / §10）
 │   │   └── pages/moments.js       # 动态列表：有评论的动态展示前 5 条预览（§7.14）
 │   ├── images/cover/              # cover1–3.jpg，Hero 背景与卡片兜底同池
 │   └── fonts/
@@ -269,6 +271,10 @@ themes/inaline-theme/
     ├── archives/section.html      # 归档页：顶部大图 + 时间线（§7.13）
     ├── moments/section.html       # 动态列表：封面卡 + 动态流（§7.14）
     ├── moments/page.html          # 动态详情：单条动态 + 评论区（§7.14）
+    ├── custom/hero.html           # 自定义页 · 带顶部大图（§10）
+    ├── custom/plain.html          # 自定义页 · 无顶部大图（§10）
+    ├── shortcodes/
+    │   └── friend-links.html      # 友链站点卡片网格（§10）
     └── partials/
         ├── head.html              # meta、主题内联脚本、字体、CSS
         ├── header.html            # Header 外壳
@@ -285,14 +291,16 @@ themes/inaline-theme/
         ├── carousel-body.html     # 轮播卡片文字区（§7.10）
         ├── cover-pool.html        # 封面图池（§7.1 / §7.7）
         ├── post-cover.html        # 单篇文章封面解析（§7.7 / §7.8）
+        ├── post-hero.html         # 文章页 / 自定义 hero 页共用的顶部大图（§8.1 / §10）
+        ├── link-image.html        # 友链站点缩略图 / 图标解析（§10）
         ├── post-card.html         # 文章卡片（§7.7）
         ├── article-meta.html      # 文章末尾信息卡（§8.6）
         ├── post-nav.html          # 上一篇 / 下一篇（§8.7）
-        ├── post-comments.html     # 文章评论区骨架：分割线 / 标题 / 表单 / 列表 / 分页（§8.8）
-        ├── comment-scripts.html   # 评论脚本：emoji / format / comment（文章页与动态详情共用，§8.8）
+        ├── post-comments.html     # 评论区骨架：分割线 / 标题 / 表单 / 列表 / 分页（§8.8 / §10）
+        ├── comment-scripts.html   # 评论脚本：emoji / format / comment（文章页 / 动态详情 / 自定义页共用，§8.8 / §10）
         ├── pager.html             # 分页（§7.7）
         ├── sidebar.html           # 右侧栏容器（§7.8）
-        ├── sidebar-toc.html       # 侧栏目录卡片（仅文章页，§8.5）
+        ├── sidebar-toc.html       # 侧栏目录卡片（文章页与自定义 hero 页，§8.5 / §10）
         ├── toc-flat.html          # 标题树压平为 h2–h3 线性列表（§8.5）
         ├── toc-list.html          # 目录嵌套列表递归渲染（§8.5）
         ├── sidebar-profile.html   # 侧栏博主信息卡（§7.8）
@@ -318,12 +326,12 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页 / 归档页 / 动态页页脚背景（§7.1 / §7.13 / §7.14）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页 / 自定义页 / 归档页 / 动态页页脚背景（§7.1 / §7.13 / §7.14 / §10）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `lightbox.js`：全局图片预览（§5.4），点击监听用事件委托，动态内容无需重新初始化；暴露 `window.inalineLightboxInit`。
 - `waline.js`：Waline API 薄封装（§8.8 / §7.11），只负责拼地址、解析 `{ errno, errmsg, data }`、归一错误与按邮箱生成头像地址；不碰 DOM。覆盖评论列表 / 发表、评论数（单篇 / 全站）、近期评论、阅读量计数器读写。
 - `emoji.js`：评论区表情包（§8.8），读取 `params.waline.emoji`，按需拉取 `@waline/emojis` 预设的 `info.json`，渲染选择器，并把 `:key:` / 颜文字转成安全 HTML。
 - `format.js`：评论预览用的轻量 Markdown（§8.8），先转义再生成 HTML，不参与存储。
-- `comment.js`：评论区 UI（§8.8），由文章页 / 动态详情页模板按需引入；从 `data-post-comments` 读取配置，渲染评论树并接管分页 / 排序 / 刷新 / 表单 / 预览。
+- `comment.js`：评论区 UI（§8.8 / §10），由文章页 / 动态详情页 / 自定义页模板按需引入；从 `data-post-comments` 读取配置，渲染评论树并接管分页 / 排序 / 刷新 / 表单 / 预览。
 - `waline-stats.js`：全站 Waline 数据回填（§7.11），`baseof.html` 在 Waline 可用时全局加载；负责访问 / 访客埋点、文章卡片阅读量与评论量、侧栏评论总数与近期评论、页脚统计。与 `waline.js` 一样只在 `data-waline-server` 存在时启动。
 - `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前有 `home.js`、`post.js`、`moments.js`）。
 - 每个模块写成幂等 `init()`，事件用 `dataset.bound` 防重复绑定；后续接入 Swup 时在 `page:view` 再次调用同一 `init()` 即可。
@@ -504,9 +512,9 @@ menu:
 - 悬停：`::before` 由中心生长出主题色实心填充，图标转白；不加发光、内高光与外光晕。
 - `prefers-reduced-motion` 下取消生长过渡，填充直接显示。
 
-### 6.7 首页 / 文章页顶部态
+### 6.7 首页 / 文章页 / 自定义 hero 页顶部态
 
-首页与带顶部大图的文章页未滚动时，Header 完全让位给封面图；滚动后自动恢复常驻样式。
+首页、带顶部大图的文章页与自定义 hero 页未滚动时，Header 完全让位给封面图；滚动后自动恢复常驻样式。
 
 | 属性 | 顶部态（未滚动） | 滚动后 / 无封面内页 |
 | --- | --- | --- |
@@ -549,7 +557,7 @@ menu:
 | 初始图 | `params.hero.initial_cover`：封面路径 → 固定从它开始；`random` → 每次随机；留空 → 第一张 |
 | 兜底 | `random` 时模板先做一次构建期随机（无 JS 兜底），`home.js` 在每次载入时重摇 |
 | 切换按钮 | 卡片左下角左右箭头，仅当封面多于一张时渲染 |
-| 封面记忆 | `main.js` 只在首页把当前激活封面的 `data-cover` 写入 localStorage（键 `inaline-page-bg`，含随机初始图与箭头切换）；分类 / 标签词条页的 `data-page-bg="term"` 只读不写，有记录时还原一次背景，避免覆盖首页选择。文章页 / 归档页 / 动态页不渲染 `.page-bg`，`body` 保持 `--color-bg` 灰底；页脚输出 `data-footer-covers`，`main.js` 读回记录、校验其属于封面池后写入 `--footer-cover` 并加 `has-cover-bg`，未记录 / 失效时退回封面池第一张（页脚外观见 §7.9） |
+| 封面记忆 | `main.js` 只在首页把当前激活封面的 `data-cover` 写入 localStorage（键 `inaline-page-bg`，含随机初始图与箭头切换）；分类 / 标签词条页的 `data-page-bg="term"` 只读不写，有记录时还原一次背景，避免覆盖首页选择。文章页 / 自定义页 / 归档页 / 动态页不渲染 `.page-bg`，`body` 保持 `--color-bg` 灰底；页脚输出 `data-footer-covers`，`main.js` 读回记录、校验其属于封面池后写入 `--footer-cover` 并加 `has-cover-bg`，未记录 / 失效时退回封面池第一张（页脚外观见 §7.9 / §10） |
 
 **硬约束**：
 
@@ -656,7 +664,7 @@ menu:
 | 宽度 | 容器 1200（含左右内边距各 24）→ 内容 1152；侧栏 280，主栏 848 |
 | 断点 | `max-width: 1080px`：转单列并 `display: none` 侧栏，不做"侧栏变窄"的中间态 |
 | 侧栏 | 纵向 flex，间距 `--space-5`；占位卡 `.sidebar-card` 与文章卡片同语言（`--color-elevated` + `--shadow-sm` + `--radius-lg`，`min-height: 120px`） |
-| 已实现组件 | 博主信息卡 `sidebar-profile.html`、目录 `sidebar-toc.html`（仅文章页，与最新文章同组，排在博主卡之后，见 §8.5）、最新文章 `sidebar-latest.html`、近期评论 `sidebar-comments.html`、分类 `sidebar-categories.html`、标签 `sidebar-tags.html`；文章页侧栏为「博主卡 +（目录 + 最新文章）吸顶组」 |
+| 已实现组件 | 博主信息卡 `sidebar-profile.html`、目录 `sidebar-toc.html`（文章页与自定义 hero 页，与最新文章同组，排在博主卡之后，见 §8.5 / §10）、最新文章 `sidebar-latest.html`、近期评论 `sidebar-comments.html`、分类 `sidebar-categories.html`、标签 `sidebar-tags.html`；文章页 / 自定义 hero 页侧栏为「博主卡 +（目录 + 最新文章）吸顶组」，自定义 plain 页与列表页用通用侧栏 |
 | 待实现组件 | 公告（占一张 `.sidebar-card`，带独立 `enable` 开关） |
 
 **博主信息卡**：
@@ -677,7 +685,7 @@ menu:
 - 列表每条整行一个链接：左侧 60×60（1:1 居中裁切）缩略图，右侧标题（最多两行）与日期；图与文字块在行内垂直居中，列表项间距 `--space-4`。
 - 缩略图与文章卡片共用 `post-cover.html`：优先 front matter 的 `cover`，未配置则从封面池按序号轮换。
 - 悬停：整行标题转主题色，缩略图 `scale(1.04)`（外层圆角裁切）；`reduced-motion` 下取消缩放。
-- 文章页：与目录同处一个吸顶组、排在目录之后；整组吸顶到本卡底部与左侧正文卡片底部平齐后，随页面滚走（§8.5）。
+- 文章页 / 自定义 hero 页：与目录同处一个吸顶组、排在目录之后；整组吸顶到本卡底部与左侧正文卡片底部平齐后，随页面滚走（§8.5 / §10）。
 
 **近期评论卡**：
 
@@ -712,7 +720,7 @@ menu:
 
 深色毛玻璃条：`--footer-scrim` + `backdrop-filter: blur(--footer-blur) saturate(1.08)`，白字 `--color-over-hero-soft`，`0.875rem / 1.6`，居中，上下 `--space-6`。它是全站唯一不随主题翻色的深色块。
 
-首页页脚压在整页背景图上。文章页、归档页与动态页（列表 / 详情）页脚由 `main.js` 把首页上次展示的封面写进 `--footer-cover`：`.has-cover-bg` 状态用 `linear-gradient(var(--footer-scrim), var(--footer-scrim))` 盖在图上（`background-size: cover`、居中、不重复），并取消无意义的毛玻璃；没有记录 / JS 不可用时退回普通深色玻璃。其余内页的页脚压在页面底色上（§7.1）。
+首页页脚压在整页背景图上。文章页、自定义页（hero / plain）、归档页与动态页（列表 / 详情）页脚由 `main.js` 把首页上次展示的封面写进 `--footer-cover`：`.has-cover-bg` 状态用 `linear-gradient(var(--footer-scrim), var(--footer-scrim))` 盖在图上（`background-size: cover`、居中、不重复），并取消无意义的毛玻璃；没有记录 / JS 不可用时退回普通深色玻璃。其余内页的页脚压在页面底色上（§7.1）。
 
 六行自上而下全部可选，任一行留空 / 关闭即不渲染：
 
@@ -748,7 +756,7 @@ menu:
 
 ### 7.11 Waline 数据回填 ✅
 
-首页 / 分区页 / 词条页与页脚里依赖评论系统的数据，统一由 `assets/js/waline-stats.js` 在浏览器端回填。`baseof.html` 在 `params.waline` 有 `server` 且未关闭时给 `<body>` 挂 `data-waline-server`，并全局加载 `waline.js` 与 `waline-stats.js`；Waline 未配置时脚本不加载，模板占位符（`—` / `--`）保持原样。文章页评论区仍由 `comment.js` 单独接管。
+首页 / 分区页 / 词条页与页脚里依赖评论系统的数据，统一由 `assets/js/waline-stats.js` 在浏览器端回填。`baseof.html` 在 `params.waline` 有 `server` 且未关闭时给 `<body>` 挂 `data-waline-server`，并全局加载 `waline.js` 与 `waline-stats.js`；Waline 未配置时脚本不加载，模板占位符（`—` / `--`）保持原样。文章页与自定义页评论区仍由 `comment.js` 单独接管。
 
 | 项 | 规格 |
 | --- | --- |
@@ -816,7 +824,7 @@ menu:
 
 ## 8. 文章页 ✅
 
-文章页模板为 `layouts/posts/page.html`，覆盖通用 `page.html`；关于页等其他普通页面不受影响。
+文章页模板为 `layouts/posts/page.html`，覆盖通用 `page.html`；顶部大图抽到 `partials/post-hero.html`，与自定义 hero 页共用（§10）。关于页使用 §10 的 hero 模板，不再走通用 `page.html`。
 
 自上而下：顶部通栏大图（居中标题区叠在图上，底部浪花）→ 两栏正文（左侧正文卡片 + 右侧栏）；正文卡片末尾附文章信息卡（§8.6）、上一篇 / 下一篇（§8.7）与评论区（§8.8）。文章页侧栏自上而下为博主信息卡与「目录 + 最新文章」吸顶组：整组滚到 Header 下沿后吸顶并一直保持，直到最新文章卡的底部与左侧正文卡片底部平齐，再随页面滚走（§8.5）。
 
@@ -848,15 +856,15 @@ menu:
 
 ### 8.4 Header 顶部态
 
-文章页带 `body.has-post-hero`，顶部 Header 与首页一致：透明、无毛玻璃、无阴影、白字；滚动超过 8px 加 `.is-scrolled` 后恢复常驻样式（§6.7）。
+文章页与自定义 hero 页带 `body.has-post-hero`，顶部 Header 与首页一致：透明、无毛玻璃、无阴影、白字；滚动超过 8px 加 `.is-scrolled` 后恢复常驻样式（§6.7 / §10）。
 
 ### 8.5 侧栏目录 ✅
 
-文章页侧栏自上而下为博主信息卡与「目录 + 最新文章」吸顶组（最新文章卡规格见 §7.8）。目录是组内第一张卡：正文的 h2 / h3 两级，标题 id 由 Hugo 构建时生成。整组吸顶后一直保持到最新文章卡的底部与左侧正文卡片（`.post-content`）底部平齐，再随页面滚走。
+文章页与自定义 hero 页侧栏自上而下为博主信息卡与「目录 + 最新文章」吸顶组（最新文章卡规格见 §7.8）。目录是组内第一张卡：正文的 h2 / h3 两级，标题 id 由 Hugo 构建时生成。整组吸顶后一直保持到最新文章卡的底部与左侧正文卡片（`.post-content`）底部平齐，再随页面滚走。
 
 | 项 | 规格 |
 | --- | --- |
-| 模板 | `sidebar-toc.html` 组装卡片；`toc-flat.html` 把 `.Fragments.Headings` 递归压平并过滤为 h2–h3；`toc-list.html` 把线性列表递归渲染成嵌套 `<ul>`。`sidebar.html` 在 `.IsPage` 且 `.Type == "posts"` 时渲染博主卡，并把目录与最新文章包进 `.sidebar-sticky` 吸顶组，其他页面不渲染目录 |
+| 模板 | `sidebar-toc.html` 组装卡片；`toc-flat.html` 把 `.Fragments.Headings` 递归压平并过滤为 h2–h3；`toc-list.html` 把线性列表递归渲染成嵌套 `<ul>`。`sidebar.html` 在 `.IsPage` 且 `.Type == "posts"`，或 `type: custom` + `layout: hero` 时渲染博主卡，并把目录与最新文章包进 `.sidebar-sticky` 吸顶组，其他页面不渲染目录 |
 | 数据 | `.Fragments.Headings`（页面全部标题树，id 由 Hugo 生成）；只取 Level 2–3，不依赖 `markup.tableOfContents` 配置 |
 | 配置 | `params.sidebar.toc`：`enable`、`title`（默认"文章目录"）、`min_headings`（默认 2） |
 | 渲染门槛 | 压平后的标题少于 `min_headings` 时整卡不渲染 |
@@ -913,7 +921,7 @@ menu:
 
 ### 8.8 评论区 ✅（Waline）
 
-上一篇 / 下一篇之后的评论区，仍在 `.post-content` 卡片内，用一条 Markdown 雪花分割线（§9.4，与正文 `hr` 共用 `md-divider` mixin）与上方内容分开。动态详情页复用同一套评论区，放在动态卡下方的独立白卡里，并隐藏这条分割线（§7.14）。模板只输出结构骨架、`data-*` 配置与表情包 JSON；页面模板通过 `comment-scripts.html` 统一加载 `emoji.js` / `format.js` / `comment.js`。`comment.js` 按 `data-post-comments` 请求 Waline，渲染评论树并接管分页 / 排序 / 刷新 / 发布表单；表情由 `emoji.js` 管理，发布前的 Markdown 预览由 `format.js` 渲染，HTTP 细节集中在 `waline.js`（`window.InalineWaline`）。
+上一篇 / 下一篇之后的评论区，仍在 `.post-content` 卡片内，用一条 Markdown 雪花分割线（§9.4，与正文 `hr` 共用 `md-divider` mixin）与上方内容分开。动态详情页复用同一套评论区，放在动态卡下方的独立白卡里，并隐藏这条分割线（§7.14）；自定义页在 front matter 写 `comments: true` 时，也在正文卡末尾复用同一套评论区（§10）。模板只输出结构骨架、`data-*` 配置与表情包 JSON；页面模板通过 `comment-scripts.html` 统一加载 `emoji.js` / `format.js` / `comment.js`。`comment.js` 按 `data-post-comments` 请求 Waline，渲染评论树并接管分页 / 排序 / 刷新 / 发布表单；表情由 `emoji.js` 管理，发布前的 Markdown 预览由 `format.js` 渲染，HTTP 细节集中在 `waline.js`（`window.InalineWaline`）。
 
 **配置与文件**
 
@@ -968,7 +976,7 @@ menu:
 ## 9. Markdown 正文排版 ✅
 
 所有 Markdown 内容的排版集中在 `assets/css/_markdown.scss`，由内容容器上的 `.markdown` 类启用：
-文章正文（`layouts/posts/page.html`）、普通页面（`layouts/page.html`）、分区页内容（`layouts/section.html`）。
+文章正文（`layouts/posts/page.html`）、自定义页（`layouts/custom/hero.html` / `plain.html`）、普通页面（`layouts/page.html`）、分区页内容（`layouts/section.html`）。
 容器自身的卡片、宽度与栅格仍归 `_article.scss` / `_post.scss`，本文件只处理内容元素。
 代码高亮配色单独放在 `_chroma.scss`（亮 / 暗分发）、`_chroma-light.scss`、`_chroma-dark.scss`。
 
@@ -986,13 +994,14 @@ menu:
 
 | 层级 | 规格 |
 | --- | --- |
-| h1–h6 公共 | 字重 500、`line-height: 1.35`、`text-wrap: balance`、`scroll-margin-top: calc(--header-height + --space-4)`；标题前的四角星（`::before`，mask 取形）以 6s 逆时针匀速旋转；悬停整条标题右移 `--space-2`；标题内的链接跟随标题色、无下划线 |
+| h1–h6 公共 | 字重 500、`line-height: 1.35`、`text-wrap: balance`、`scroll-margin-top: calc(--header-height + --space-4)`；标题前的四角星（`::before`，mask 取形）以 6s 逆时针匀速旋转；悬停标题右移 `--space-2`（h1 的文字与四角星移动，下划线留在原位，见下行）；标题内的链接跟随标题色、无下划线 |
 | 四角星 | 颜色按层级取 `--color-heading-mark-1` … `--color-heading-mark-6`（h1 橙 / h2 紫 / h3 蓝 / h4 绿 / h5 粉 / h6 灰） |
-| h1 | `1.875rem`，底部 1px 分割线（`--color-border`），上间距 `--space-8` |
+| h1 | `1.875rem`；上间距 `--space-8`；`padding-bottom: var(--space-3)`，给下划线上的雪花留净空 |
+| h1 下划线 | `::after` 伪元素绘制：2px 实线 `--color-hr-line`（与 §9.4 分割线同色同宽，但为实线），线上左端 5% 骑一枚主题色雪花（`\f2dc`）；悬停时 h1 文字 / 四角星右移 `--space-2`，伪元素反向平移让线留在原位，雪花用 `padding-left` 以 1s `ease-in-out` 滑到 `calc(95% - 20px)` |
 | h2 | `1.5rem`，上间距 `--space-8` |
 | h3 | `1.25rem`，上间距 `--space-6` |
 | h4 / h5 / h6 | `1.125rem` / `1rem` / `.9375rem`；h6 用 `--color-text-muted` |
-| 动效降级 | `prefers-reduced-motion` 下四角星停转、悬停位移取消；打印时四角星停转 |
+| 动效降级 | `prefers-reduced-motion` 下四角星停转、悬停位移取消，h1 下划线不再反向补偿、雪花也不滑动；打印时四角星停转 |
 
 ### 9.3 行内元素
 
@@ -1052,3 +1061,91 @@ menu:
 | 启用 | 所有页面自动生效，无需 front matter 开关 |
 | 样式 | 行内 `<math>` 跟随正文；块级输出外层还有一层 `<span class="katex">`，用 `:has(> math[display="block"])` 把它转成块容器；`math[display="block"]` 以 `fit-content` 收缩后居中，上下 `1.5em`，过宽时自身横向滚动，不撑破正文列 |
 | 降级 | 渲染失败时 `warnf` 并在原位置输出原始 LaTeX；页面无 JS 依赖，显示依赖浏览器原生 MathML（Chrome 109+ / Firefox / Safari） |
+
+---
+
+## 10. 自定义页面 ✅
+
+站内自定义页面（关于、友链等）统一使用 `type: custom` + front matter `layout` 选择模板：`hero`（带顶部大图，文章式）与 `plain`（无大图，正文卡 + 通用侧栏）。评论区由 front matter 的 `comments` 控制。关于页（`/about/`）与友链页（`/links/`）分别是两套模板的实例。
+
+### 10.1 模板约定
+
+| 项 | hero | plain |
+| --- | --- | --- |
+| 模板 | `layouts/custom/hero.html` | `layouts/custom/plain.html` |
+| front matter | `type: custom` + `layout: hero` | `type: custom` + `layout: plain` |
+| 标题 | front matter 的 `title`，叠在顶部大图上 | 正文 Markdown 的 `# 标题`；模板不输出标题 |
+| 顶部 | `partials/post-hero.html`（与文章页共用）：封面 / 标题 / 日期 / 阅读时长 / 字数 / 浪花 | 无大图；`.main` 保持普通内页上边距 |
+| 正文卡 | `.post-content`（`_article.scss`），`--space-6` 内边距 | `.custom-content`（`_custom.scss`），`--space-6`（≤560px 收为 `--space-5`） |
+| 侧栏 | 文章侧栏：博主卡 +（目录 + 最新文章）吸顶组 | 通用侧栏：博主卡 + 最新文章 + 近期评论 + 分类 + 标签 |
+| 信息卡 | `article-meta.html` | 无 |
+| 上一篇 / 下一篇 | 不渲染（自定义页不属于 posts，没有相邻页） | 不渲染 |
+| 评论区 | `comments: true` 时渲染 `post-comments.html` 并加载评论脚本 | 同左 |
+| 页面状态 | `body.has-post-hero` + `.main--post`；页脚封面背景 | 普通 Header / main；页脚封面背景 |
+| 页脚 | 同文章页，`main.js` 写 `--footer-cover` | 同左 |
+
+**Front matter 约定**
+
+```yaml
+---
+title: "页面标题"
+type: custom
+layout: hero       # 或 plain
+comments: true     # 可选；仅 true 渲染评论区
+---
+```
+
+- `comments` 缺省 / false：不输出评论区骨架，也不加载 emoji / format / comment 脚本；Waline 总开关仍由 `params.waline` 控制。
+- `type: custom` 的页面是常规页（kind page），URL 由文件路径决定；不属于 posts 分区，因此不会进入首页 / 归档 / 分类 / 标签列表，也不计入侧栏文章数。
+- 两种模板都输出页脚封面，走 `footer.html` 的封面池逻辑（§7.9）。
+- hero 模板的封面：front matter `cover` 优先，未配置由 `post-cover.html` 回退封面池；plain 模板没有大图，封面池也用于页脚。
+- CSS 分层：hero 复用 `_article.scss`；plain 的外层正文卡在 `_custom.scss`，页内的友链组件在 `_links.scss`，两者不互相依赖。
+
+### 10.2 关于页（hero 示例）
+
+`content/about.md`：
+
+| 项 | 规格 |
+| --- | --- |
+| front matter | `type: custom`、`layout: hero`、`comments: true`；`title` 关于 |
+| 结构 | 与文章页一致：顶部大图 → 正文卡 + 文章侧栏 → 信息卡 → 评论区；没有上一篇 / 下一篇 |
+| 侧栏 | 正文有 3 个 h2，目录达到 `min_headings`，显示「博主卡 +（目录 + 最新文章）吸顶组」 |
+| 页脚 | 文章页同款封面背景 |
+| 内容 | 自我介绍 / 关于我 / 这里有什么 / 联系；标题与正文排版沿用 §9 |
+
+### 10.3 友链页（plain 示例）
+
+`content/links.md`（常规页，URL `/links/`）：
+
+| 项 | 规格 |
+| --- | --- |
+| front matter | `type: custom`、`layout: plain`、`comments: true`；`title` 友链 |
+| 结构 | 无顶部大图；单个 `.custom-content` 正文卡 + 通用侧栏；正文卡末尾接评论区 |
+| 标题 | 正文 Markdown 的 `# 友链`（模板不输出标题） |
+| 内容 | Markdown 简介 → `friend-links` 站点网格 → 「申请友链」小节（YAML 代码块，代码窗口自带复制按钮）→ 评论区 |
+| 页脚 | 封面背景（custom 类型统一） |
+| 评论区 | `comments: true`；评论路径 `/links/`，用于接收友链申请留言 |
+
+### 10.4 友链站点卡片
+
+站点由短代码 `friend-links` 生成，短代码内容是一段 YAML 站点数组；正文其余部分仍是普通 Markdown。
+
+| 项 | 规格 |
+| --- | --- |
+| 用法 | `{{< friend-links >}}` … `{{< /friend-links >}}`，中间写 YAML 数组；`{{< … >}}` 形式（而非 `{{% … %}}`）保证内容不被 Markdown 二次处理 |
+| 字段 | `name`（站点名）、`url`（站点地址，必填）；`desc`（一句话简介，兼容 `description`）、`cover`（站点缩略图）、`avatar`（站点图标，兼容 `logo`）可选 |
+| 图片 | `cover` / `avatar` 支持网络地址（http/https/协议相对）与 assets 路径，走 `link-image.html` 解析（与 `post-cover.html` / `author-avatar.html` 同一套规则）；缺图时分别渲染渐变地球占位与通用链接图标，构建告警 |
+| 网格 | `.friend-links`：三列等宽（`repeat(3, minmax(0, 1fr))`），间距 `--space-4`；≤768px 两列，≤560px 单列 |
+| 卡片 | 整卡一条 `<a>`；`--color-elevated` 底 + 1px `--color-border` 描边 + `--radius-lg`；**不用阴影**——外层正文卡已有 `--shadow-sm`，内层再叠阴影会糊成一片，层级靠描边区分 |
+| 缩略图 | 卡片上方，`aspect-ratio: 16 / 10`，`object-fit: cover`；上两角跟随卡片圆角，下两角与信息区相接保持直角；只在指针落在缩略图上时 `scale(1.04)` |
+| 信息区 | 缩略图下方的 `--color-elevated` 面：40px 圆形图标（`border-radius: 50%` + 1px 描边）、名称（`1rem / 600`、单行省略）、简介（`0.875rem` muted、`line-clamp: 2`）；右上角外链箭头默认隐藏 |
+| 悬停 | 描边转 `--color-primary`，卡片 `translateY(-2px)`，名称转主题色，外链箭头淡入；`:focus-visible` 同样亮起并加主题色描边；不改变整卡背景 |
+| 链接 | 外链 `target="_blank"` + `rel="noopener"`；站内路径（`/` 开头）过 `relURL`，当前页打开 |
+| 语义 | `<ul>` / `<li>` / `<a>`；缩略图与图标 `alt=""`（名称已提供文字），箭头 `aria-hidden`；图标带 `data-lightbox-ignore`，不参与图片预览，光标保持手型 |
+| 占位数据 | 示例六个站点写在 `content/links.md`；缩略图 / 图标为 `assets/images/links/cover-1…6.svg` 与 `logo-1…6.svg`，上线前替换为真实站点素材 |
+
+### 10.5 维护约定
+
+- 新增自定义页：新建 `content/<slug>.md`，按 §10.1 的 front matter 选择 hero / plain；hero 页标题写 front matter，plain 页标题写正文 `#`。
+- 友链数据与页面文案同在 `content/links.md`；新增站点只加一条 YAML 条目，图片既可以是网络 URL，也可以放进 `assets/` 后用相对路径引用。
+- 自定义页不属于 posts 分区，不会进入文章列表 / 归档；需要作为文章发布的内容请放进 `content/posts/`。

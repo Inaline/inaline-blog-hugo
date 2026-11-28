@@ -1,0 +1,27 @@
+{{/*
+  自定义页面 · 无顶部大图（DESIGN.md §10）
+
+  front matter 约定：
+    type: custom
+    layout: plain
+    comments: true   # 可选；为 true 时才渲染评论区
+
+  标题不在这里输出：按友链页的约定，页面标题写在正文 Markdown 的 # 标题里，
+  与正文一起落在白色内容卡中。结构与文章页同一套两栏骨架（正文卡 + 右侧栏），
+  但右侧栏使用通用侧栏，没有文章目录。
+*/}}
+{{ define "main" }}
+<article class="custom-page container container--wide layout">
+  <div class="layout-main">
+    <div class="custom-content">
+      {{ with .Content }}<div class="markdown">{{ . }}</div>{{ end }}
+      {{ if .Params.comments }}{{ partial "post-comments.html" . }}{{ end }}
+    </div>
+  </div>
+  {{ partial "sidebar.html" . }}
+</article>
+{{ end }}
+
+{{ define "page-scripts" }}
+  {{ if .Params.comments }}{{ partial "comment-scripts.html" . }}{{ end }}
+{{ end }}

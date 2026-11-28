@@ -1,75 +1,8 @@
 {{ define "main" }}
 {{/* 文章页（§8）：顶部通栏大图（居中标题区叠在图上）→ 左侧正文卡片 + 右侧栏。
-     封面优先取 front matter 的 cover，未配置时按封面池兜底（与文章卡片同池）。
-     正文阅读时长 / 字数不用 Hugo 的 .ReadingTime / .WordCount：它们按空格切词，
-     中文会严重失真，这里沿用文章卡片的字符数算法。 */}}
-{{ $cover := partial "post-cover.html" (dict "page" . "index" 0) }}
-{{ $chars := countrunes (replaceRE `\s+` "" (.Content | plainify)) }}
-{{ $minutes := math.Max 1 (math.Ceil (div (float $chars) 400.0)) }}
+     顶部大图抽到 partials/post-hero.html，与自定义 hero 页共用同一套结构。 */}}
 <article class="post-page">
-  <div class="post-hero">
-    {{ with $cover }}
-      <img class="post-hero-image" src="{{ . }}" alt="" fetchpriority="high" decoding="async">
-    {{ end }}
-
-    <header class="container post-header">
-      <h1 class="post-title">{{ .Title }}</h1>
-      <div class="post-meta">
-        {{ if not .Date.IsZero }}
-          <span class="post-meta-item">
-            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-            <span>发布于：<time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006年1月2日" }}</time></span>
-          </span>
-          <div class="post-meta-sep" aria-hidden="true"></div>
-        {{ end }}
-        <span class="post-meta-item">
-          <i class="fa-regular fa-clock" aria-hidden="true"></i>
-          <span>阅读时长：{{ $minutes }} 分钟</span>
-        </span>
-        <div class="post-meta-sep" aria-hidden="true"></div>
-        <span class="post-meta-item">
-          <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
-          {{/* 单篇字数一般不大，只用千分位逗号，不折成 k / M（DESIGN.md §8.2） */}}
-          <span>字数：{{ partial "format-number.html" (dict "value" $chars "unit" false) }} 字</span>
-        </span>
-      </div>
-
-      {{ $categories := .GetTerms "categories" }}
-      {{ $tags := .GetTerms "tags" }}
-      {{ if or $categories $tags }}
-        <div class="post-taxonomies">
-          {{ with $categories }}
-            <span class="post-taxonomies-group">
-              <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
-              {{ range . }}<a class="post-category" href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>{{ end }}
-            </span>
-          {{ end }}
-          {{ with $tags }}
-            <span class="post-taxonomies-group">
-              <i class="fa-solid fa-tags" aria-hidden="true"></i>
-              {{ range . }}<a class="post-tag" href="{{ .RelPermalink }}">#{{ .LinkTitle }}</a>{{ end }}
-            </span>
-          {{ end }}
-        </div>
-      {{ end }}
-    </header>
-
-    {{/* 浪花（§8.1）：四层波形横向漂移，最底一层取页面底色，
-         让大图以波浪边缘沉入下方灰底正文区 */}}
-    <div class="post-hero-wave" aria-hidden="true">
-      <svg class="post-hero-wave-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto" focusable="false">
-        <defs>
-          <path id="post-hero-wave-path" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path>
-        </defs>
-        <g class="post-hero-wave-parallax">
-          <use href="#post-hero-wave-path" x="48" y="0"></use>
-          <use href="#post-hero-wave-path" x="48" y="3"></use>
-          <use href="#post-hero-wave-path" x="48" y="5"></use>
-          <use href="#post-hero-wave-path" x="48" y="7"></use>
-        </g>
-      </svg>
-    </div>
-  </div>
+  {{ partial "post-hero.html" . }}
 
   <div class="container container--wide layout layout--post">
     <div class="layout-main">

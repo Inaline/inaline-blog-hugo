@@ -1,0 +1,23 @@
+// ---------------------------------------------------------------------------
+// 自定义页面（DESIGN.md §10）
+//
+// 两种模板共用同一套 front matter 约定（type: custom + layout）：
+//   · hero  —— 带顶部大图，直接复用文章页的 .post-page / .post-content 样式
+//   · plain —— 无大图，正文卡 + 右侧栏；本文件只负责这张正文卡
+// 评论区是否渲染由 front matter 的 comments 决定，样式复用 _comments.scss。
+// ---------------------------------------------------------------------------
+
+// 无大图模板的正文卡：与文章页 .post-content 同一套白面 / 阴影 / 圆角 / 内边距
+.custom-page .custom-content {
+  padding: var(--space-6);
+  background: var(--color-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+// 窄屏与文章页一致收一档内边距
+@media (max-width: 560px) {
+  .custom-page .custom-content {
+    padding: var(--space-5);
+  }
+}

@@ -1,0 +1,236 @@
+// ---------------------------------------------------------------------------
+// 友链站点卡片（DESIGN.md §10）
+//
+// 由 shortcodes/friend-links.html 输出，铺在自定义 plain 页的正文卡里。
+// 卡片层级靠 1px 描边区分，不叠阴影——外层正文卡（_custom.scss）已经有
+// --shadow-sm，内层再叠阴影会糊成一片，描边才看得清每张卡自己的边界。
+// ---------------------------------------------------------------------------
+
+// --- 站点网格 ---
+
+// 三列。选择器带 .markdown 是为了压过 _markdown.scss 的 `ul` 列表规则
+// （左边距、项目符号、条目间距），那些规则特异度更高
+.markdown .friend-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-5) 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+
+.markdown .friend-links > li {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+}
+
+.markdown .friend-links > li::marker {
+  content: none;
+}
+
+// --- 站点卡片 ---
+
+// 整卡是一条链接。<a> 在 .markdown 里会命中 md-link（点状下划线 / 内边距 /
+// 行尾外链图标 / 悬停铺主题色），这里逐项收回，只保留"整卡可点"。
+.markdown a.friend-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-elevated);
+  color: var(--color-text);
+  line-height: 1.6;
+  transition: border-color var(--duration-fast) var(--ease),
+              transform var(--duration-base) var(--ease);
+}
+
+// 外链图标由右上角的 .friend-card-arrow 承担，去掉 md-link 的行尾图标
+.markdown a.friend-card::after {
+  content: none;
+}
+
+.markdown a.friend-card:hover {
+  border-color: var(--color-primary);
+  background: var(--color-elevated);
+  color: var(--color-text);
+  transform: translateY(-2px);
+}
+
+.markdown a.friend-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-color: var(--color-primary);
+}
+
+// 卡片上方：站点缩略图。比例定死，图片列表混排时卡片高度仍然齐
+.friend-card-cover {
+  position: relative;
+  flex: none;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+// 图片本身不画圆角：上方两角由卡片自身的圆角 + overflow 裁出，
+// 下方两角与信息区相接，保持直角。这里必须显式归零，压过 _markdown.scss
+// 给所有正文图片加的四角圆角；选择器带 .markdown 才能稳定胜出。
+.markdown .friend-card-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  object-fit: cover;
+  transition: transform var(--duration-base) var(--ease);
+}
+
+// 与文章卡片一致：缩放只在指针落到缩略图自己身上时触发
+.friend-card-cover:hover img {
+  transform: scale(1.04);
+}
+
+// 没配缩略图时的兜底：浅灰渐变 + 地球图标
+.friend-card-cover-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-surface), var(--color-bg));
+  color: var(--color-text-muted);
+  font-size: 2rem;
+}
+
+// 卡片下方：白底 + 图标 / 名称 / 简介
+.friend-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--color-elevated);
+}
+
+.friend-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+// 图标裁成圆形。同样带 .markdown 压过 `_markdown.scss` 的 `img` 圆角规则；
+// 高 / 宽也一并声明，避免非方形图标被 `height: auto` 带偏
+.markdown .friend-card-logo {
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  object-fit: cover;
+}
+
+.friend-card-logo--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+}
+
+// 灯箱脚本会把被忽略图片的光标设成 auto；图标仍是整卡链接的一部分，恢复手型
+.markdown a.friend-card img[data-lightbox-ignore] {
+  cursor: pointer;
+}
+
+.friend-card-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.markdown a.friend-card:hover .friend-card-name,
+.markdown a.friend-card:focus-visible .friend-card-name {
+  color: var(--color-primary);
+}
+
+// 外链箭头：默认藏起，悬停 / 键盘焦点时从右下角轻轻落位
+.friend-card-arrow {
+  flex: none;
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: .75rem;
+  opacity: 0;
+  transform: translate(-2px, 2px);
+  transition: opacity var(--duration-fast) var(--ease),
+              transform var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+}
+
+.markdown a.friend-card:hover .friend-card-arrow,
+.markdown a.friend-card:focus-visible .friend-card-arrow {
+  color: var(--color-primary);
+  opacity: .9;
+  transform: none;
+}
+
+// 简介固定两行，卡片高度不被长短不一的文案带跑
+.markdown .friend-card-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+// --- 响应式 ---
+
+// ≤768px：侧栏已撤掉（§7.8），三列收成两列，单卡仍有约 220px 以上
+@media (max-width: 768px) {
+  .markdown .friend-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// ≤560px：两列会把名称挤成省略号，改成单列
+@media (max-width: 560px) {
+  .markdown .friend-links {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 动效降级：必须留在文件末尾（DESIGN.md §2.2）
+// ---------------------------------------------------------------------------
+
+@media (prefers-reduced-motion: reduce) {
+  .markdown a.friend-card,
+  .friend-card-cover img,
+  .friend-card-name,
+  .friend-card-arrow {
+    transition: none;
+  }
+
+  .markdown a.friend-card:hover {
+    transform: none;
+  }
+
+  .friend-card-cover:hover img {
+    transform: none;
+  }
+}

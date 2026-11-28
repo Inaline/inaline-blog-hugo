@@ -2,12 +2,12 @@
   右侧栏（DESIGN.md §7.8）
 
   一个组件一张 .sidebar-card，自上而下堆叠（间距 = .sidebar 的 gap）。
-  文章页为「博主信息卡 →（目录 + 最新文章）吸顶组」（§8.5）；首页 / 分区页 / 词条页
-  继续用博主卡 + 最新文章 / 近期评论 / 分类 / 标签，不渲染目录。
-  每个组件自带 enable 开关（见 hugo.yaml 的 params.sidebar）。
+  文章页与自定义 hero 页为「博主信息卡 →（目录 + 最新文章）吸顶组」（§8.5 / §10）；
+  首页 / 分区页 / 词条页 / 自定义 plain 页继续用博主卡 + 最新文章 / 近期评论 /
+  分类 / 标签，不渲染目录。每个组件自带 enable 开关（见 hugo.yaml 的 params.sidebar）。
 */}}
 <aside class="sidebar" aria-label="侧栏">
-  {{ if and .IsPage (eq .Type "posts") }}
+  {{ if or (and .IsPage (eq .Type "posts")) (and .IsPage (eq .Type "custom") (eq .Layout "hero")) }}
     {{ partial "sidebar-profile.html" . }}
     {{/* 目录与最新文章包进同一个吸顶组：滚过 Header 下沿后整组吸顶，
          直到最新文章底部与左侧正文卡片底部平齐，再随页面一起滚走（§8.5） */}}

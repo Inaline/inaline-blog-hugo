@@ -1,0 +1,76 @@
+{{/*
+  友链站点卡片网格（DESIGN.md §10）
+
+  用法：短代码内写 YAML 站点数组，字段均为可选，但 name / url 缺一不可：
+
+    {{< friend-links >}}
+    - name: 站点名
+      url: https://example.com
+      desc: 一句话简介，15字内最佳
+      cover: images/links/cover-1.svg   # 站点缩略图：网络 URL 或 assets 路径
+      avatar: images/links/logo-1.svg   # 站点图标：网络 URL 或 assets 路径
+    {{< /friend-links >}}
+
+  字段：name / url 必填；desc（兼容 description）、cover、avatar（兼容 logo）
+  可选。输出 <ul class="friend-links">，样式见 _links.scss。cover / avatar 缺失时
+  分别渲染占位封面与通用链接图标，不影响卡片结构。
+*/}}
+
+{{- $page := .Page -}}
+{{- $raw := trim .Inner " \n\r\t" -}}
+{{- $sites := slice -}}
+{{- if $raw -}}
+  {{- $sites = $raw | transform.Unmarshal -}}
+{{- else -}}
+  {{- warnf "friend-links: %s 的短代码内容为空，未渲染站点卡" $page.RelPermalink -}}
+{{- end -}}
+{{- if not (reflect.IsSlice $sites) -}}
+  {{- warnf "friend-links: %s 的短代码内容应为 YAML 站点数组" $page.RelPermalink -}}
+  {{- $sites = slice -}}
+{{- end -}}
+
+{{- with $sites -}}
+<ul class="friend-links">
+  {{- range . -}}
+    {{- $name := .name | default "" -}}
+    {{- $url := .url | default "" -}}
+    {{- if not (and $name $url) -}}
+      {{- warnf "friend-links: %s 有一个站点缺少 name 或 url，已跳过" $page.RelPermalink -}}
+    {{- else -}}
+      {{- $href := $url -}}
+      {{- if hasPrefix $href "/" -}}{{- $href = $href | relURL -}}{{- end -}}
+      {{- $external := or (hasPrefix $href "http://") (hasPrefix $href "https://") (hasPrefix $href "//") -}}
+      {{- $desc := or .desc .description -}}
+      {{- $avatarSource := or .avatar .logo -}}
+      {{- $cover := partial "link-image.html" (dict "page" $page "src" .cover "label" (printf "站点 %q 的缩略图" $name)) -}}
+      {{- $logo := partial "link-image.html" (dict "page" $page "src" $avatarSource "label" (printf "站点 %q 的图标" $name)) -}}
+      <li>
+        <a class="friend-card" href="{{ $href }}"{{ if $external }} target="_blank" rel="noopener"{{ end }}>
+          <div class="friend-card-cover">
+            {{- with $cover -}}
+              <img src="{{ . }}" alt="" loading="lazy">
+            {{- else -}}
+              <span class="friend-card-cover-fallback" aria-hidden="true"><i class="fa-solid fa-globe"></i></span>
+            {{- end -}}
+          </div>
+          <div class="friend-card-body">
+            <div class="friend-card-head">
+              {{- with $logo -}}
+                {{/* 图标普遍分辨率低，不参与全站灯箱（DESIGN.md §5.4） */}}
+                <img class="friend-card-logo" src="{{ . }}" alt="" width="40" height="40" loading="lazy" data-lightbox-ignore>
+              {{- else -}}
+                <span class="friend-card-logo friend-card-logo--fallback" aria-hidden="true"><i class="fa-solid fa-link"></i></span>
+              {{- end -}}
+              <span class="friend-card-name">{{ $name }}</span>
+              <i class="fa-solid fa-arrow-up-right-from-square friend-card-arrow" aria-hidden="true"></i>
+            </div>
+            {{- with $desc -}}
+              <p class="friend-card-desc">{{ . }}</p>
+            {{- end -}}
+          </div>
+        </a>
+      </li>
+    {{- end -}}
+  {{- end -}}
+</ul>
+{{- end -}}
