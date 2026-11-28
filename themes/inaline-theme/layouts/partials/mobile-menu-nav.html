@@ -1,0 +1,52 @@
+{{- /* 移动端抽屉 · 页面列表（DESIGN.md §6.9）
+
+       参数：
+         page  —— 当前页，用于 IsMenuCurrent / HasMenuCurrent 的选中态
+         items —— 当前层级的菜单项（site.Menus.main 或某项的 .Children）
+         level —— 层级，1 为顶级
+
+       与桌面导航（nav-item.html）同样来自 menu.main，不硬编码。
+       有子项的节点在抽屉里渲染为可展开的树：按钮负责展开 / 收起，
+       子链接仍是指向真实页面的 <a>；选中分支默认展开。 */ -}}
+{{- $page := .page -}}
+{{- $items := .items -}}
+{{- $level := .level -}}
+<ul class="mobile-menu-list mobile-menu-list--level-{{ $level }}">
+  {{- range $items -}}
+    {{- $item := . -}}
+    {{- $children := $item.Children -}}
+    {{- $icon := index $item.Params "icon" -}}
+    {{- $active := or ($page.IsMenuCurrent "main" $item) ($page.HasMenuCurrent "main" $item) -}}
+    {{- $childActive := false -}}
+    {{- range $children -}}
+      {{- if or ($page.IsMenuCurrent "main" .) ($page.HasMenuCurrent "main" .) -}}
+        {{- $childActive = true -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $active = or $active $childActive -}}
+    <li class="mobile-menu-item{{ if $children }} mobile-menu-item--parent{{ end }}">
+      {{- if $children }}
+        <div class="mobile-menu-tree{{ if $childActive }} is-expanded{{ end }}" data-menu-tree>
+          <button type="button" class="mobile-menu-link mobile-menu-link--toggle{{ if $active }} is-active{{ end }}" data-menu-tree-toggle aria-expanded="{{ if $childActive }}true{{ else }}false{{ end }}">
+            {{ with $icon }}<i class="{{ . }} mobile-menu-icon" aria-hidden="true"></i>{{ end }}
+            <span class="mobile-menu-label">{{ $item.Name }}</span>
+            <i class="fa-solid fa-chevron-right mobile-menu-caret" aria-hidden="true"></i>
+          </button>
+          {{/* 收起时 inert：里面的链接不参与 Tab / 读屏；展开由 main.js 撤销 */}}
+          <div class="mobile-menu-tree-body"{{ if not $childActive }} inert{{ end }}>
+            <div class="mobile-menu-tree-inner">
+              {{- partial "mobile-menu-nav.html" (dict "page" $page "items" $children "level" (add $level 1)) -}}
+            </div>
+          </div>
+        </div>
+      {{- else }}
+        {{- $href := $item.URL -}}
+        {{- $external := or (hasPrefix $href "http://") (hasPrefix $href "https://") -}}
+        <a class="mobile-menu-link{{ if $active }} is-active{{ end }}" href="{{ $href }}"{{ if $active }} aria-current="page"{{ end }}{{ if $external }} target="_blank" rel="noopener"{{ end }}>
+          {{ with $icon }}<i class="{{ . }} mobile-menu-icon" aria-hidden="true"></i>{{ end }}
+          <span class="mobile-menu-label">{{ $item.Name }}</span>
+        </a>
+      {{- end }}
+    </li>
+  {{- end -}}
+</ul>

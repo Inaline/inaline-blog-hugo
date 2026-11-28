@@ -232,6 +232,36 @@
   box-shadow: var(--shadow-sm);
 }
 
+// ---------------------------------------------------------------------------
+// 移动端：正文卡内外边距收紧（DESIGN.md §8.3 / §8.9）
+//
+// 头图高度由 --post-hero-height 的 320px 下限统一抬高（§8.1）。
+// 平板卡片内边距 32 → 24；手机再把容器左右留白与卡片内边距一起收到 16，
+// 同样的字号下每行多出约 3 个汉字，阅读时不用频繁扫窄列。
+//
+// 大图与卡片之间的上间距沿用 .post-page .layout 的基础值 --space-6（32px）：
+// 底部浪花高 44px，24px 会贴进波浪的视觉范围；32px 有缓冲又不至于留出大灰带。
+// ---------------------------------------------------------------------------
+
+@media (max-width: 768px) {
+  .post-page .post-content {
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 560px) {
+  .post-page > .container {
+    // 只改左右。不能用 padding 简写：它会把上面 ≤768px 设置的
+    // padding-top（--space-7，避开浪花）一并重置为 0
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+
+  .post-page .post-content {
+    padding: var(--space-4);
+  }
+}
+
 // --- 文章末尾信息卡（§8.6） ---
 
 // 内嵌在正文卡片末尾的浅色面板：参考 inaline.net 的 .article-meta-info：

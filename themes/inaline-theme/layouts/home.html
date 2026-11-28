@@ -1,7 +1,7 @@
 {{ define "main" }}
   {{ partial "hero.html" . }}
 
-  <div class="container container--wide layout" id="home-content">
+  <div class="container container--wide layout layout--sidebar-flow" id="home-content">
     <div class="layout-main">
       {{ $paginator := .Paginate (where site.RegularPages "Section" "posts") }}
       {{/* 轮播图只出现在第一页列表顶部（§7.10） */}}

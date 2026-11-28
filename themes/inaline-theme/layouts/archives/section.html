@@ -4,7 +4,7 @@
 {{ partial "archive-hero.html" . }}
 
 {{ $posts := sort (where site.RegularPages "Section" "posts") "Date" "desc" }}
-<div class="container container--wide layout archive-layout">
+<div class="container container--wide layout layout--sidebar-flow archive-layout">
   <div class="layout-main">
     {{ if $posts }}
       <section class="archive-timeline" aria-label="文章归档时间线">

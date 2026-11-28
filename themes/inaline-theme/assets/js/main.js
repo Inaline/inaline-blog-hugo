@@ -456,12 +456,191 @@
     pending.forEach(function (el) { io.observe(el); });
   }
 
+  /**
+   * 移动端抽屉菜单（DESIGN.md §6.9）
+   *
+   * 开合、遮罩、Esc / 焦点锁、body 滚动锁；页面 / 分类选项卡；
+   * 页面树的可展开节点。≤768px 由 Header 左侧菜单按钮触发；
+   * 桌面断点（≥769px）切换时自动收起，避免遮罩与滚动锁残留。
+   *
+   * 抽屉关闭时模板上的 inert 会让内部链接退出 Tab / 读屏树；
+   * 打开 / 收起时这里同步维护，收起动画期间也不会留下可聚焦的隐藏链接。
+   */
+  function initMobileMenu() {
+    var root = document.querySelector('[data-mobile-menu]');
+    var toggle = document.querySelector('.menu-toggle');
+    if (!root || !toggle || root.dataset.mobileMenuBound === 'true') return;
+    root.dataset.mobileMenuBound = 'true';
+
+    var panel = root.querySelector('.mobile-menu');
+    var overlay = root.querySelector('.mobile-menu-overlay');
+    var closeBtn = panel && panel.querySelector('.mobile-menu-close');
+    if (!panel || !overlay) return;
+
+    var lastFocus = null;
+    var mq = window.matchMedia('(min-width: 769px)');
+
+    function isOpen() {
+      return panel.classList.contains('is-open');
+    }
+
+    function focusable() {
+      var nodes = panel.querySelectorAll(
+        'a[href]:not([tabindex="-1"]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      return Array.prototype.filter.call(nodes, function (el) {
+        // offsetParent 过滤掉隐藏的分类面板；closest('[inert]') 过滤掉收起的子菜单
+        return el.offsetParent !== null && !el.closest('[inert]');
+      });
+    }
+
+    function open() {
+      if (isOpen()) return;
+      lastFocus = document.activeElement;
+      panel.classList.add('is-open');
+      overlay.classList.add('is-open');
+      panel.removeAttribute('inert');
+      panel.setAttribute('aria-hidden', 'false');
+      toggle.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('is-menu-open');
+
+      // 等 visibility 生效后再移焦点，避免在不可见元素上聚焦失败
+      window.requestAnimationFrame(function () {
+        var target = closeBtn || panel;
+        if (target) target.focus({ preventScroll: true });
+      });
+    }
+
+    function close(opts) {
+      opts = opts || {};
+      if (!isOpen()) return;
+
+      panel.classList.remove('is-open');
+      overlay.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('is-menu-open');
+
+      // 先把焦点移出去，再给面板加 inert / aria-hidden：
+      // 否则焦点会短暂留在 aria-hidden 子树里，部分读屏会直接丢掉焦点
+      if (opts.restoreFocus !== false) {
+        var target = lastFocus && document.contains(lastFocus) ? lastFocus : toggle;
+        if (target && typeof target.focus === 'function') {
+          target.focus({ preventScroll: true });
+        }
+      }
+
+      panel.setAttribute('inert', '');
+      panel.setAttribute('aria-hidden', 'true');
+    }
+
+    toggle.addEventListener('click', function () {
+      if (isOpen()) close();
+      else open();
+    });
+
+    Array.prototype.forEach.call(root.querySelectorAll('[data-mobile-menu-close]'), function (el) {
+      el.addEventListener('click', function () { close(); });
+    });
+
+    // 抽屉内是真实链接：跳转前先收起。外链新标签页也会回到菜单按钮
+    Array.prototype.forEach.call(panel.querySelectorAll('a[href]'), function (link) {
+      link.addEventListener('click', function () { close(); });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (!isOpen()) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      var items = focusable();
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      var active = document.activeElement;
+
+      if (e.shiftKey && (active === first || active === panel)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+
+    // --- 页面 / 分类选项卡 ---
+    var tabs = panel.querySelectorAll('[data-menu-tab]');
+    var panes = panel.querySelectorAll('[data-menu-pane]');
+
+    function activateTab(name) {
+      Array.prototype.forEach.call(tabs, function (tab) {
+        var active = tab.getAttribute('data-menu-tab') === name;
+        tab.classList.toggle('is-active', active);
+        tab.setAttribute('aria-selected', String(active));
+        tab.setAttribute('tabindex', active ? '0' : '-1');
+      });
+      Array.prototype.forEach.call(panes, function (pane) {
+        var active = pane.getAttribute('data-menu-pane') === name;
+        pane.classList.toggle('is-active', active);
+        pane.hidden = !active;
+      });
+    }
+
+    Array.prototype.forEach.call(tabs, function (tab, index) {
+      tab.addEventListener('click', function () {
+        activateTab(tab.getAttribute('data-menu-tab'));
+      });
+
+      // 方向键切换选项卡（ARIA tabs 的键盘约定）
+      tab.addEventListener('keydown', function (e) {
+        var dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!dir) return;
+        e.preventDefault();
+        var next = tabs[(index + dir + tabs.length) % tabs.length];
+        activateTab(next.getAttribute('data-menu-tab'));
+        next.focus();
+      });
+    });
+
+    // --- 页面树展开 / 收起 ---
+    Array.prototype.forEach.call(panel.querySelectorAll('[data-menu-tree-toggle]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var tree = btn.closest('[data-menu-tree]');
+        if (!tree) return;
+
+        var expanded = !tree.classList.contains('is-expanded');
+        tree.classList.toggle('is-expanded', expanded);
+        btn.setAttribute('aria-expanded', String(expanded));
+
+        var body = tree.querySelector('.mobile-menu-tree-body');
+        if (body) {
+          if (expanded) body.removeAttribute('inert');
+          else body.setAttribute('inert', '');
+        }
+      });
+    });
+
+    // 跨过桌面断点时自动收起
+    function onMQ(e) {
+      if (e.matches) close({ restoreFocus: false });
+    }
+
+    if (mq.addEventListener) mq.addEventListener('change', onMQ);
+    else if (mq.addListener) mq.addListener(onMQ);
+  }
+
   function init() {
     initThemeToggle();
     initPageBgMemory();
     initPageBgRestore();
     initFooterCover();
     initHeaderScroll();
+    initMobileMenu();
     initFooterUptime();
     initClickableCards();
     initSocialCopy();

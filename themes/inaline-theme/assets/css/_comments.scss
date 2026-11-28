@@ -223,7 +223,7 @@
   resize: vertical;
 }
 
-// 字数限制提示：当前是演示占位 0/1000，接入 Waline 后由前端随输入更新
+// 字数提示：只显示当前字数，不设上限，由 comment.js 随输入更新
 .post-comment-counter {
   position: absolute;
   right: var(--space-3);
@@ -605,6 +605,15 @@
   gap: var(--space-1) var(--space-2);
 }
 
+// 昵称 + 用户标签作为整体，与时间同处信息行。
+// 用 baseline 对齐，信息行的行高与没有标签时保持一致
+.post-comment-identity {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
 .post-comment-author {
   color: var(--color-text);
   font-size: .9375rem;
@@ -612,6 +621,22 @@
   line-height: 1.4;
   // 下缘一条 30% 高的主题色荧光条，与 Markdown strong 一致
   background: linear-gradient(var(--color-primary-highlight), var(--color-primary-highlight)) bottom / 100% 30% no-repeat;
+}
+
+// Waline 用户标签：主题色淡底胶囊，紧跟昵称；过长时省略，不顶掉时间
+.post-comment-label {
+  flex: none;
+  max-width: 8em;
+  padding: 1px 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-primary-highlight);
+  color: var(--color-primary);
+  font-size: .6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .post-comment-time {
@@ -802,9 +827,10 @@
   }
 }
 
-// 回复 / 表情 / 预览共用的基础按钮：默认 muted。
+// 回复 / 点赞 / 表情 / 预览共用的基础按钮：默认 muted。
 // 悬停不铺背景色：小操作只把文字 / 图标转成主题色，实心填色留给主按钮
 .post-comment-reply,
+.post-comment-like,
 .post-comment-tool,
 .post-comment-action {
   display: inline-flex;
@@ -840,9 +866,28 @@
   color: var(--color-primary);
 }
 
-// 回复按钮在气泡右下角
-.post-comment-reply {
+// 点赞 + 回复收进右下角操作组：设备信息在左，小操作靠右
+.post-comment-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   margin-left: auto;
+}
+
+// 点赞：空心心形 + 计数（0 也显示）。用明亮的饱和红区分"喜欢"与主题强调；
+// 点过之后实心，再点取消；请求期间禁用并降透明度
+.post-comment-like {
+  font-variant-numeric: tabular-nums;
+
+  &:hover:not(:disabled),
+  &.is-liked {
+    color: var(--color-like);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: .6;
+  }
 }
 
 // 表情按钮只有图标，比文字按钮大一号；32px 点击区保证好按
@@ -1007,6 +1052,31 @@
   }
 }
 
+// 手机：表情弹窗原本以 32px 的表情按钮左边缘为起点，360px 宽 + 按钮又不在
+// 屏幕最左边，会向右顶出视口。这里把底栏拉成整张表单宽
+//（负外边距吃掉左侧头像列，再用等量左内边距把按钮 / 操作组推回原位），
+// 弹窗以底栏为定位基准、左右铺满，宽度自然等于表单宽度。
+// 只到 560px：再宽的屏幕用原来的 360px 弹窗就放得下，不必铺满整表。
+@media (max-width: 560px) {
+  .post-comment-form-foot {
+    position: relative;
+    margin-left: calc(-1 * (var(--comment-avatar-size) + var(--space-3)));
+    padding-left: calc(var(--comment-avatar-size) + var(--space-3));
+  }
+
+  // 去掉按钮自身相对定位，让弹窗的包含块落到 .post-comment-form-foot
+  .post-comment-emoji {
+    position: static;
+  }
+
+  .post-comment-emoji-popup {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+  }
+}
+
 // 更窄的屏幕上表情格子收一列，面板不横向溢出
 @media (max-width: 480px) {
   .post-comment-emoji-grid {
@@ -1017,6 +1087,7 @@
 // 减少动态效果：只保留颜色变化，分割线雪花不再移动
 @media (prefers-reduced-motion: reduce) {
   .post-comment-reply,
+  .post-comment-like,
   .post-comment-reply-cancel,
   .post-comment-tool,
   .post-comment-action,

@@ -2,13 +2,16 @@
 // 首页文章列表顶部轮播图（§7.10）
 //
 // 桌面端固定高度，与右侧栏 profile 卡等高，首行底边自然对齐；
-// 侧栏撤掉的窄屏改回 3:1 画幅。卡片绝对定位叠放，
+// ≤1080px 改 3:1，≤768px 改 16:9 并支持横向滑动。卡片绝对定位叠放，
 // 靠 opacity / visibility 交叉淡入（与整页背景同一手法）。
 // 所有幻灯片都是整图背景：图片铺满，底部渐变压暗，文字压底。
 // ---------------------------------------------------------------------------
 
 .carousel {
   position: relative;
+  // 显式钉住宽度：≤768px 用 aspect-ratio + max-height 定高时，部分浏览器
+  // 会按 max-height 反推宽度（280 × 16/9 ≈ 498px），在手机上撑出容器
+  width: 100%;
   height: var(--carousel-height);
   margin-bottom: var(--space-5);
   overflow: hidden;
@@ -213,6 +216,99 @@
   background: var(--color-primary);
 }
 
+// ---------------------------------------------------------------------------
+// 移动端（DESIGN.md §7.10）
+//
+// 16:9 图片卡，高度在 220–280px 之间；标题两行截断，摘要保留两行。
+// 指示器仍留在右侧竖排，只把触控区放到 24×24、视觉圆点缩到 8px，
+// 选中项纵向拉长到 20px；文字区右侧留 40px 避开指示器。
+// 横向滑动由 home.js 的 touch 监听接管（touch-action: pan-y）。
+// ---------------------------------------------------------------------------
+
+@media (max-width: 768px) {
+  .carousel {
+    height: auto;
+    aspect-ratio: 16 / 9;
+    min-height: 220px;
+    max-height: 280px;
+    // 横向滑动交给下面的 touch 监听；纵向仍照常滚动页面
+    touch-action: pan-y;
+  }
+
+  // 必须带 .carousel-slide 前缀：基础样式里的 padding-top 是 (0,2,0) 特异度
+  // 右侧 40px 给竖向指示器让位
+  .carousel-slide .carousel-body {
+    padding: var(--space-4) var(--space-7) var(--space-5) var(--space-4);
+  }
+
+  .carousel-meta {
+    font-size: 0.75rem;
+  }
+
+  .carousel-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 1.125rem;
+  }
+
+  .carousel-summary {
+    font-size: 0.8125rem;
+  }
+
+  // 指示器仍留在右侧竖排，只把触控区与圆点尺寸调到手机上可点的大小
+  .carousel-dots {
+    top: 50%;
+    right: var(--space-2);
+    bottom: auto;
+    flex-direction: column;
+    // 24px 触控区里圆点只有 8px，间距 8 会显得散；收到 4 让视觉节奏更紧
+    gap: var(--space-1);
+    transform: translateY(-50%);
+  }
+
+  .carousel-dot,
+  .carousel-dot.is-active {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+  }
+
+  .carousel-dot::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--color-over-hero);
+    transform: translate(-50%, -50%);
+    transition: height var(--duration-slow) var(--ease-out),
+                background-color var(--duration-slow) var(--ease);
+  }
+
+  // 按钮本体只做触控区；悬停 / 选中都画在 ::before 上
+  .carousel-dot:hover,
+  .carousel-dot.is-active {
+    background: transparent;
+  }
+
+  .carousel-dot:hover::before,
+  .carousel-dot.is-active::before {
+    background: var(--color-primary);
+  }
+
+  // 竖排时选中项纵向拉长，和桌面一致
+  .carousel-dot.is-active::before {
+    width: 8px;
+    height: 20px;
+  }
+}
+
 // --- 减少动态效果 ---
 
 @media (prefers-reduced-motion: reduce) {
@@ -220,7 +316,8 @@
   .carousel-slide .carousel-body,
   .carousel-bg-wrap,
   .carousel-bg,
-  .carousel-dot {
+  .carousel-dot,
+  .carousel-dot::before {
     transition: none;
   }
 

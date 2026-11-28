@@ -3,7 +3,7 @@
      列表只取 posts 分区，动态等内容不进入词条页（§7.14）。 */}}
 {{ $pages := where .RegularPages "Section" "posts" }}
 {{ partial "term-hero.html" . }}
-<div class="container container--wide layout">
+<div class="container container--wide layout layout--sidebar-flow">
   <div class="layout-main">
     {{ if $pages }}
       {{ $paginator := .Paginate $pages }}

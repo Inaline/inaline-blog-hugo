@@ -5,6 +5,7 @@
  *  1. 把 Waline 返回的评论树渲染成 post-comments.html 里的结构
  *  2. 顶层评论分页、最新 / 最早排序、刷新
  *  3. 发布表单：邮箱头像、字数、回复上下文、提交与反馈
+ *  4. 评论点赞（可取消）与注册用户的 label 标签
  *
  * 配置全部写在 section 的 data-* 上（由模板按 hugo.yaml 的 params.waline 输出），
  * 脚本不读 Hugo 变量，模板与 JS 只靠这组锚点连接。
@@ -13,7 +14,7 @@
   'use strict';
 
   var USER_KEY = 'inaline-comment-user';
-  var MAX_LENGTH = 1000;
+  var LIKES_KEY = 'inaline-comment-likes';
 
   var section = document.querySelector('[data-post-comments]');
   if (!section || !window.InalineWaline) return;
@@ -174,7 +175,14 @@
     var main = create('div', 'post-comment-main');
 
     var head = create('header', 'post-comment-head');
-    head.appendChild(create('span', 'post-comment-author', comment.nick || '匿名'));
+    var identity = create('span', 'post-comment-identity');
+    identity.appendChild(create('span', 'post-comment-author', comment.nick || '匿名'));
+
+    // 用户标签由 Waline 后台按注册用户设置，只有关联账号的评论才带 label
+    var label = String(comment.label || '').trim();
+    if (label) identity.appendChild(create('span', 'post-comment-label', label));
+
+    head.appendChild(identity);
     head.appendChild(renderTime(comment.time));
     main.appendChild(head);
 
@@ -184,7 +192,11 @@
     var foot = create('div', 'post-comment-bubble-foot');
     var meta = renderMeta(comment);
     if (meta) foot.appendChild(meta);
-    foot.appendChild(renderReplyButton(comment, isReply ? rootId : comment.objectId));
+
+    var actions = create('div', 'post-comment-actions');
+    actions.appendChild(renderLikeButton(comment));
+    actions.appendChild(renderReplyButton(comment, isReply ? rootId : comment.objectId));
+    foot.appendChild(actions);
     bubble.appendChild(foot);
     main.appendChild(bubble);
 
@@ -295,6 +307,67 @@
     item.appendChild(icon);
     item.appendChild(create('span', '', text));
     return item;
+  }
+
+  /**
+   * 点赞按钮。Waline 的匿名点赞没有「谁点过」的记录，本机用 localStorage
+   * 记住自己的点赞状态：点击在点赞 / 取消之间切换，刷新 / 翻页后保持。
+   * 计数始终显示（含 0）；请求期间禁用，失败回滚到点击前的状态。
+   */
+  function renderLikeButton(comment) {
+    var id = comment.objectId;
+    var count = Math.max(0, Math.floor(Number(comment.like) || 0));
+
+    var button = create('button', 'post-comment-like');
+    button.type = 'button';
+
+    var icon = document.createElement('i');
+    icon.setAttribute('aria-hidden', 'true');
+    button.appendChild(icon);
+
+    var counter = create('span', 'post-comment-like-count');
+    button.appendChild(counter);
+
+    function paint(value, liked) {
+      count = Math.max(0, Math.floor(Number(value) || 0));
+      icon.className = liked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+      counter.textContent = formatCount(count);
+      button.classList.toggle('is-liked', liked);
+      button.setAttribute('aria-pressed', String(liked));
+      button.setAttribute('aria-label', (liked ? '已点赞，点击取消' : '点赞') + '（' + formatCount(count) + '）');
+      button.title = liked ? '取消点赞' : '点赞';
+    }
+
+    var liked = isLiked(id);
+    paint(count, liked);
+
+    button.addEventListener('click', function () {
+      if (button.disabled) return;
+
+      var previous = count;
+      var previousLiked = liked;
+      var nextLiked = !previousLiked;
+      var next = Math.max(0, previous + (nextLiked ? 1 : -1));
+
+      button.disabled = true;
+      paint(next, nextLiked);
+
+      client.like(id, nextLiked).then(function (updated) {
+        // 以服务端计数为准：LIKE_INC_MAX 大于 1 时一次可能加不止 1
+        liked = nextLiked;
+        saveLike(id, nextLiked);
+        paint(updated && updated.like !== undefined ? updated.like : next, nextLiked);
+        button.disabled = false;
+      }, function (error) {
+        console.error('[comments] 点赞失败', error);
+        paint(previous, previousLiked);
+        button.disabled = false;
+        // 失败提示挂在 tooltip 上，不打断评论区阅读
+        button.title = previousLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试';
+      });
+    });
+
+    return button;
   }
 
   function renderReplyButton(comment, rootId) {
@@ -681,7 +754,8 @@
 
   function updateCounter() {
     if (!els.counter) return;
-    els.counter.textContent = fields.comment.value.length + '/' + MAX_LENGTH;
+    // 服务端不限制评论长度，这里只显示字数：按码点计数，emoji 不会被算成两个字
+    els.counter.textContent = Array.from(fields.comment.value).length + ' 字';
   }
 
   function scheduleFormAvatar() {
@@ -767,6 +841,40 @@
   function saveUser(user) {
     try {
       localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } catch (e) {
+      /* 隐私模式下不可用，忽略 */
+    }
+  }
+
+  // 点赞状态按「服务地址#评论 id」记在本机，换服务器 / 换评论不会串。
+  // localStorage 不可用（隐私模式）时退化成不记住，本次页面内仍能正常点赞。
+  function readLikes() {
+    try {
+      var raw = localStorage.getItem(LIKES_KEY);
+      var parsed = raw ? JSON.parse(raw) : null;
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function likeKey(id) {
+    return (data.walineServer || '') + '#' + id;
+  }
+
+  function isLiked(id) {
+    return readLikes()[likeKey(id)] === true;
+  }
+
+  function saveLike(id, liked) {
+    var likes = readLikes();
+    if (liked) {
+      likes[likeKey(id)] = true;
+    } else {
+      delete likes[likeKey(id)];
+    }
+    try {
+      localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
     } catch (e) {
       /* 隐私模式下不可用，忽略 */
     }

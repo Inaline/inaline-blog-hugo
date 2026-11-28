@@ -11,3 +11,6 @@ resources/_gen/
 waline/.env
 waline/data/
 waline/node_modules/
+
+# CLAUDE.md
+CLAUDE.md

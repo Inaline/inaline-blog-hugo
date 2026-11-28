@@ -190,8 +190,8 @@
   }
 
   // -------------------------------------------------------------------------
-  // 文章列表顶部轮播图（§7.10）：点击右侧指示器切换；可选自动轮播
-  // 鼠标悬停 / 键盘焦点进入时暂停，移开 / 失焦后恢复。
+  // 文章列表顶部轮播图（§7.10）：点击右侧指示器切换；触屏可横向滑动；
+  // 可选自动轮播，鼠标悬停 / 键盘焦点进入时暂停，移开 / 失焦后恢复。
   // 鼠标点击指示器留下的焦点不算暂停，否则移开鼠标后轮播图永远停住
   // -------------------------------------------------------------------------
 
@@ -284,6 +284,75 @@
           schedule(); // 手动切换后重新计时，别让刚点到的图立刻被带走
         });
       });
+
+      // -----------------------------------------------------------------------
+      // 触屏横向滑动翻页：阈值 40px，横向位移必须明显大于纵向，
+      // 避免把页面的上下滚动误判成翻页。手指按住时暂停自动轮播，松手重新计时。
+      // 滑动结束后浏览器可能还会合成一次 click（整卡 / 标题链接），
+      // 在捕获阶段拦掉这一次，避免"刚切完图就跳走"。
+      // -----------------------------------------------------------------------
+
+      var touchStartX = 0;
+      var touchStartY = 0;
+      var touchTracking = false;
+      var swiped = false;
+      var swipeReset = null;
+
+      function clearSwipeTimer() {
+        if (!swipeReset) return;
+        clearTimeout(swipeReset);
+        swipeReset = null;
+      }
+
+      root.addEventListener('touchstart', function (e) {
+        clearSwipeTimer();
+        swiped = false;
+
+        if (e.touches.length !== 1) {
+          touchTracking = false;
+          return;
+        }
+
+        touchTracking = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        stop(); // 手指按住时先停自动轮播
+      }, { passive: true });
+
+      root.addEventListener('touchend', function (e) {
+        if (!touchTracking) return;
+        touchTracking = false;
+        schedule(); // 松手后重新计时
+
+        var touch = e.changedTouches && e.changedTouches[0];
+        if (!touch) return;
+
+        var dx = touch.clientX - touchStartX;
+        var dy = touch.clientY - touchStartY;
+        if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+
+        swiped = true;
+        show(dx < 0 ? index + 1 : index - 1);
+
+        // 没有后续合成 click 时也把标记收掉，别影响下一次键盘 / 鼠标点击
+        swipeReset = setTimeout(function () {
+          swiped = false;
+          swipeReset = null;
+        }, 400);
+      }, { passive: true });
+
+      root.addEventListener('touchcancel', function () {
+        touchTracking = false;
+        schedule();
+      }, { passive: true });
+
+      root.addEventListener('click', function (e) {
+        if (!swiped) return;
+        swiped = false;
+        clearSwipeTimer();
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
 
       root.addEventListener('mouseenter', function () { hovering = true; updatePause(); });
       root.addEventListener('mouseleave', function () { hovering = false; updatePause(); });

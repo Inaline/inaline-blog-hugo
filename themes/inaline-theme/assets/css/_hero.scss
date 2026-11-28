@@ -71,7 +71,7 @@
   justify-content: center;
   // 尺寸完全跟随可见文字（§7.5）：宽度 max-content 随打字生长（680px 兜底、
   // 75vw 封顶后才折行）；高度 min-height 兜底，折行后由内容撑高（每行 +38px）。
-  // 本期不做移动端适配
+  // ≤768px 改为固定 90vw 卡片，不再随打字伸缩（见文件末尾）
   width: max-content;
   min-width: 680px;
   max-width: 75vw;
@@ -306,6 +306,73 @@
     transform: translate(-50%, 12px);
     opacity: .7;
     animation-timing-function: cubic-bezier(.25, 0, .45, .45);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 移动端（DESIGN.md §7.5 / §7.6）
+//
+// 桌面卡片靠 max-content + 680px 下限随打字生长；手机上改为固定 90vw 的
+// 玻璃卡，避免一行字还没打完就被裁切，也不让卡片宽度一直跳。
+// 角落引号缩小内缩、背景切换按钮移到右上角，把底部让给收尾引号与正文。
+// ---------------------------------------------------------------------------
+
+@media (max-width: 768px) {
+  .hero {
+    --hero-avatar-size: 56px;
+  }
+
+  .hero-stage {
+    gap: var(--space-4);
+  }
+
+  .hero-profile {
+    gap: var(--space-3);
+  }
+
+  .hero-profile-name {
+    font-size: clamp(1.625rem, 8vw, 2rem);
+  }
+
+  .hero-quote {
+    width: 90vw;
+    max-width: 420px;
+    min-width: 0;
+    min-height: 150px;
+    padding: var(--space-8) var(--space-7) var(--space-6);
+  }
+
+  .hero-quote-mark {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .hero-quote-mark--open {
+    top: var(--space-3);
+    left: var(--space-3);
+  }
+
+  .hero-quote-mark--close {
+    right: var(--space-3);
+    bottom: var(--space-3);
+  }
+
+  .hero-quote-text {
+    font-size: 1.125rem;
+    line-height: 1.8;
+  }
+
+  .hero-cover-nav {
+    top: var(--space-3);
+    right: var(--space-3);
+    bottom: auto;
+    left: auto;
+  }
+
+  .hero-cover-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
   }
 }
 

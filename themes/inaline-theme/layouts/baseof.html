@@ -25,6 +25,7 @@
        （footer.html + main.js）。 */}}
   {{ if $pageBg }}{{ partial "page-background.html" . }}{{ end }}
   {{ partial "header.html" . }}
+  {{ partial "mobile-menu.html" . }}
   {{ partial "search-overlay.html" . }}
   <main class="main{{ if .IsHome }} main--home{{ else if $isTerm }} main--term{{ else if $archivePage }} main--archive{{ else if $isTaxonomy }} main--taxonomy{{ else if $searchPage }} main--search{{ else if $postHero }} main--post{{ end }}">
     {{ block "main" . }}{{ end }}

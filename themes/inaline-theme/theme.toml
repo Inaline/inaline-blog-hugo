@@ -1,4 +1,5 @@
 name = 'Inaline Theme'
+version = '1.0.0'
 license = 'MIT'
 description = '面向个人技术博客的极简 Hugo 主题'
 homepage = ''

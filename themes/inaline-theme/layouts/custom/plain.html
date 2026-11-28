@@ -11,7 +11,7 @@
   但右侧栏使用通用侧栏，没有文章目录。
 */}}
 {{ define "main" }}
-<article class="custom-page container container--wide layout">
+<article class="custom-page container container--wide layout layout--sidebar-flow">
   <div class="layout-main">
     <div class="custom-content">
       {{ with .Content }}<div class="markdown">{{ . }}</div>{{ end }}

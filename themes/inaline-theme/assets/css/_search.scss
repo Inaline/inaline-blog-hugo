@@ -400,30 +400,8 @@ body.search-open {
     margin-top: var(--space-4);
   }
 
-  // 搜索语境里的首页卡片改为上下排，缩略图铺满
-  .search-overlay-results .post-card,
-  .search-overlay-results .post-card--flip,
-  .search-page-post-list .post-card,
-  .search-page-post-list .post-card--flip {
-    flex-direction: column;
-  }
-
-  .search-overlay-results .post-card-cover,
-  .search-overlay-results .post-card--flip .post-card-cover,
-  .search-page-post-list .post-card-cover,
-  .search-page-post-list .post-card--flip .post-card-cover {
-    width: 100%;
-    aspect-ratio: 3 / 2;
-    clip-path: none;
-    -webkit-clip-path: none;
-  }
-
-  .search-overlay-results .post-card-body,
-  .search-overlay-results .post-card--flip .post-card-body,
-  .search-page-post-list .post-card-body,
-  .search-page-post-list .post-card--flip .post-card-body {
-    padding: var(--space-4);
-  }
+  // 搜索结果卡片的窄屏形态与全局文章列表共用（上下排 / 封面铺满），
+  // 见 _post.scss 的 §7.7 块，这里不再重复
 }
 
 @media (max-width: 560px) {

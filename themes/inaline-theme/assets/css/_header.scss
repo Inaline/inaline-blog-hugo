@@ -63,6 +63,9 @@
 }
 
 .header-left {
+  // 显式钉在第 1 列：移动端中部导航 display:none 后，栅格自动排布会把
+  // .header-actions 挤进第 2 列，两个按钮就跟在 Logo 后面而不是最右侧
+  grid-column: 1;
   display: flex;
   align-items: center;
   justify-self: start;
@@ -88,6 +91,7 @@
 // --- 中部导航 ---
 
 .site-nav {
+  grid-column: 2;
   height: 100%;
 }
 
@@ -306,6 +310,8 @@
 // --- 右侧操作区 ---
 
 .header-actions {
+  // 同 .header-left：固定在第 3 列，中部导航隐藏时仍靠最右
+  grid-column: 3;
   display: flex;
   align-items: center;
   gap: var(--space-1);

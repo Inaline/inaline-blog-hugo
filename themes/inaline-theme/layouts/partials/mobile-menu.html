@@ -1,0 +1,49 @@
+{{/*
+  移动端抽屉菜单（DESIGN.md §6.9）
+
+  ≤768px 由 Header 左侧的菜单按钮打开，从屏幕左侧滑出。
+  自上而下：
+    · 博主信息（复用 sidebar-profile.html，与桌面侧栏同一套内容）
+    · 页面 / 分类两个选项卡
+    · 页面树（menu.main，含可展开的子菜单）
+    · 分类列表（替代 ≤1080px 被撤掉的分类侧栏；标签 / 最新文章等仍留在桌面侧栏）
+  开合、选项卡、树形展开、焦点锁与 body 滚动锁都在 main.js 的 initMobileMenu()。
+*/}}
+<div class="mobile-menu-root" data-mobile-menu>
+  <div class="mobile-menu-overlay" data-mobile-menu-close aria-hidden="true"></div>
+
+  <aside class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title" aria-hidden="true" tabindex="-1" inert>
+    <h2 class="visually-hidden" id="mobile-menu-title">站点菜单</h2>
+
+    <button type="button" class="mobile-menu-close" data-mobile-menu-close aria-label="关闭菜单">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+
+    <div class="mobile-menu-head">
+      {{ partial "sidebar-profile.html" . }}
+
+      <div class="mobile-menu-tabs" role="tablist" aria-label="菜单视图">
+        <button type="button" class="mobile-menu-tab is-active" id="mobile-menu-tab-pages" role="tab" aria-selected="true" aria-controls="mobile-menu-pane-pages" data-menu-tab="pages" tabindex="0">页面</button>
+        <button type="button" class="mobile-menu-tab" id="mobile-menu-tab-categories" role="tab" aria-selected="false" aria-controls="mobile-menu-pane-categories" data-menu-tab="categories" tabindex="-1">分类</button>
+      </div>
+    </div>
+
+    <div class="mobile-menu-scroll">
+      <div class="mobile-menu-pane is-active" id="mobile-menu-pane-pages" role="tabpanel" aria-labelledby="mobile-menu-tab-pages" data-menu-pane="pages">
+        <nav aria-label="页面导航">
+          {{ if site.Menus.main }}
+            {{ partial "mobile-menu-nav.html" (dict "page" . "items" site.Menus.main "level" 1) }}
+          {{ else }}
+            <p class="mobile-menu-empty">暂无页面</p>
+          {{ end }}
+        </nav>
+      </div>
+
+      <div class="mobile-menu-pane" id="mobile-menu-pane-categories" role="tabpanel" aria-labelledby="mobile-menu-tab-categories" data-menu-pane="categories" hidden>
+        <nav aria-label="分类导航">
+          {{ partial "mobile-menu-categories.html" . }}
+        </nav>
+      </div>
+    </div>
+  </aside>
+</div>

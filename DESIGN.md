@@ -14,7 +14,7 @@
 | 站点语言 | 简体中文 |
 | 主题色 | `#FA5D19` |
 | 布局基调 | 列表页两栏（文章列表 + 右侧栏）；文章页为顶部大图（标题区叠在图上）+ 两栏正文卡片；首页为整页封面背景 + 通栏 Hero；自定义页按带大图的 hero / 不带大图的 plain 两套模板渲染（§10） |
-| 响应式 | ⏳ 统一在后续阶段实现；当前只有两栏 → 单栏的断点降级 |
+| 响应式 | ⏳ 分阶段实现；标题栏 / 抽屉（§6.9）、首页 Hero / 轮播（§7.5 / §7.10）、文章页头图 / 正文栏（§8）、带侧栏页面下移（§7.8，文章页目录除外）已完成，其余细节待适配 |
 | 技术形态 | Hugo 静态生成（SSR），无前端框架 |
 
 ---
@@ -65,6 +65,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --color-primary-soft:   rgba(250, 93, 25, .10);   // 弱强调底色（Markdown mark 高亮等）；暗色 .12
 --color-primary-highlight: rgba(250, 93, 25, .30); // strong 下缘的荧光条（§9.3）
 --color-hr-line:          rgba(250, 93, 25, .38); // 分割线虚线（§9.4）；暗色 .42
+--color-like:             #FF5A70;                // 评论点赞的明亮饱和红（§8.8），亮暗主题共用
 
 // Markdown 标题前四角星的层级色（§9.2）：亮暗主题共用，纯装饰
 --color-heading-mark-1: #FA5D19;  // h1 橙
@@ -87,6 +88,8 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --post-hero-scrim-bottom: rgba(0, 0, 0, .72);     // 文章页大图底部深底（标题区）
 --footer-scrim:         rgba(26, 26, 26, .48);    // 页脚深色毛玻璃底
 --footer-blur:          3px;
+--menu-overlay:         rgba(0, 0, 0, .45);       // 移动端抽屉遮罩（§6.9），两种主题同值
+--menu-overlay-blur:    4px;                      // 抽屉遮罩毛玻璃强度
 
 --lightbox-backdrop:    rgba(8, 10, 14, .92);     // 图片预览遮罩（§5.4）
 --lightbox-btn-bg:      rgba(255, 255, 255, .10); // 预览按钮底色
@@ -106,7 +109,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 
 > 暗色的四个微调在 `dark-tokens` 覆写：`--color-primary-hover: #FF7A3D`、
 > `--color-primary-soft: rgba(250,93,25,.12)`、`--color-hr-line: rgba(250,93,25,.42)`、
-> `--color-quote-text: #B6B1AA`。主题色、标题星色、引用底色与代码窗口的 JetBrains 配色不翻。
+> `--color-quote-text: #B6B1AA`。主题色、标题星色、点赞红、引用底色与代码窗口的 JetBrains 配色不翻。
 
 社交图标品牌色（同样只在 `:root` 定义）：
 
@@ -196,7 +199,7 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --content-width: 42rem;     // 单栏内容宽度（文章详情等）
 --sidebar-width: 280px;
 --carousel-height: 270px;   // 首页轮播图，与侧栏 profile 卡等高
---post-hero-height: clamp(240px, 30vw, 380px); // 文章页顶部大图：按视口宽度伸缩，不随窗口高度变化
+--post-hero-height: clamp(320px, 30vw, 380px); // 文章页顶部大图：按视口宽度伸缩，不随窗口高度变化；320px 下限保证手机高度
 --post-wave-height: 56px;  // 文章页大图底部浪花高度；≤768px 收为 44px（§8.1）
 --toc-body-max-height: min(500px, 55vh); // 侧栏目录列表滚动区上限（§8.5）
 --toc-sub-max-height: 500px;             // 子目录展开动画的 max-height 上限（§8.5）
@@ -204,7 +207,9 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --header-blur: 20px;
 
 // 层级
---z-header: 100; --z-dropdown: 110; --z-search: 900; --z-lightbox: 1000;
+--z-header: 100; --z-dropdown: 110; --z-search: 900;
+--z-menu-overlay: 930; --z-menu: 940;
+--z-lightbox: 1000;
 
 // 动效
 --ease: cubic-bezier(.4, 0, .2, 1);
@@ -235,6 +240,7 @@ themes/inaline-theme/
 │   │   ├── _base.scss             # reset + 基础排版 + 容器
 │   │   ├── _page-bg.scss          # 整页背景：首页 / 分类 / 标签词条页（§7.1 / §7.12）
 │   │   ├── _header.scss           # Header（§6）
+│   │   ├── _mobile-menu.scss      # 移动端标题栏入口 + 抽屉菜单（§6.9）
 │   │   ├── _hero.scss             # Hero（§7.2–§7.6）
 │   │   ├── _post.scss             # 文章卡片 / 分页 / 标签（§7.7）
 │   │   ├── _markdown.scss         # Markdown 正文排版（§9）
@@ -252,17 +258,17 @@ themes/inaline-theme/
 │   │   ├── _motion.scss           # 进入 / 滚动进场动效（§5.3）
 │   │   └── _lightbox.scss         # 图片预览（§5.4）
 │   ├── js/
-│   │   ├── main.js                # 全局：主题、封面记忆（§7.1）、Header 滚动态、页脚运行时长、整卡跳转、复制、代码窗口、进场动效
+│   │   ├── main.js                # 全局：主题、封面记忆（§7.1）、Header 滚动态、移动端抽屉菜单（§6.9）、页脚运行时长、整卡跳转、复制、代码窗口、进场动效
 │   │   ├── lightbox.js            # 全局：图片预览分组 / 缩放 / 切换（§5.4）
 │   │   ├── vendor/fuse.min.js     # Fuse.js v7.1.0（Apache-2.0），客户端搜索（§7.15）
 │   │   ├── search-core.js         # 搜索索引加载 / Fuse 查询 / 结果卡渲染（§7.15）
 │   │   ├── search.js              # 全局：搜索浮层开合 / 焦点 / ⌘ K / 结果（§7.15）
-│   │   ├── waline.js              # Waline API 封装：列表 / 发表 / 计数 / 近期评论 / 错误 / 头像（§8.8 / §7.11）
+│   │   ├── waline.js              # Waline API 封装：列表 / 发表 / 点赞 / 计数 / 近期评论 / 错误 / 头像（§8.8 / §7.11）
 │   │   ├── waline-stats.js        # 全站 Waline 数据回填：阅读量 / 评论数 / 近期评论 / 页脚统计（§7.11）
 │   │   ├── emoji.js               # 评论区表情包：预设拉取 / 选择器 / 颜文字（§8.8）
 │   │   ├── format.js              # 评论预览的轻量 Markdown（§8.8）
-│   │   ├── comment.js             # 评论区：渲染 / 分页 / 排序 / 表单（§8.8 / §10）
-│   │   ├── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图
+│   │   ├── comment.js             # 评论区：渲染（含点赞 / 用户标签）/ 分页 / 排序 / 表单（§8.8 / §10）
+│   │   ├── pages/home.js          # 首页：一言打字机 + 背景切换 + 轮播图（含触屏横向滑动）
 │   │   ├── pages/post.js          # 文章页 / 自定义 hero 页：目录高亮 / 折叠 / 阅读进度（§8.5 / §10）
 │   │   ├── pages/moments.js       # 动态列表：有评论的动态展示前 5 条预览（§7.14）
 │   │   └── pages/search.js        # 搜索页：q 状态 / 300ms 防抖 / 前端分页（§7.15）
@@ -290,6 +296,9 @@ themes/inaline-theme/
     └── partials/
         ├── head.html              # meta、主题内联脚本、字体、CSS
         ├── header.html            # Header 外壳
+        ├── mobile-menu.html       # 移动端抽屉菜单：博主信息 + 页面 / 分类选项卡（§6.9）
+        ├── mobile-menu-nav.html   # 抽屉页面树递归渲染（§6.9）
+        ├── mobile-menu-categories.html # 抽屉分类列表（§6.9）
         ├── search-overlay.html    # 全屏搜索浮层（§7.15）
         ├── search-hero.html       # 搜索页顶部大图与搜索框（§7.15）
         ├── nav-item.html          # 菜单项递归渲染（§6.5）
@@ -341,7 +350,7 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页 / 自定义页 / 归档页 / 分类标签索引页 / 搜索页 / 动态页页脚背景（§7.1 / §7.12 / §7.13 / §7.14 / §7.15 / §10）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页 / 自定义页 / 归档页 / 分类标签索引页 / 搜索页 / 动态页页脚背景（§7.1 / §7.12 / §7.13 / §7.14 / §7.15 / §10）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、移动端抽屉菜单开合 / 选项卡 / 页面树（§6.9）、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `lightbox.js`：全局图片预览（§5.4），点击监听用事件委托，动态内容无需重新初始化；暴露 `window.inalineLightboxInit`。
 - `vendor/fuse.min.js`：Fuse.js v7.1.0（Apache-2.0），本地 vendor，不依赖 CDN（§7.15）。
 - `search-core.js`：搜索索引加载（`/index.json`，懒加载后缓存）、Fuse 查询（多词 AND 过滤、字段权重）、结果卡渲染（首页 `.post-card`）。浮层与搜索页共用，暴露 `window.inalineSearchCore`。
@@ -449,6 +458,7 @@ themes/inaline-theme/
   用 `fixed` 而非 `sticky`，整页背景（首页 / 分类 / 标签词条页）和首页 Hero 才能从 `y=0` 铺满并钻到 Header 底下。
 - 背景 `--header-bg` + `backdrop-filter: blur(--header-blur)`；用 `--shadow-header` 分层，不用分割线。
 - 内部三栏 Grid：`grid-template-columns: 1fr auto 1fr`，容器 `--container-width`，左右内边距 `--space-5`。中间导航绝对居中，不因左右宽度不等而偏移。
+- 左 / 中 / 右三组显式 `grid-column: 1 / 2 / 3`：移动端中部导航 `display: none` 后，栅格自动排布不会把右操作区挤到第 2 列，两个按钮仍贴最右。
 - 进场：`.header-inner` 从上方 8px 淡入落位，`--duration-reveal`（§5.3）；`prefers-reduced-motion` 下直接显示。
 - 滚动态：滚动超过 8px 加 `.is-scrolled`，阴影升为 `--shadow-md`。
 - 显隐：向下滚动且离开顶部安全区（Header 高度 + 24px）后加 `.is-hidden`（`translateY(-100%)`）收起；向上滚动立即展开；顶部安全区内恒展开；键盘焦点进入 Header 时强制展开。位移小于 8px 不判定方向。
@@ -555,6 +565,27 @@ menu:
 
 搜索按钮的开合在独立 `search.js` 里（§7.15），不塞进 Header 模块：它还要处理全屏焦点锁、Esc / ⌘K 与 body 滚动锁。
 
+### 6.9 移动端标题栏与抽屉菜单 ✅
+
+`≤768px` 隐藏中部导航与桌面下拉，Logo 左侧出现菜单按钮；`≥769px` 抽屉整棵 DOM `display:none`，桌面 Header 保持 §6.1–§6.6 的规格不变。
+
+| 项 | 规格 |
+| --- | --- |
+| 断点 | `max-width: 768px`：`.site-nav` 隐藏、`.menu-toggle` 显示；`min-width: 769px`：`.mobile-menu-root` 不渲染 |
+| 菜单按钮 | `.action-btn.menu-toggle`（36×36），`fa-bars`；`aria-label`、`aria-controls="mobile-menu"`、`aria-expanded`、`aria-haspopup="dialog"` |
+| 遮罩 | 全屏 fixed，`--menu-overlay` + `blur(--menu-overlay-blur)`；`z-index: --z-menu-overlay`；点击关闭，`touch-action: none` 阻止背景橡皮筋滚动 |
+| 抽屉 | 左侧 fixed，宽 `80vw`、上限 300px，高 `100dvh`，底色 `--color-elevated`，`--shadow-dropdown`，`z-index: --z-menu`；`translateX(-100%) → 0`，`--duration-base` |
+| 关闭 | 右上角 X（36×36）+ 遮罩 + Esc；关闭后焦点回到打开前的元素 |
+| 滚动锁 | `body.is-menu-open { overflow: hidden; }`；抽屉头（博主信息 + 选项卡）固定，只有列表区滚动，`overscroll-behavior: contain` |
+| 内容 | 博主信息（复用 `sidebar-profile.html`，在抽屉里去掉卡片底色 / 阴影 / 圆角，只留底部分隔线）+「页面 / 分类」选项卡；标签、最新文章、近期评论暂不进入抽屉，留给后续移动端两栏合一方案 |
+| 页面 tab | `menu.main` 递归；有子项的节点为可展开按钮，选中分支默认展开；当前项 `.is-active` + `aria-current="page"`，父级同步高亮 |
+| 分类 tab | `site.Taxonomies.categories.ByCount` 全量渲染（抽屉可滚动）；当前词条页，或文章 front matter 的 `categories` 命中词条时选中 |
+| 选项卡 | `role=tablist / tab / tabpanel`，`aria-selected` 与 `tabindex` 同步；左右方向键切换；切换只切 `hidden`，焦点留在 tab 上 |
+| 折叠 | 子菜单用 `grid-template-rows: 0fr → 1fr` 展开 / 收起；收起时加 `inert`，展开时撤销，隐藏链接不进入 Tab 与读屏树 |
+| 焦点 | 打开后焦点落在关闭按钮；Tab / Shift+Tab 在抽屉内循环；`inert` + `aria-hidden` 随开合同步 |
+| 动效降级 | `prefers-reduced-motion` 下抽屉、遮罩、选项卡、链接与折叠动画全部关闭 |
+| JS | `main.js` 的 `initMobileMenu()`；`data-mobile-menu` + `dataset.mobileMenuBound` 幂等；`matchMedia('(min-width: 769px)')` 跨断点自动收起，避免遮罩 / 滚动锁残留 |
+
 ---
 
 ## 7. 首页
@@ -624,9 +655,10 @@ menu:
 | --- | --- |
 | 配置 | `params.hero.hitokoto`：字符串列表；不配置则整张卡片不渲染 |
 | 进场 | 淡入 + 上移 24px，`--duration-reveal`，延迟 140ms；打字机顺延到 1100ms 后开打（§5.3） |
-| 尺寸 | `width: max-content`，`min-width: 680px`，`max-width: 75vw`；`min-height: 140px`；内边距 `--space-8` 上下、`--space-8 + --space-4` 左右 |
+| 尺寸 | 桌面：`width: max-content`，`min-width: 680px`，`max-width: 75vw`；`min-height: 140px`；内边距 `--space-8` 上下、`--space-8 + --space-4` 左右。`≤768px`：固定 `90vw`、上限 420px、`min-width: 0`、`min-height: 150px`，内边距上 48 / 左右 40 / 下 32 |
 | 外观 | `background: --hero-card-bg` + `backdrop-filter: blur(--hero-card-blur)`；`--radius-xl`；无描边、无投影 |
-| 引号 | 左上 / 右下各一个，同一 SVG 旋转 180°，`2rem`，`--color-over-hero` @ `opacity: .35`，内缩 `--space-5` |
+| 引号 | 桌面：左上 / 右下各一个，同一 SVG 旋转 180°，`2rem`，`--color-over-hero` @ `opacity: .35`，内缩 `--space-5`。`≤768px`：缩为 `1.5rem`，内缩 12px |
+| 移动端 | `≤768px` 卡片不再随打字伸缩；正文 `1.125rem / 1.8`；背景切换按钮从左下移到卡片右上角，32×32 |
 | 文字 | `--color-over-hero`，`1.25rem / 1.9`，居中，带暗色投影兜底 |
 | 光标 | 2px 竖条，`1.1em` 高，`steps(2, jump-none)` 方波闪烁；打字 / 删除期间常亮 |
 | 时序 | 打字 110ms/字（中文标点后 +260ms）→ 停留 2800ms → 删除 45ms/字 → 500ms 后下一条 |
@@ -635,7 +667,7 @@ menu:
 | 降级 | 无 JS：静态渲染第一条；`reduced-motion`：静态展示随机一条，光标隐藏 |
 | 切换按钮 | 卡片左下角左右箭头（24×24，`opacity: .55` → 悬停 1），仅多于一张封面时渲染 |
 
-- 卡片尺寸完全跟随可见文字，不预留整句宽高：打字时宽度增长，到 `75vw` 封顶后折行，高度由内容撑高。
+- 桌面端卡片尺寸完全跟随可见文字，不预留整句宽高：打字时宽度增长，到 `75vw` 封顶后折行，高度由内容撑高；`≤768px` 改为固定 `90vw` 卡片，避免窄屏上一边打字一边裁切。
 - 卡片内的角落引号、切换按钮均为绝对定位，不进 flex 流，不参与卡片尺寸计算。
 
 ### 7.6 博主头像与名称 ✅
@@ -649,6 +681,7 @@ menu:
 | 头像 | `--hero-avatar-size` 圆形，`object-fit: cover`，2px 半透明白圈；悬停顺时针转一圈，移出逆时针转回（`transition` 500ms，`reduced-motion` 下不转） |
 | 名称 | `params.author`，`3.5rem`，字重 500，字距 `.02em`，`--color-over-hero` |
 | 名称发光 | 暗色投影兜底 + `--glow-name` 双层白色辉光（近层收边、远层弥散） |
+| 移动端 | `≤768px`：`--hero-avatar-size` 覆写为 56px，名称 `clamp(1.625rem, 8vw, 2rem)`，徽章内间距 `--space-3`，徽章与卡片间距 `--space-4` |
 
 ### 7.7 文章卡片与分页 ✅
 
@@ -658,6 +691,8 @@ menu:
 | --- | --- |
 | 模板 | `post-card.html`（`page` + `index`）、`pager.html`（`paginator`）、`cover-pool.html` |
 | 布局 | 左图右文；奇数条图在左、偶数条图在右（`.post-card--flip` → `row-reverse`）；图文间距 `--space-5` |
+| 窄屏布局 | `≤768px`：卡片改上下排（封面在上、文字在下），封面宽 100%、`aspect-ratio: 3 / 2`，取消斜切与交替方向；卡片 `gap` 归零，图文间距只由文字列的上内边距 `--space-4` 承担。首页 / 分区页 / 词条页与搜索结果共用这一套 |
+| 列表外边距 | `≤560px`：`.container.layout--sidebar-flow`（首页 / 分区 / 词条 / 索引 / 搜索 / 归档 / 动态 / 自定义 plain）左右留白从 `--space-5` 收到 `--space-4`，文章卡、轮播图与下方侧栏卡一起变宽；卡片之间的纵向间距仍为 `--space-5` |
 | 卡面 | `--color-elevated` + `--shadow-sm` + `--radius-lg`，`overflow: hidden`，无整卡内边距 |
 | 悬停 | 卡片 `--shadow-md` + `translateY(-2px) scale(1.01)`；封面只在封面自身悬停时 `scale(1.04)`；`reduced-motion` 下撤掉位移 / 缩放，保留颜色与阴影 |
 | 封面 | 宽 300px，`aspect-ratio: 3 / 2` 作为下限，`align-self: stretch` 撑满卡片全高，`object-fit: cover`；外层 `clip-path` 斜切一角 |
@@ -683,6 +718,7 @@ menu:
 | 栅格 | `grid-template-columns: minmax(0, 1fr) var(--sidebar-width)`，间距 `--space-5`，`align-items: start` |
 | 宽度 | 容器 1200（含左右内边距各 24）→ 内容 1152；侧栏 280，主栏 848 |
 | 断点 | `max-width: 1080px`：转单列并 `display: none` 侧栏，不做"侧栏变窄"的中间态 |
+| 移动端 | `≤768px`：带侧栏的页面（`.layout--sidebar-flow`：首页 / 分区 / 词条 / 索引 / 搜索 / 归档 / 动态 / 自定义 plain）把侧栏接到主内容后面作为单列第二段；博主卡与分类卡改由 §6.9 抽屉承接并在此隐藏，只保留最新文章 / 近期评论 / 标签。文章页与自定义 hero 页的目录吸顶组暂不参与；769–1080px 仍撤掉侧栏，是后续断点调整的范围 |
 | 侧栏 | 纵向 flex，间距 `--space-5`；占位卡 `.sidebar-card` 与文章卡片同语言（`--color-elevated` + `--shadow-sm` + `--radius-lg`，`min-height: 120px`） |
 | 已实现组件 | 博主信息卡 `sidebar-profile.html`、目录 `sidebar-toc.html`（文章页与自定义 hero 页，与最新文章同组，排在博主卡之后，见 §8.5 / §10）、最新文章 `sidebar-latest.html`、近期评论 `sidebar-comments.html`、分类 `sidebar-categories.html`、标签 `sidebar-tags.html`；文章页 / 自定义 hero 页侧栏为「博主卡 +（目录 + 最新文章）吸顶组」，自定义 plain 页、词条 / 索引页与列表页用通用侧栏 |
 | 待实现组件 | 公告（占一张 `.sidebar-card`，带独立 `enable` 开关） |
@@ -765,8 +801,10 @@ menu:
 | 图片 | `image` 支持网络 URL 与 assets 路径；未配 / 解析失败回退封面池（与文章卡片同池） |
 | 卡片 | 统一为整图背景：图片铺满，底部线性渐变压暗，日期 / 标题 / 摘要压在底部；标题为链接时悬停加下划线 |
 | 点击 | 有 `url` 的条目整卡可点（`data-card-href` + 点击监听）；指示器与标题链接保留原生行为，拖选文字不跳转 |
-| 尺寸 | 与主栏同宽；桌面高度取 `--carousel-height`（270px，与侧栏 profile 卡等高，首行底边对齐）；≤1080px 侧栏隐藏后恢复 `aspect-ratio: 3 / 1` + `min-height: 220px`；`--radius-lg` + `--shadow-sm` |
-| 切换 | 右侧竖向圆形指示器；未选中 12px 白色圆点（无阴影 / 描边），选中拉长为 32px（两个圆点 + 间距），高度 / 颜色过渡 `--duration-slow` |
+| 尺寸 | 与主栏同宽，显式 `width: 100%`（避免 `aspect-ratio` + `max-height` 在部分浏览器反推宽度撑出容器）；桌面高度取 `--carousel-height`（270px，与侧栏 profile 卡等高，首行底边对齐）；`≤1080px` 侧栏隐藏后恢复 `aspect-ratio: 3 / 1` + `min-height: 220px`；`≤768px` 改 `aspect-ratio: 16 / 9`，高度 220–280px；`--radius-lg` + `--shadow-sm` |
+| 切换 | 桌面 / 移动端均为右侧竖向圆形指示器；未选中 12px 白色圆点（无阴影 / 描边），选中拉长为 32px（两个圆点 + 间距），高度 / 颜色过渡 `--duration-slow`。`≤768px`：按钮触控区 24×24、视觉圆点 8px、选中纵向拉长到 20px，按钮间距收到 `--space-1` |
+| 移动端 | `≤768px`：标题 `1.125rem`、两行截断，摘要 `0.8125rem`、保留两行；文字区内边距上 16 / 右 40 / 下 24 / 左 16，右侧给竖向指示器让位 |
+| 手势 | 触屏横向滑动超过 40px 且横向位移大于纵向时切换上一张 / 下一张；手指按住暂停自动轮播，松手重新计时；滑动后的合成 click 在捕获阶段拦掉，避免误跳文章 |
 | 过渡 | 幻灯片交叉淡入淡出 `--duration-slow`；图片从 `scale(1.1)` 缓落到 1（`--duration-slower`），文字延迟 100ms 向上落位 |
 | 悬停 | 鼠标移入 / 键盘焦点进入（`:focus-visible`）时，当前图片放大到 `1.04` 并加 `blur(2px)`，`--duration-base`；与文章封面同一档缩放。鼠标点击指示器留下的焦点不算，移开鼠标即复原 |
 | 悬停分层 | 缩放 / 模糊挂在外层 `.carousel-bg-wrap`，换片的 `scale(1.1 → 1)` 挂在 `.carousel-bg`，两段 `transform` 互不覆盖 |
@@ -887,7 +925,7 @@ Header 右侧搜索按钮打开全屏浮层；**初态只有一块居中的胶�
 
 | 项 | 规格 |
 | --- | --- |
-| 容器 | `.post-hero`：`position: relative`，flex 列、`justify-content: flex-end`；`min-height: --post-hero-height`（`clamp(240px, 30vw, 380px)`），按视口宽度伸缩、不随窗口高度变化；窄屏标题区变高时允许大图一起撑高 |
+| 容器 | `.post-hero`：`position: relative`，flex 列、`justify-content: flex-end`；`min-height: --post-hero-height`（`clamp(320px, 30vw, 380px)`），按视口宽度伸缩、不随窗口高度变化；320px 下限保证手机上首图有足够高度，窄屏标题区变高时允许大图一起撑高 |
 | 图片 | 复用 `post-cover.html`：front matter 的 `cover` 优先，未配置 / 解析失败回退封面池；绝对定位铺满，`object-fit: cover`，`fetchpriority="high"` |
 | 压暗 | `::after` 双层渐变：顶部 `--post-hero-scrim-top` → 28% 处透明（Header 白字兜底）；底部 `--post-hero-scrim-bottom` → 58% 处过渡到 `--post-hero-scrim-top` → 顶部透明，为标题区铺深底 |
 | 浪花 | `.post-hero-wave` 绝对定位在大图底部，高 `--post-wave-height`（56px，`≤768px` 收为 44px），`z-index: 2`（压暗遮罩 1 与标题区 3 之间），`overflow: hidden`、`pointer-events: none`；SVG `viewBox="0 24 150 28"` 在 `<defs>` 里定义 `#post-hero-wave-path`，四层 `<use>` 复用同一条曲线，以 9 / 13 / 17 / 24s 横向漂移（`cubic-bezier(.36,.45,.63,.53)`、负延迟形成视差）；`fill: var(--color-bg)`，透明度依次 .7 / .5 / .3 / 1，最底一层与正文灰底衔接；窄屏隐藏中间两层，`prefers-reduced-motion` 下停止 |
@@ -902,8 +940,9 @@ Header 右侧搜索按钮打开全屏浮层；**初态只有一块居中的胶�
 
 ### 8.3 正文两栏
 
-- 容器复用 `.container--wide` + `.layout.layout--post`（与首页文章列表同一套宽度），上方留 `--space-6`；主栏桌面宽度与首页文章列表一致（1200 − 48 内边距 − 24 栏间距 − 280 侧栏 = 848）。
+- 容器复用 `.container--wide` + `.layout.layout--post`（与首页文章列表同一套宽度），上方留 `--space-6`（32px，给底部 44px 高的浪花留出视觉缓冲，移动端沿用）；主栏桌面宽度与首页文章列表一致（1200 − 48 内边距 − 24 栏间距 − 280 侧栏 = 848）。
 - 正文 `.post-content` 本身就是一张卡片：`--color-elevated` + `--shadow-sm` + `--radius-lg`，内边距 `--space-6`，视觉语言与侧栏 `.sidebar-card` 一致；卡片宽度对齐首页文章列表的 848px，窄屏时居中收窄。卡片内部由 `.markdown` 承载正文，末尾追加 `.article-meta` 信息卡（§8.6）、`.post-nav` 上一篇 / 下一篇（§8.7）与 `.post-comments` 评论区（§8.8）。
+- 移动端（`≤768px`）：大图与正文之间的上间距保持 `--space-6`（32px，避开底部浪花），卡片内边距从 `--space-6` 收到 `--space-5`；`≤560px` 时卡片内边距与容器左右留白再一起收到 `--space-4`，正文列更宽。卡片自身的白面、圆角与阴影不变。
 - 复用 `.layout` / `.layout-main` / `partial "sidebar.html"`；`.layout--post` 把侧栏拉满主栏高度（给目录 sticky 留行程，§8.5）；`≤1080px` 时随 `.layout` 一起撤掉侧栏，正文卡片居中。
 - 正文元素的基础排版统一在 `_markdown.scss`，容器加 `.markdown` 类；图片统一 `max-width: 100%`，避免原图撑破内容列。
 
@@ -979,10 +1018,10 @@ Header 右侧搜索按钮打开全屏浮层；**初态只有一块居中的胶�
 **配置与文件**
 
 - `hugo.yaml` 的 `params.waline`：`enable`（总开关）、`server`（服务地址）、`page_size`（每页顶层评论数）、`avatar_prefix`（表单头像 hash 前缀）、`avatar_params`（原样拼在 hash 后的查询串，如 `?d=monsterid`）、`emoji`（表情选项卡）。缺少 `server` 或 `enable: false` 时，评论区与相关脚本都不渲染 / 不加载。
-- `waline.js`：`create({ server })` 返回 `list()` / `add()`。`list()` 把 `sort: 'newest' | 'oldest'` 映射到 Waline 的 `insertedAt_desc` / `insertedAt_asc`，统一返回 `{ comments, page, pageSize, totalPages, count }`；`add()` 透传评论字段；`avatarUrl(mail, prefix, nick, params)` 复刻服务端头像规则：纯数字昵称或 `<数字>@qq.com` 取 QQ 头像，其余走 `avatar_prefix + MD5(trim + lowercase mail) + avatar_params`。
+- `waline.js`：`create({ server })` 返回 `list()` / `add()` / `like()`。`list()` 把 `sort: 'newest' | 'oldest'` 映射到 Waline 的 `insertedAt_desc` / `insertedAt_asc`，统一返回 `{ comments, page, pageSize, totalPages, count }`；`add()` 透传评论字段；`like(id, on)` 向 `/api/comment/<id>` 发送 `{ like: true | false }`（无需登录），返回更新后的评论，`like` 为服务端最新计数；`avatarUrl(mail, prefix, nick, params)` 复刻服务端头像规则：纯数字昵称或 `<数字>@qq.com` 取 QQ 头像，其余走 `avatar_prefix + MD5(trim + lowercase mail) + avatar_params`。
 - `emoji.js`：读取 `params.waline.emoji`。图片包支持 `preset`（`@waline/emojis@1.4.0/<name>` 简写或完整目录 URL，运行时读取 `<preset>/info.json`）与 `folder + items` 自定义包；文本包用 `type: "text"` + `items`。对外暴露 `load()` / `toHtml()` / `protect()` / `restore()`；某个图片包加载失败只跳过该包，颜文字仍可用。
 - `format.js`：预览用轻量 Markdown。先转义再生成 HTML，支持段落 / 换行、标题、引用、有序 / 无序列表、分隔线、围栏代码、行内代码、粗体、斜体、删除线、链接与图片；链接只放行 http(s) / 相对路径 / mailto / 锚点。预览是近似效果，最终以服务端渲染为准。
-- `comment.js`：幂等 `init()`，暴露 `window.inalineCommentInit`；从 section 的 `data-waline-server` / `data-comment-path` / `data-comment-page-size` / `data-comment-avatar-prefix` / `data-comment-avatar-params` 与 `[data-comment-emoji-config]` 读配置。发布成功后把昵称 / 邮箱 / 网址写进 `localStorage` 的 `inaline-comment-user`，下次自动回填。
+- `comment.js`：幂等 `init()`，暴露 `window.inalineCommentInit`；从 section 的 `data-waline-server` / `data-comment-path` / `data-comment-page-size` / `data-comment-avatar-prefix` / `data-comment-avatar-params` 与 `[data-comment-emoji-config]` 读配置。发布成功后把昵称 / 邮箱 / 网址写进 `localStorage` 的 `inaline-comment-user`，下次自动回填；点赞状态按「服务地址#评论 id」写进 `localStorage` 的 `inaline-comment-likes`。
 - 无 JS 时列表停在「评论加载中…」并显示 `<noscript>` 提示：评论依赖服务端数据，不做静态降级。
 
 | 项 | 规格 |
@@ -994,10 +1033,10 @@ Header 右侧搜索按钮打开全屏浮层；**初态只有一块居中的胶�
 | 表单头像 | 复用 `.post-comment-avatar` 外框：`--color-bg` 底 + `fa-user`；昵称 / 邮箱输入（共用 250ms 防抖）后按 `avatarUrl` 换成头像。规则与服务端一致：纯数字昵称或 `<数字>@qq.com` 取 `https://q1.qlogo.cn/g?b=qq&nk=<数字>&s=100`，其余走 WeAvatar（`avatar_prefix` + MD5 + `avatar_params`，本仓库配 `?d=monsterid`）；服务端 `waline/.env` 的 `GRAVATAR_STR` 需返回同样的规则；图片加载失败退回 `fa-user` |
 | 表单字段 | 三列 grid（`≤768px` 单列），`name` 取 `mail` / `nick` / `link`，`autocomplete` 对应 email / nickname / url；每个字段是 `label` 包裹的外框：左侧 `.post-comment-field-label` 标签插槽（邮箱 / 昵称 / 网址，muted、`--color-bg` 灰底、左右 `--space-2` 内边距、右侧 1px `--color-border` 竖线），右侧透明底输入框铺满剩余宽度；外框高 40px、输入区 `--color-elevated` 白底（暗色为抬升层）+ 1px `--color-border` + `--radius-md`；`:focus-within` 只把外框边框转主题色，不改文字颜色；输入框自身无描边、不加光圈 / 阴影；占位提示只显示「必填」/「可选」 |
 | 回复上下文 | 点评论的「回复」后，字段与正文之间出现 `.post-comment-reply-hint`，显示 `回复 @昵称` 与取消按钮；textarea 占位变成 `回复 @昵称…`，焦点移到表单。提交时带 `pid`（直接回复对象）与 `rid`（顶层评论），服务端把回复挂到顶层评论下；回复成功后留在当前页并滚回父评论 |
-| 表单正文 | textarea 最小高 104px、纵向可拉伸，内边距 `--space-3`（底部多留一档放字数提示）；与字段同底色、同描边，聚焦反馈一致；加 `maxlength="1000"` |
-| 字数提示 | `.post-comment-editor` 包住 textarea，右下角绝对定位 `0/1000`（muted、0.75rem），不挡输入；由 `comment.js` 随输入更新 |
+| 表单正文 | textarea 最小高 104px、纵向可拉伸，内边距 `--space-3`（底部多留一档放字数提示）；与字段同底色、同描边，聚焦反馈一致；不设 `maxlength`，客户端不做长度截断 |
+| 字数提示 | `.post-comment-editor` 包住 textarea，右下角绝对定位当前字数（如 `42 字`，muted、0.75rem），不挡输入；由 `comment.js` 随输入按码点更新，只展示数量、不设上限 |
 | 表单操作栏 | 左侧表情按钮只有 `fa-face-smile` 图标（32px 点击区、图标 1.125rem），点击打开表情面板；右侧依次为 Markdown 指南图标、预览与发送：Markdown 指南复用表情按钮的尺寸与样式（`fa-brands fa-markdown`，外链到 `https://guides.github.com/features/mastering-markdown/`）；预览与发送同高，预览宽度随内容自适应、只有文字无图标，outline 默认 `--color-border` 描边 + muted 文字，悬停只把边框与文字转主题色，预览中切换为「编辑」并加 `.is-active`（主题色描边 / 文字）；发送为实心主题色带 `fa-paper-plane`，保留 `min-width: 72px`，悬停 `--color-primary-hover`；提交中禁用并把文字换成「发送中」；窄屏换行时操作组靠右 |
-| 表情选择器 | 表情按钮外包一层 `.post-comment-emoji`（`position: relative`），面板向上弹出：`--color-elevated` 底 + 1px `--color-border` + `--radius-md` + `--shadow-dropdown`，宽 360px、`max-width: calc(100vw - 48px)`，`z-index: var(--z-dropdown)`。面板顶部是选项卡（文字胶囊，当前项主题色实心 + 白字），下方是表情区：图片包 8 列网格（≤480px 收为 7 列，32px 按钮 / 24px 图片，最高 240px 滚动），颜文字用 flex 换行、按钮宽度随文本。点击选项卡只切换分类、面板保持打开；点击某枚表情插入光标处（图片包插 `:key:`，颜文字插原文）后收起面板并把焦点交回 textarea；点击外部或 Esc 关闭，Esc 后焦点回到按钮。外部关闭监听用 `pointerdown`（回退 `mousedown`），避免选项卡重绘后 click 冒泡把面板误关 |
+| 表情选择器 | 表情按钮外包一层 `.post-comment-emoji`（`position: relative`），面板向上弹出：`--color-elevated` 底 + 1px `--color-border` + `--radius-md` + `--shadow-dropdown`，宽 360px、`max-width: calc(100vw - 48px)`，`z-index: var(--z-dropdown)`。面板顶部是选项卡（文字胶囊，当前项主题色实心 + 白字），下方是表情区：图片包 8 列网格（≤480px 收为 7 列，32px 按钮 / 24px 图片，最高 240px 滚动），颜文字用 flex 换行、按钮宽度随文本。点击选项卡只切换分类、面板保持打开；点击某枚表情插入光标处（图片包插 `:key:`，颜文字插原文）后收起面板并把焦点交回 textarea；点击外部或 Esc 关闭，Esc 后焦点回到按钮。外部关闭监听用 `pointerdown`（回退 `mousedown`），避免选项卡重绘后 click 冒泡把面板误关。`≤560px`：底栏用负外边距跨到表单左边缘、再用等量左内边距推回按钮 / 操作组；表情包裹层改为 `position: static`，弹窗以底栏为定位基准 `left/right: 0`、`width: auto`，宽度等于表单宽度，不再从按钮右移出视口 |
 | 表情配置 | `params.waline.emoji` 是选项卡数组：`preset`（`qq` / `alus` / `bilibili` 等 `@waline/emojis` 预设名，或完整目录 URL）+ 可选 `name`；或 `folder` / `prefix` / `type` / `items` 自定义图片包；或 `type: "text"` + `items` 的颜文字包。图片包的 `info.json` 运行时拉取并缓存；某个包失败只跳过该包，面板底部提示「部分表情包加载失败」。删除整个 `emoji` 项时表情按钮自动隐藏 |
 | 表情提交 | `emoji.js` 在提交 / 预览前把 `:key:` 换成 `<img class="wl-emoji" src="..." alt="key" loading="lazy">`，把颜文字包成 `<span class="wl-kaomoji">...（已转义）...</span>`；服务端 markdown-it（`html: true`）+ DOMPurify 保留两种标签。`.wl-emoji` 也被 lightbox 忽略，点表情不会打开大图 |
 | Markdown 预览 | 预览按钮在 textarea 与 `.post-comment-preview` 之间切换：编辑区隐藏、预览区显示；切换时由 JS 量取 textarea 当前高度写进预览区 inline height，外层高度保持一致，内容更长时在预览区内部滚动。预览区沿用 `.post-comment-content` 排版，外框与输入框同底色 / 描边 / 圆角。`format.js` 先整体转义再渲染，支持常见 Markdown；`emoji.js` 先把表情 / 颜文字换成占位符，渲染完再还原，避免 `*` / `_` 被当成强调符。预览只用于发布前确认，最终以服务端渲染为准 |
@@ -1005,23 +1044,25 @@ Header 右侧搜索按钮打开全屏浮层；**初态只有一块居中的胶�
 | 列表头 | 表单下方一行：左侧「XX 条评论」总数（Waline 的 `count`，含回复；千分位逗号，不折 k / M）；右侧文字卡片（`--color-bg` 胶囊）内放「最新 / 最早」排序与刷新。当前排序 `is-active` 为主题色实心 + 白字，另一项默认 muted、悬停只转文字色；排序切换后回到第 1 页；刷新保持当前页，请求中图标旋转并禁用，悬停不改变禁用色 |
 | 顶层条目 | 40px 圆形头像 + 内容列；头像取 Waline 返回的 `avatar`，缺省 / 加载失败用名字首字兜底 |
 | 评论信息行 | 昵称（0.9375rem / 500，下缘 30% 高主题色荧光条，与 Markdown `strong` 一致）+ 相对时间 |
-| 气泡卡片 | `--color-bg` 底 + `--radius-md`，内边距 `--space-3 --space-4`，装正文与底部行；底部行左侧设备信息、右侧回复按钮；二级评论内边距收为 `--space-2 --space-3` |
+| 用户标签 | Waline 评论关联到注册用户时返回 `label`，渲染在昵称右侧的 `.post-comment-label` 胶囊（主题色 30% 底 + 主题色文字、0.6875rem、最长 8em 省略）；匿名评论不带标签，标签值在 Waline 后台的用户管理中设置 |
+| 气泡卡片 | `--color-bg` 底 + `--radius-md`，内边距 `--space-3 --space-4`，装正文与底部行；底部行左侧设备信息、右侧点赞 / 回复操作组；二级评论内边距收为 `--space-2 --space-3` |
 | 二级评论 | 容器只负责纵向节奏：与父评论正文同列（不再额外缩进），回复之间间距 `--space-4`；每条回复各自带头像、信息行与气泡卡片，不共用整块面板；回复按时间正序渲染，`reply_user` 提供被回复者，正文首段前插入 `.post-comment-mention` 的 `@昵称` |
 | 二级条目 | 32px 头像、昵称与正文 0.875rem，与顶层拉开层级 |
 | 时间 | `comment.js` 按 Waline 的 `time` 现算，规则同 `relative-time.html`：1 分钟内"刚刚"，之后 N 分钟 / 小时前，7 天内 N 天前，超过 7 天显示 `2006年1月2日`；`<time datetime>` 输出绝对时间，`title` 提供完整时间；页面停留时每分钟重算一次 |
 | 设备信息 | IP 归属地取 `addr`，为空时不渲染；系统 / 浏览器按 `os` / `browser` 映射图标（Windows / Apple / Android / Linux；Chrome / Edge / Firefox / Safari），浏览器名与版本间补空格（Waline 输出 `Chrome140.0`），未知平台用通用图标兜底；三项均带 `title` |
 | 回复按钮 | `button` + `fa-reply`，位于气泡右下角；默认 muted，悬停只转主题色、不铺底，`:focus-visible` 主题色描边；点击进入回复上下文 |
+| 点赞 | 每条评论操作组左侧的心形按钮：未点赞为空心 `fa-regular fa-heart` + muted，悬停与已点赞都用 `--color-like` 明亮饱和红（§3.1）；已点赞为实心 + 该色；计数始终显示（0 也保留），用千分位并写进 `aria-label`。点击在点赞 / 取消之间切换：先乐观 ±1，`PUT /api/comment/<objectId>` 的 `{ like: true \| false }` 返回后以服务端 `like` 为准，请求期间禁用，失败回滚计数与点赞态；本机点赞状态按「服务地址#id」记在 `localStorage` 的 `inaline-comment-likes`，刷新 / 翻页后保持，取消时删除记录 |
 | 正文链接 | 保留下划线（`text-underline-offset: 2px`）；正文不是 `.markdown` 作用域，不复用点状线链接样式 |
 | 分页 | 复用列表页分页语言：36px 方形按钮、当前页实心主题色、悬停只换文字色；按 Waline 的 `totalPages`（顶层评论数）由 JS 生成首尾页 + 当前页左右各一页，跳过的页码用省略号收拢；总数不超过一页时整块 `hidden`；用 `button` 承载，不改变 URL；当前页 `aria-current="page"` |
 | 空 / 加载 / 失败 | 首次加载显示「评论加载中…」；无评论显示「还没有评论，来抢沙发吧。」；请求失败显示「评论加载失败，点击右上角刷新重试。」，保留刷新按钮 |
 | 正文 | `.post-comment-content` 带 `data-lightbox-group`，评论内图片按条成组预览（§5.4）；补了粗体（30% 主题色荧光条）、斜体、删除线、标题（压到正文级）、有序 / 无序列表、引用、行内代码、代码块、分隔线、表格的基础样式；`.wl-emoji` 按 1.5em 缩放并与文字基线对齐，`.wl-kaomoji` 整枚不折行；长链接 / 长英文串任意位置折行 |
-| 可访问性 | `section` + `aria-labelledby`、`nav` + `aria-label`、表单 `aria-label`；头像纯装饰 `aria-hidden`；三个字段用 `label` 包裹输入框，左侧标签即可访问名称（不再重复 `aria-label`）；回复按钮带 `aria-label="回复 {昵称}"`；排序按钮用 `aria-pressed` 标记当前项；刷新按钮用 `aria-label`；列表区用 `aria-busy` 标记请求中；提交反馈用 `role="status"`；表情按钮用 `aria-haspopup="dialog"` / `aria-expanded` / `aria-controls` 指向面板，面板 `role="dialog"` 并接收焦点，选项卡用 `aria-pressed`，颜文字项带 `aria-label`；预览按钮用 `aria-pressed` 标记当前态 |
+| 可访问性 | `section` + `aria-labelledby`、`nav` + `aria-label`、表单 `aria-label`；头像纯装饰 `aria-hidden`；三个字段用 `label` 包裹输入框，左侧标签即可访问名称（不再重复 `aria-label`）；回复按钮带 `aria-label="回复 {昵称}"`；排序按钮用 `aria-pressed` 标记当前项；刷新按钮用 `aria-label`；列表区用 `aria-busy` 标记请求中；提交反馈用 `role="status"`；表情按钮用 `aria-haspopup="dialog"` / `aria-expanded` / `aria-controls` 指向面板，面板 `role="dialog"` 并接收焦点，选项卡用 `aria-pressed`，颜文字项带 `aria-label`；预览按钮用 `aria-pressed` 标记当前态；点赞按钮用 `aria-pressed` 标记是否已点赞，`aria-label` 带计数 |
 | 锚点 | 评论区 `#comments` 与单条评论 `#comment-<id>` 均设 `scroll-margin-top`，落点让开 fixed Header；从侧栏近期评论等外部链接带 `#comment-<id>` 进入时，`comment.js` 在首次渲染后补一次定位（评论是异步插入的，浏览器不会自己滚） |
 | 动效降级 | 评论 / 表单 / 排序 / 刷新按钮、表情选项卡 / 表情项、字段外框、输入框、分页与分割线雪花在 `prefers-reduced-motion` 下取消过渡 / 位移；刷新中的旋转图标也停住 |
 
 ### 8.9 待补充 ⏳
 
-- 移动端断点与顶部大图高度微调。
+- 移动端目录入口：`≤1080px` 侧栏隐藏后文章页没有目录，待移动端两栏合一方案补齐。
 - 评论图片上传、GIF 搜索等 Waline 客户端能力尚未接入；预览的轻量 Markdown 暂不支持表格、脚注与嵌套列表。
 
 ---

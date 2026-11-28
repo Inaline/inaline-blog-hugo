@@ -1,0 +1,342 @@
+// ---------------------------------------------------------------------------
+// 移动端标题栏与抽屉菜单（DESIGN.md §6.9）
+//
+// ≤768px：桌面中部导航隐藏，Logo 左侧出现菜单按钮；抽屉从左侧滑出，
+// 内容为博主信息 +「页面 / 分类」选项卡。抽屉只在移动端出现，
+// 桌面端整棵 DOM 树 display: none，不影响原有三栏 Header。
+// ---------------------------------------------------------------------------
+
+// 菜单按钮：复用 .action-btn 的尺寸 / 悬停；桌面不显示
+.menu-toggle {
+  display: none;
+}
+
+// --- 遮罩 ---
+
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-menu-overlay);
+  background: var(--menu-overlay);
+  backdrop-filter: blur(var(--menu-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--menu-overlay-blur));
+  // 遮罩吞掉背后的滑动手势：iOS 上 body overflow: hidden 不足以阻止橡皮筋滚动
+  touch-action: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--duration-base) var(--ease),
+              visibility var(--duration-base);
+}
+
+.mobile-menu-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+// --- 抽屉本体 ---
+
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-menu);
+  display: flex;
+  flex-direction: column;
+  width: 80vw;
+  max-width: 300px;
+  height: 100vh;
+  height: 100dvh;
+  // 打开时抽屉压在页面上，页面内容不能再滚；body 锁在下方
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-dropdown);
+  outline: none;
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform var(--duration-base) var(--ease),
+              visibility var(--duration-base);
+}
+
+.mobile-menu.is-open {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+body.is-menu-open {
+  overflow: hidden;
+}
+
+// 关闭按钮：绝对定位在右上角；压在滚动区之上，滚动内容不会把它带走
+.mobile-menu-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+// 次要操作只换图标色，不铺底色（§2.2）
+.mobile-menu-close:hover {
+  color: var(--color-primary);
+}
+
+.mobile-menu-close:focus-visible,
+.mobile-menu-link:focus-visible,
+.mobile-menu-tab:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+// 抽屉头：博主卡 + 选项卡。固定不滚，滚动只发生在下方的列表区
+.mobile-menu-head {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-5) 0;
+  // 头部不滚动：滑动手势不要漏给背后的页面（与遮罩同一处理，§6.9）
+  touch-action: none;
+}
+
+// 滚动区：只有选项卡内容（页面树 / 分类列表）滚动
+.mobile-menu-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+// 抽屉里的博主卡不再是"卡片"：去掉白底 / 阴影 / 圆角，只留一条底部分隔线，
+// 与桌面侧栏的内容保持一致，位置从卡片变成抽屉头部
+.mobile-menu .sidebar-profile {
+  min-height: 0;
+  padding: 0 0 var(--space-5);
+  background: transparent;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+// 抽屉在 320px 宽的屏幕上内容区只有约 220px：六个图标（232px）放不下时换行，
+// 不要溢出到抽屉内边距里
+.mobile-menu .profile-socials {
+  flex-wrap: wrap;
+}
+
+// --- 页面 / 分类选项卡 ---
+
+.mobile-menu-tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+.mobile-menu-tab {
+  flex: 1;
+  min-height: 38px;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+              background-color var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+
+.mobile-menu-tab:hover {
+  color: var(--color-primary);
+}
+
+.mobile-menu-tab.is-active {
+  background: var(--color-elevated);
+  color: var(--color-primary);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+// --- 列表 ---
+
+.mobile-menu-pane[hidden] {
+  display: none;
+}
+
+.mobile-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// 所有子级列表统一右缩进，不限制递归深度
+.mobile-menu-list:not(.mobile-menu-list--level-1) {
+  margin-top: var(--space-1);
+  padding-left: var(--space-5);
+}
+
+.mobile-menu-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+              background-color var(--duration-fast) var(--ease);
+}
+
+// 悬停只换文字色；选中态才铺主题色弱底。避免"悬停 = 选中"的误读（§2.2）
+.mobile-menu-link:hover {
+  color: var(--color-primary);
+}
+
+.mobile-menu-link:not(.is-active):hover {
+  background: var(--color-bg);
+}
+
+.mobile-menu-link.is-active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.mobile-menu-icon {
+  flex: none;
+  width: 1.25rem;
+  color: inherit;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.mobile-menu-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-menu-caret {
+  flex: none;
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 0.5625rem;
+  transition: transform var(--duration-base) var(--ease);
+}
+
+.mobile-menu-tree.is-expanded > .mobile-menu-link--toggle .mobile-menu-caret {
+  transform: rotate(90deg);
+}
+
+.mobile-menu-link.is-active .mobile-menu-caret {
+  color: inherit;
+}
+
+// 子菜单展开：grid 0fr → 1fr，保持纯 CSS 动画；
+// 收起时链接由模板上的 inert 摘出 Tab / 读屏树（展开时 main.js 撤销）
+.mobile-menu-tree-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-base) var(--ease);
+}
+
+.mobile-menu-tree.is-expanded > .mobile-menu-tree-body {
+  grid-template-rows: 1fr;
+}
+
+.mobile-menu-tree-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+// --- 分类列表 ---
+
+.mobile-menu-count {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mobile-menu-link.is-active .mobile-menu-count {
+  color: inherit;
+}
+
+.mobile-menu-empty {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+// --- 断点 ---
+
+// ≤768px：桌面导航让位给菜单按钮。Header 仍是三栏 Grid，
+// 中部导航隐藏后变为"左 Logo / 右操作区"的两端布局
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: inline-flex;
+  }
+
+  .site-nav {
+    display: none;
+  }
+
+  .header-left {
+    gap: var(--space-2);
+  }
+}
+
+// 桌面端整个抽屉不渲染
+@media (min-width: 769px) {
+  .mobile-menu-root {
+    display: none;
+  }
+}
+
+// --- 减少动态效果 ---
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu,
+  .mobile-menu-overlay,
+  .mobile-menu-tab,
+  .mobile-menu-link,
+  .mobile-menu-caret,
+  .mobile-menu-tree-body {
+    transition: none;
+  }
+}

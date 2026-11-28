@@ -343,6 +343,46 @@ body.has-hero .pager-ellipsis {
 // _markdown.scss（§9），作用域是内容容器上的 .markdown 类。
 
 // ---------------------------------------------------------------------------
+// 窄屏：文章卡片改上下排（DESIGN.md §7.7）
+//
+// 原先这套规则只写在搜索浮层 / 搜索页的结果卡上；首页、分区页、词条页
+// 共用同一张 .post-card，≤768px 一并改为「封面在上、文字在下」。
+// 交替卡的 row-reverse 与斜切在竖排下没有意义，一并重置。
+// ---------------------------------------------------------------------------
+
+@media (max-width: 768px) {
+  .post-card,
+  .post-card--flip {
+    flex-direction: column;
+    // 竖排后图文间距交给文字列自身的上内边距（--space-4）；
+    // 卡片 gap 不归零的话会叠成 24 + 16 = 40px
+    gap: 0;
+  }
+
+  .post-card-cover,
+  .post-card--flip .post-card-cover {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    clip-path: none;
+    -webkit-clip-path: none;
+  }
+
+  .post-card-body,
+  .post-card--flip .post-card-body {
+    padding: var(--space-4);
+  }
+}
+
+// 手机上带侧栏的页面外壳与文章页同一档：左右只留 16，卡片 / 轮播 /
+// 下方侧栏一起变宽。只改左右，不用 padding 简写（避免把其他方向的重置带进来）。
+@media (max-width: 560px) {
+  .container.layout--sidebar-flow {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 动效降级：必须留在文件末尾——同特异度的规则写在它后面会整段盖掉它（DESIGN.md §2.2）
 // ---------------------------------------------------------------------------
 

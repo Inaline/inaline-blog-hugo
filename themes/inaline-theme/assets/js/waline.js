@@ -8,6 +8,8 @@
  *   var client = InalineWaline.create({ server: 'http://localhost:8360' });
  *   client.list({ path: '/posts/hello/', page: 1, pageSize: 10, sort: 'newest' });
  *   client.add({ nick, mail, link, comment, url, ua, pid, rid });
+ *   client.like(12);                            // 点赞 → 更新后的评论（like 为最新计数）
+ *   client.like(12, false);                     // 取消点赞
  *   client.count(['/posts/a/', '/posts/b/']);   // → [评论数, 评论数]
  *   client.count();                             // → 全站评论总数
  *   client.recent(5);                           // → 近期评论数组
@@ -110,6 +112,23 @@
     }
 
     /**
+     * 点赞 / 取消点赞。Waline 对已通过评论开放，无需登录；
+     * 返回更新后的评论对象，like 字段是服务端的最新计数。
+     * 匿名身份下没有"谁点过"的记录，取消会直接扣计数，
+     * 是否可取消由 comment.js 用 localStorage 的本机点赞状态决定。
+     */
+    function like(commentId, on) {
+      return request('/api/comment/' + encodeURIComponent(commentId), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({ like: on !== false })
+      });
+    }
+
+    /**
      * 评论数。传路径数组 → 与数组等长的评论数数组；
      * 不传 → 全站已通过评论总数（首页博主卡用）。
      */
@@ -194,6 +213,7 @@
     return {
       list: list,
       add: add,
+      like: like,
       count: count,
       recent: recent,
       views: views,

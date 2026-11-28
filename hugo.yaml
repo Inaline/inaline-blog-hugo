@@ -70,6 +70,8 @@ params:
     emoji:
       - preset: "qq"
         name: "QQ"
+      - preset: "bilibili"
+        name: "Bilibili"
       - name: "颜文字"
         type: "text"
         items:

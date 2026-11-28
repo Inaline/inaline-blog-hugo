@@ -5,7 +5,7 @@
 {{ $pages := sort .RegularPages "Date" "desc" }}
 <h1 class="visually-hidden">{{ .Title }}</h1>
 
-<div class="container container--wide layout moments-layout">
+<div class="container container--wide layout layout--sidebar-flow moments-layout">
   <div class="layout-main">
     <div class="moments-card">
       {{ partial "moments-cover.html" . }}

@@ -60,6 +60,9 @@
   --color-primary-soft: rgba(250, 93, 25, 0.10); // 弱强调底色（Markdown mark 高亮等）；暗色微调至 .12
   --color-primary-highlight: rgba(250, 93, 25, 0.30); // 加粗文本下缘的荧光条（§9）
   --color-hr-line: rgba(250, 93, 25, 0.38); // 分割线虚线（§9.4）：比 primary-soft 深，2px 虚线才看得清；暗色微调至 .42
+  // 评论点赞（§8.8）：明亮的饱和红，不用品牌橙（点赞是"喜欢"而非主题强调）。
+  // 亮暗主题共用同一档，不进 dark-tokens
+  --color-like: #FF5A70;
   // Markdown 标题前四角星的层级色（§9.2）。亮暗主题共用——取中间调，
   // 图形小、纯装饰，在两种底色上都要看得清
   --color-heading-mark-1: #FA5D19; // h1 主题橙
@@ -95,6 +98,10 @@
   // 全屏搜索遮罩：叠在虚化封面之上；直接显示，不做淡入（§7.15）
   --search-veil: rgba(245, 245, 245, .40);
 
+  // 移动端抽屉菜单遮罩（§6.9）：压在页面 + Header 之上，抽屉从左侧滑出。
+  // 两种主题同值——遮罩的职责是"把背后的页面压暗"，不随主题翻色
+  --menu-overlay: rgba(0, 0, 0, .45);
+
   // 页脚毛玻璃条（见 _footer.scss）。与 --color-over-hero / --badge-bg 同类——
   // 它是"压在封面图上的色块"，两种主题下取值相同，故**不进 dark-tokens**：
   // 跟着主题翻色的话，亮色下它会退回浅色，"和正文区分、更突出"就没了。
@@ -103,6 +110,7 @@
   // 页脚会连底色一起丢掉，只剩白字直接压在照片上
   --footer-scrim: rgba(26, 26, 26, .48);
   --footer-blur: 3px;
+  --menu-overlay-blur: 4px; // 移动端抽屉遮罩的毛玻璃强度（§6.9）
 
   // 图片预览（§5.4）：遮罩与控件都坐在照片上，亮暗主题同值。
   // 遮罩不用纯黑，留一点冷色底，暗部不会死黑
@@ -230,7 +238,7 @@
   // 目录（§8.5）：列表滚动区上限 / 子目录展开动画的 max-height 上限
   --toc-body-max-height: min(500px, 55vh);
   --toc-sub-max-height: 500px;
-  --post-hero-height: clamp(240px, 30vw, 380px); // 文章页顶部大图高度：按视口宽度伸缩，不随窗口高度变化（§8）
+  --post-hero-height: clamp(320px, 30vw, 380px); // 文章页顶部大图高度：按视口宽度伸缩，不随窗口高度变化；320px 下限保证手机上有足够高度（§8.1）
   --post-wave-height: 56px; // 文章页大图底部浪花高度（窄屏在 _article.scss 收为 44px）
   --header-height: 56px;
   --header-blur: 20px;       // Header 与下拉面板共用的毛玻璃强度（两者须同档，见 §6.3）
@@ -239,6 +247,8 @@
   --z-header: 100;
   --z-dropdown: 110;
   --z-search: 900; // 全屏搜索：压住 Header 与下拉菜单，低于图片预览
+  --z-menu-overlay: 930; // 移动端抽屉遮罩：压住搜索，低于抽屉本体
+  --z-menu: 940; // 移动端抽屉：压住 Header / 搜索，低于图片预览
   --z-lightbox: 1000; // 图片预览：永远压住 Header 与下拉菜单
 
   // 动效

@@ -1,0 +1,30 @@
+{{- /* 移动端抽屉 · 分类列表（DESIGN.md §6.9）
+
+       数据取 site.Taxonomies.categories，按文章数降序展示全部分类；
+       桌面侧栏分类卡只取前 N 个，这里是抽屉里的完整入口（抽屉自身可滚动）。
+       当前词条页或文章所属分类加选中态。 */ -}}
+{{- $page := . -}}
+{{- $terms := slice -}}
+{{- with site.Taxonomies.categories }}{{ $terms = .ByCount }}{{ end -}}
+{{- if $terms }}
+  <ul class="mobile-menu-list mobile-menu-category-list">
+    {{- range $terms -}}
+      {{- $termPage := .Page -}}
+      {{- $current := eq $page.RelPermalink $termPage.RelPermalink -}}
+      {{- $active := $current -}}
+      {{- if and (not $active) $page.IsPage -}}
+        {{- range $page.Params.categories -}}
+          {{- if eq . $termPage.LinkTitle -}}{{- $active = true -}}{{- end -}}
+        {{- end -}}
+      {{- end -}}
+      <li class="mobile-menu-item">
+        <a class="mobile-menu-link mobile-menu-category-link{{ if $active }} is-active{{ end }}" href="{{ $termPage.RelPermalink }}"{{ if $current }} aria-current="page"{{ end }}>
+          <span class="mobile-menu-label">{{ $termPage.LinkTitle }}</span>
+          <span class="mobile-menu-count">{{ .Count }}</span>
+        </a>
+      </li>
+    {{- end -}}
+  </ul>
+{{- else }}
+  <p class="mobile-menu-empty">暂无分类</p>
+{{- end }}
