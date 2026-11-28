@@ -4,7 +4,11 @@
   {{ partial "head.html" . }}
 </head>
 {{ $postHero := and .IsPage (eq .Type "posts") }}
-<body{{ if .IsHome }} class="has-hero"{{ else if $postHero }} class="has-post-hero"{{ end }}>
+{{/* Waline 总开关：缺 server 或 enable: false 时，全站都不输出评论区骨架、
+     阅读量 / 评论数 / 近期评论 / 页脚统计的脚本，占位符保持原样 */}}
+{{ $waline := site.Params.waline }}
+{{ $walineEnabled := and $waline $waline.server (ne $waline.enable false) }}
+<body{{ if .IsHome }} class="has-hero"{{ else if $postHero }} class="has-post-hero"{{ end }}{{ if $walineEnabled }} data-waline-server="{{ $waline.server }}"{{ end }}>
   {{/* 首页整页背景。必须是 body 的第一个子元素——它靠负 z-index 落到"画布之上、
        内容之下"，中间隔一个带 transform / filter / opacity 的祖先就会被困住。
        文章页不放整页背景：背景图只在页脚出现（footer.html + main.js）。 */}}
@@ -22,6 +26,16 @@
   {{/* 图片预览（§5.4）：全站生效，动态插入的评论图片也能用 */}}
   {{ $lightbox := resources.Get "js/lightbox.js" | minify | fingerprint }}
   <script src="{{ $lightbox.RelPermalink }}" integrity="{{ $lightbox.Data.Integrity }}" defer></script>
+
+  {{ if $walineEnabled }}
+    {{/* Waline API 封装 + 全站数据回填（§7.11）：
+         阅读量埋点、卡片统计、侧栏评论总数 / 近期评论、页脚访客统计。
+         文章页评论区依赖同一个 waline.js，故放全局而不只在文章页加载 */}}
+    {{ $walineJS := resources.Get "js/waline.js" | minify | fingerprint }}
+    <script src="{{ $walineJS.RelPermalink }}" integrity="{{ $walineJS.Data.Integrity }}" defer></script>
+    {{ $statsJS := resources.Get "js/waline-stats.js" | minify | fingerprint }}
+    <script src="{{ $statsJS.RelPermalink }}" integrity="{{ $statsJS.Data.Integrity }}" defer></script>
+  {{ end }}
 
   {{/* 页面级脚本出口：页面模板用 {{ define "page-scripts" }} 注入自己的 JS */}}
   {{ block "page-scripts" . }}{{ end }}

@@ -121,6 +121,13 @@
       state.comments = result.comments;
       render();
 
+      // 从侧栏近期评论等外部链接进入时，页面地址带 #comment-<id>：
+      // 评论是异步插入的，浏览器不会自己滚过去，渲染后补一次定位
+      if (options.initial && window.location.hash) {
+        var match = window.location.hash.match(/^#comment-([0-9]+)$/);
+        if (match) focusComment(match[1]);
+      }
+
       if (options.scroll) scrollToComments();
       if (options.focusId) focusComment(options.focusId);
     }, function (error) {
@@ -149,7 +156,8 @@
       });
     }
 
-    if (els.count) els.count.textContent = state.count + ' 条评论';
+    // 文章内页的数字只加千分位逗号，不折成 k / M（DESIGN.md §8.8）
+    if (els.count) els.count.textContent = formatCount(state.count) + ' 条评论';
     renderPager();
   }
 
@@ -793,6 +801,12 @@
         "'": '&#39;'
       }[ch];
     });
+  }
+
+  /** 千分位逗号：文章页评论总数等局部数字用，不折成 k / M */
+  function formatCount(value) {
+    var number = Math.max(0, Math.floor(Number(value) || 0));
+    return String(number).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
 
   function relativeTime(ms) {

@@ -222,7 +222,7 @@
   }
 }
 
-// 阅读量 / 评论量的占位符：等 Waline 接上后由前端回填（§8 阶段 9）
+// 阅读量 / 评论量由 waline-stats.js 异步回填（§7.11），等宽数字避免变化时抖动
 .post-card-stat {
   font-variant-numeric: tabular-nums;
 }

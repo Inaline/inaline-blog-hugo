@@ -406,6 +406,14 @@
   line-height: 1.55;
 }
 
+// 加载中 / 空 / 失败：列表位置的一条弱化文案（li 与 noscript 的 p 共用）
+.sidebar-comments-state {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
 // ---------------------------------------------------------------------------
 // 分类（.sidebar-categories）
 //

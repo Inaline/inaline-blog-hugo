@@ -1,0 +1,30 @@
+{{/*
+  数字显示（DESIGN.md §7.8 / §8.2）
+
+  参数：
+    value —— 非负整数
+    unit  —— 是否允许 k / M 单位，默认 true；文章页 / 文章列表传 false
+
+  规则：
+    < 10000            千分位逗号：123 / 1,451 / 9,998
+    10000 – 999999     (value / 1000) 截断两位小数 + k：15.34k
+    >= 1000000         (value / 1000000) 截断两位小数 + M：1.23M
+
+  截断而非四舍五入：15,340 – 15,349 都显示 15.34k。
+  JS 侧（waline-stats.js）有一份同规则实现，改规则时两边一起改。
+*/}}
+{{- $value := int (default 0 .value) -}}
+{{- $unit := true -}}
+{{- if isset . "unit" -}}{{- $unit = .unit -}}{{- end -}}
+
+{{- $text := "" -}}
+{{- if or (not $unit) (lt $value 10000) -}}
+  {{- $text = lang.FormatNumber 0 $value -}}
+{{- else if lt $value 1000000 -}}
+  {{- $hundredths := div $value 10 -}}
+  {{- $text = printf "%d.%02d%s" (div $hundredths 100) (mod $hundredths 100) "k" -}}
+{{- else -}}
+  {{- $hundredths := div $value 10000 -}}
+  {{- $text = printf "%d.%02d%s" (div $hundredths 100) (mod $hundredths 100) "M" -}}
+{{- end -}}
+{{- $text -}}

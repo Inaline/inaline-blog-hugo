@@ -39,8 +39,9 @@
       </p>
     {{ end }}
 
-    {{/* 3. 访客统计：四个数字现在都是占位符，等接入 Waline 后由前端按
-           data-footer-stat 回填（值域见 hugo.yaml 的注释），模板侧不再改 */}}
+    {{/* 3. 访客统计：四个数字由 waline-stats.js 按 data-footer-stat 回填
+           （本站访问量 + localStorage 近似去重后的访客数，见 DESIGN.md §7.9）；
+           Waline 未接入或无 JS 时保持占位符 */}}
     {{ if $f.stats }}
       <p class="footer-line">
         <span class="footer-stat">今日访客: <span class="footer-num" data-footer-stat="today-visitors">--</span></span>

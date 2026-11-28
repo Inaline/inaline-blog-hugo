@@ -338,9 +338,10 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
     margin: 1.5em 0;
     // 上内边距给开引号留出位置：引号高 1.5rem，距顶部 --space-2，再空 --space-1
     padding: calc(var(--space-2) + 1.5rem + var(--space-1)) var(--space-4) var(--space-3);
-    // 竖线始终是主题色；嵌套层级只靠背景深浅区分
+    // 竖线始终是主题色；嵌套层级只靠背景深浅区分。
+    // 竖线所在的左侧上下角保持直角，只圆右侧两角，竖线才不会被圆角吃掉
     border-left: 3px solid var(--color-primary);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
     background: var(--color-quote-bg-1);
     // 引用正文用独立令牌，颜色见 _tokens.scss；开引号仍是主题色
     color: var(--color-quote-text);
@@ -403,7 +404,6 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
     border: 0;
     border-radius: var(--radius-md);
     background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
     font-family: var(--font-mono);
     font-size: .875rem;
     line-height: 1.7;
@@ -440,7 +440,6 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
     border: 1px solid var(--code-window-border);
     border-radius: var(--radius-md);
     background: var(--code-window-bg);
-    box-shadow: var(--shadow-sm);
   }
 
   .code-window-bar {
@@ -735,10 +734,17 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
   // --- 表格 ----------------------------------------------------------------
 
   // 渲染钩子（render-table.html）把表格包进 .table-scroll：
-  // 表格默认吃满父级宽度，内容超宽时由包装层横向滚动，不把卡片撑宽
+  // 表格默认吃满父级宽度，内容超宽时由包装层横向滚动，不把卡片撑宽。
+  // 包装层加 1px 描边 + 圆角，与代码窗口一起先不加阴影做对比；
+  // 表头 / 行底色与滚动内容一起被圆角裁切，描边本身也是圆角的，
+  // 空表 / 只有末行透明时也能看出轮廓
   .table-scroll {
     margin: 1.5em 0;
     overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    // 表格和代码窗口一样不靠阴影分层，显式写 none，避免被其它规则 / 缓存状态残留影响
+    box-shadow: none;
 
     > table {
       margin: 0;
@@ -770,14 +776,22 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
     font-variant-numeric: tabular-nums;
   }
 
+  // 表头铺一层比正文行深（亮色）/ 深一档（暗色）的底，和表格内容区分开；
+  // --color-surface 在暗色下与 elevated 同值，这里用 --color-bg 才能两套主题都看得出来
   th {
-    background: var(--color-surface);
+    background: var(--color-bg);
     color: var(--color-text);
     font-weight: 600;
     white-space: nowrap;
   }
 
-  tbody tr:nth-child(even) {
+  // 默认不做斑马纹，只保留鼠标移入行的浅底；
+  // 用原来斑马纹那一档 --color-bg，而不是主题色浅底
+  tbody tr {
+    transition: background-color var(--duration-fast) var(--ease);
+  }
+
+  tbody tr:hover {
     background: var(--color-bg);
   }
 
@@ -1053,7 +1067,7 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
   }
 }
 
-// 减少动态效果：链接与折叠标题只保留颜色过渡，标题四角星停转
+// 减少动态效果：链接、折叠标题与表格行只保留颜色变化、不做过渡，标题四角星停转
 @media (prefers-reduced-motion: reduce) {
   .markdown a,
   .markdown a::before,
@@ -1062,7 +1076,8 @@ $heading-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
   .article-meta a::before,
   .article-meta a::after,
   .markdown summary,
-  .markdown hr::before {
+  .markdown hr::before,
+  .markdown tbody tr {
     transition: none;
   }
 

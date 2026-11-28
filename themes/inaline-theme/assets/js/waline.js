@@ -1,13 +1,18 @@
 /**
- * Waline API 薄封装（DESIGN.md §8.8）
+ * Waline API 薄封装（DESIGN.md §8.8 / §7.11）
  *
  * 只负责与服务端通信：拼地址、解析统一的 { errno, errmsg, data } 响应、
- * 把失败归一成 WalineError。渲染与交互全部在 comment.js。
+ * 把失败归一成 WalineError。渲染与交互在 comment.js / waline-stats.js。
  *
  * 用法：
  *   var client = InalineWaline.create({ server: 'http://localhost:8360' });
  *   client.list({ path: '/posts/hello/', page: 1, pageSize: 10, sort: 'newest' });
  *   client.add({ nick, mail, link, comment, url, ua, pid, rid });
+ *   client.count(['/posts/a/', '/posts/b/']);   // → [评论数, 评论数]
+ *   client.count();                             // → 全站评论总数
+ *   client.recent(5);                           // → 近期评论数组
+ *   client.views(['/posts/a/']);                // → [阅读量]
+ *   client.increment('/posts/a/', 'time');      // 阅读量 +1
  *   InalineWaline.avatarUrl('a@b.com', 'https://seccdn.libravatar.org/avatar/', '123456');
  */
 (function (global) {
@@ -104,9 +109,96 @@
       });
     }
 
+    /**
+     * 评论数。传路径数组 → 与数组等长的评论数数组；
+     * 不传 → 全站已通过评论总数（首页博主卡用）。
+     */
+    function count(paths) {
+      var urls = Array.isArray(paths) ? paths : [];
+      var params = new URLSearchParams();
+      params.set('type', 'count');
+      if (urls.length) params.set('url', urls.join(','));
+
+      return request('/api/comment?' + params.toString(), {
+        method: 'GET',
+        headers: { Accept: 'application/json' }
+      }).then(function (data) {
+        if (!urls.length) return Number(data) || 0;
+        return urls.map(function (path, index) {
+          return Array.isArray(data) ? Number(data[index]) || 0 : 0;
+        });
+      });
+    }
+
+    /** 近期评论：每条带 url / objectId / nick / avatar / comment / time，服务端最多 50 条 */
+    function recent(limit) {
+      var params = new URLSearchParams();
+      params.set('type', 'recent');
+      params.set('count', String(limit || 5));
+
+      return request('/api/comment?' + params.toString(), {
+        method: 'GET',
+        headers: { Accept: 'application/json' }
+      }).then(function (data) {
+        return Array.isArray(data) ? data : [];
+      });
+    }
+
+    /** 阅读量：Waline Counter 以路径为行、time 为累计值，返回与路径数组等长的数字数组 */
+    function views(paths) {
+      return counters(paths, 'time').then(function (rows) {
+        return rows.map(function (row) { return row.time; });
+      });
+    }
+
+    /**
+     * 读计数器。paths 数组 + 类型（字符串或数组），
+     * 返回与 paths 等长的 [{ type: value }]，缺失的行按 0 处理。
+     * Waline 的 SQLite 模型只持久化 time / reactionN，自定义类型不会落库，
+     * 所以访客数也走 time（见 waline-stats.js 的路径约定）。
+     */
+    function counters(paths, types) {
+      var urls = Array.isArray(paths) ? paths : [];
+      var keys = Array.isArray(types) ? types : [types || 'time'];
+      var params = new URLSearchParams();
+      params.set('path', urls.join(','));
+      params.set('type', keys.join(','));
+
+      return request('/api/article?' + params.toString(), {
+        method: 'GET',
+        headers: { Accept: 'application/json' }
+      }).then(function (data) {
+        return urls.map(function (path, index) {
+          var row = Array.isArray(data) ? data[index] : null;
+          var values = {};
+          keys.forEach(function (key) {
+            values[key] = Number(row && row[key]) || 0;
+          });
+          return values;
+        });
+      });
+    }
+
+    /** 计数器 +1（默认 time）。用于文章阅读量与站点访问统计 */
+    function increment(path, type) {
+      return request('/api/article', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({ path: path, type: type || 'time' })
+      });
+    }
+
     return {
       list: list,
-      add: add
+      add: add,
+      count: count,
+      recent: recent,
+      views: views,
+      counters: counters,
+      increment: increment
     };
   }
 

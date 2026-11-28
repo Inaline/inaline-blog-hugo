@@ -29,7 +29,8 @@
         <div class="post-meta-sep" aria-hidden="true"></div>
         <span class="post-meta-item">
           <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
-          <span>字数：{{ $chars }} 字</span>
+          {{/* 单篇字数一般不大，只用千分位逗号，不折成 k / M（DESIGN.md §8.2） */}}
+          <span>字数：{{ partial "format-number.html" (dict "value" $chars "unit" false) }} 字</span>
         </span>
       </div>
 
@@ -89,12 +90,11 @@
   {{ $js := resources.Get "js/pages/post.js" | minify | fingerprint }}
   <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 
-  {{/* 评论区（§8.8）：API 封装 → 表情 → Markdown 预览 → UI；
-       defer 脚本按文档顺序执行，comment.js 依赖前三个全局对象 */}}
+  {{/* 评论区（§8.8）：表情 → Markdown 预览 → UI；
+       waline.js 由 baseof 全局加载，defer 脚本按文档顺序执行，
+       comment.js 依赖 waline.js 与上方的 emoji / format 全局对象 */}}
   {{ $waline := site.Params.waline }}
   {{ if and $waline $waline.server (ne $waline.enable false) }}
-    {{ $walineJS := resources.Get "js/waline.js" | minify | fingerprint }}
-    <script src="{{ $walineJS.RelPermalink }}" integrity="{{ $walineJS.Data.Integrity }}" defer></script>
     {{ $emojiJS := resources.Get "js/emoji.js" | minify | fingerprint }}
     <script src="{{ $emojiJS.RelPermalink }}" integrity="{{ $emojiJS.Data.Integrity }}" defer></script>
     {{ $formatJS := resources.Get "js/format.js" | minify | fingerprint }}

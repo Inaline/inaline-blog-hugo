@@ -240,7 +240,8 @@ themes/inaline-theme/
 │   ├── js/
 │   │   ├── main.js                # 全局：主题、封面记忆（§7.1）、Header 滚动态、页脚运行时长、整卡跳转、复制、代码窗口、进场动效
 │   │   ├── lightbox.js            # 全局：图片预览分组 / 缩放 / 切换（§5.4）
-│   │   ├── waline.js              # Waline API 封装：列表 / 发表 / 错误 / 邮箱头像（§8.8）
+│   │   ├── waline.js              # Waline API 封装：列表 / 发表 / 计数 / 近期评论 / 错误 / 头像（§8.8 / §7.11）
+│   │   ├── waline-stats.js        # 全站 Waline 数据回填：阅读量 / 评论数 / 近期评论 / 页脚统计（§7.11）
 │   │   ├── emoji.js               # 评论区表情包：预设拉取 / 选择器 / 颜文字（§8.8）
 │   │   ├── format.js              # 评论预览的轻量 Markdown（§8.8）
 │   │   ├── comment.js             # 文章页评论区：渲染 / 分页 / 排序 / 表单（§8.8）
@@ -284,6 +285,7 @@ themes/inaline-theme/
         ├── sidebar-categories.html # 侧栏分类（§7.8）
         ├── sidebar-tags.html      # 侧栏标签云（§7.8）
         ├── relative-time.html     # 相对时间文案（§7.8）
+        ├── format-number.html     # 数字格式：千分位 / 截断两位小数的 k·M（§7.8 / §8.2）
         ├── footer.html            # 页脚六行（§7.9）
         └── footer-link.html       # 页脚链接生成
 ```
@@ -302,13 +304,14 @@ themes/inaline-theme/
 
 - `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页页脚背景（§7.1）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `lightbox.js`：全局图片预览（§5.4），点击监听用事件委托，动态内容无需重新初始化；暴露 `window.inalineLightboxInit`。
-- `waline.js`：Waline API 薄封装（§8.8），只负责拼地址、解析 `{ errno, errmsg, data }`、归一错误与按邮箱生成头像地址；不碰 DOM。
+- `waline.js`：Waline API 薄封装（§8.8 / §7.11），只负责拼地址、解析 `{ errno, errmsg, data }`、归一错误与按邮箱生成头像地址；不碰 DOM。覆盖评论列表 / 发表、评论数（单篇 / 全站）、近期评论、阅读量计数器读写。
 - `emoji.js`：评论区表情包（§8.8），读取 `params.waline.emoji`，按需拉取 `@waline/emojis` 预设的 `info.json`，渲染选择器，并把 `:key:` / 颜文字转成安全 HTML。
 - `format.js`：评论预览用的轻量 Markdown（§8.8），先转义再生成 HTML，不参与存储。
 - `comment.js`：文章评论区 UI（§8.8），由文章页模板按需引入；从 `data-post-comments` 读取配置，渲染评论树并接管分页 / 排序 / 刷新 / 表单 / 预览。
+- `waline-stats.js`：全站 Waline 数据回填（§7.11），`baseof.html` 在 Waline 可用时全局加载；负责访问 / 访客埋点、文章卡片阅读量与评论量、侧栏评论总数与近期评论、页脚统计。与 `waline.js` 一样只在 `data-waline-server` 存在时启动。
 - `js/pages/*.js`：页面级逻辑，由模板的 `page-scripts` block 按需引入（当前有 `home.js`、`post.js`）。
 - 每个模块写成幂等 `init()`，事件用 `dataset.bound` 防重复绑定；后续接入 Swup 时在 `page:view` 再次调用同一 `init()` 即可。
-- 全局入口暴露为 `window.inalineInit`，首页 / 文章页入口暴露为 `window.inalinePageInit`，评论区入口暴露为 `window.inalineCommentInit`。
+- 全局入口暴露为 `window.inalineInit`，首页 / 文章页入口暴露为 `window.inalinePageInit`，评论区入口暴露为 `window.inalineCommentInit`，统计回填入口暴露为 `window.inalineWalineStatsInit`。
 - 防闪烁的主题初始化脚本单独内联在 `head.html`，不进 `main.js`。
 
 ---
@@ -616,7 +619,7 @@ menu:
 | 斜切 | 非交替卡切右上（`polygon(0 0, 92% 0, 100% 100%, 0 100%)`），交替卡镜像切左上；斜切挂在封面层而非 `<img>`，悬停放大时斜边不动 |
 | 元信息 | 四项一排、排在标题上方：发布时间 / 阅读时长 / 阅读量 / 评论量；文字 `0.875rem`、图标 `0.8125rem`，`--color-text-muted`，项间距 `--space-4` |
 | 阅读时长 | `countrunes(replaceRE "\s+" "" (plainify .Content)) ÷ 400`，向上取整，下限 1 分钟；不用 Hugo 的 `.ReadingTime`（按空格切词，中文失真） |
-| 统计占位 | 阅读量 / 评论量输出 `—`，挂 `.post-card-stat`，待 Waline 回填 |
+| 统计数据 | 阅读量 / 评论量由 `waline-stats.js` 按卡片的 `data-post-path` 批量回填（Waline Counter 阅读量 + 评论数接口，§7.11）；Waline 未配置或无 JS 时保持 `—`。卡片属文章列表，数字只加千分位逗号，不折成 k / M |
 | 标题 | `1.5rem`；悬停变 `--color-primary` |
 | 摘要 | `or .Description .Summary` → `plainify` + `truncate 120`，CSS `line-clamp: 2` |
 | 封面配置 | front matter `cover`：网络 URL 或 assets 路径；未配置则从封面池按 `index` 轮换 |
@@ -643,7 +646,8 @@ menu:
 
 - 配置 `params.sidebar.profile`：`enable`、`avatar`（留空沿用 `hero.avatar`）、`name`（留空取 `params.author`）、`socials`。
 - 头像 96px 圆形居中；名称 `1.125rem`、字重 500；整卡文字居中。
-- 三项数据等宽排列：文章数（`posts` 分区常规页数量）、字数（各篇 `.WordCount` 求和，五位数以上折为"万"）、评论数（占位 `--`，`data-sidebar-stat="comments"`）。
+- 三项数据等宽排列：文章数（`posts` 分区常规页数量）、字数（各篇 `.WordCount` 求和）、评论数（全站已通过评论总数，由 `waline-stats.js` 回填 `data-sidebar-stat="comments"`；无 Waline 时保持 `--`）。
+- 三项数字共用一套汇总格式（`format-number.html`；JS 侧 `formatCompact` 同规则）：小于 10000 按千分位逗号显示（123 / 1,451 / 9,998），10000–999999 折成截断两位小数的 `k`（15,340–15,349 都是 `15.34k`，不四舍五入），1,000,000 起折成 `M`（1.23M）。
 - 联系方式按配置顺序渲染：`rss / email / wechat / bilibili / github / qq`，32px 圆形按钮，默认品牌色图标，悬停品牌色铺满 + 图标转白 + 上浮 2px，按下回压。
 - 有 `url` 的生成链接（站内路径过 `relURL`，外链新标签页）；有 `copy` 的生成复制按钮，复制成功弹"已复制"气泡；两者都没有的条目跳过。
 - GitHub 品牌色在暗色下翻白，图标前景取 `--color-elevated` 保证可见。
@@ -661,11 +665,12 @@ menu:
 **近期评论卡**：
 
 - 配置 `params.sidebar.comments`：`enable`、`title`（默认"近期评论"）、`count`（默认 5）。
-- 文章评论区已接入 Waline（§8.8），侧栏近期评论仍由模板内的占位数据渲染；卡片带 `data-sidebar-comments` 锚点，后续由前端回填。
+- 数据来自 Waline 的 `type=recent` 接口，由 `waline-stats.js` 请求后渲染（§7.11）；模板只输出卡片骨架与 `data-sidebar-comments` / `data-sidebar-comments-count`，Waline 未配置 server 或 `enable: false` 时整卡不渲染。
 - 标题行：`fa-regular fa-comment` 图标（与标题同色，`1.0625rem`）+ 文案，规格同最新文章卡。
-- 列表每条间距 `--space-4`。每条为整行链接（没有文章可指时退化为静态条目）：左侧 32px 圆形头像，图片 `object-fit: cover` 裁圆，缺省以名字首字作占位。
-- 右侧上排：用户名（`0.8125rem / 500`，靠左，超长省略）与相对时间（`0.75rem`，`--color-text-muted`，靠右）；下排正文 `0.75rem`、最多两行。
-- 相对时间由 `relative-time.html` 在构建时计算：1 分钟内"刚刚"，之后依次"N 分钟前 / N 小时前 / N 天前"，超过 7 天显示 `2006年1月2日`。`<time datetime>` 同时输出绝对时间。
+- 列表每条间距 `--space-4`。每条为整行链接（没有可用文章地址时退化为静态条目）：左侧 32px 圆形头像，图片 `object-fit: cover` 裁圆，缺省以名字首字作占位；链接指向评论所在文章并带 `#comment-<顶层评论 id>` 锚点（回复挂到其顶层评论）。
+- 右侧上排：用户名（`0.8125rem / 500`，靠左，超长省略）与相对时间（`0.75rem`，`--color-text-muted`，靠右）；下排正文 `0.75rem`、最多两行。正文从 Waline 返回的 HTML 取纯文本，只有图片时显示 `[表情]`。
+- 相对时间由 `waline-stats.js` 按 Waline 的 `time` 现算，规则同 `relative-time.html`：1 分钟内"刚刚"，之后依次"N 分钟前 / N 小时前 / N 天前"，超过 7 天显示 `2006年1月2日`；`<time datetime>` 输出绝对时间，页面停留时每分钟重算一次。
+- 加载中显示"评论加载中…"；无评论显示空态文案；请求失败显示"评论加载失败"。无 JS 时显示 `<noscript>` 提示。
 - 悬停整行链接时用户名转主题色，时间与正文保持弱化。
 
 **分类卡**：
@@ -696,7 +701,7 @@ menu:
 
 1. **备案号**：`footer.filings[]`，`text` 为空跳过；有 `url` 自动生成链接。
 2. **Powered by**：`footer.powered_by` 开关，链接 Hugo 与主题仓库。
-3. **访客统计**：`footer.stats` 开关，今日访客 / 今日访问 / 累计访客 / 累计访问，当前输出 `--`，挂 `data-footer-stat` 待回填。
+3. **访客统计**：`footer.stats` 开关，今日访客 / 今日访问 / 累计访客 / 累计访问，由 `waline-stats.js` 回填 `data-footer-stat`；Waline 未配置或无 JS 时保持 `--`。四个数字都存在 Waline 的 Counter 表里（只有 `time` 列可靠持久化），用特殊路径区分站点累计 / 今日与访问 / 访客；访客数按 localStorage 标记近似去重，详见 §7.11。
 4. **运行时长**：`footer.since`（RFC 3339），模板构建时先算初值，`main.js` 之后每秒按 `Date.now()` 重算（后台节流也不会走慢）。
 5. **底部链接**：`footer.links[]`，默认 RSS 与 Sitemap；站内路径过 `relURL`，外链新标签页 + `rel="noopener"`。
 6. **版权**：`Copyright {copyright_since}-{今年} {site.Title}. All Rights Reserved.`；起始年与今年相同或未配置时只显示今年。
@@ -724,6 +729,21 @@ menu:
 | 降级 | `prefers-reduced-motion` 下不自动播放，取消淡入 / 缩放 / 位移 / 悬停反馈与指示器过渡 |
 | 可访问性 | 非当前幻灯片 `inert` + `aria-hidden="true"`；指示器为 `button`，当前项 `aria-current="true"` |
 
+### 7.11 Waline 数据回填 ✅
+
+首页 / 分区页 / 词条页与页脚里依赖评论系统的数据，统一由 `assets/js/waline-stats.js` 在浏览器端回填。`baseof.html` 在 `params.waline` 有 `server` 且未关闭时给 `<body>` 挂 `data-waline-server`，并全局加载 `waline.js` 与 `waline-stats.js`；Waline 未配置时脚本不加载，模板占位符（`—` / `--`）保持原样。文章页评论区仍由 `comment.js` 单独接管。
+
+| 项 | 规格 |
+| --- | --- |
+| 埋点 | 每次页面载入向 Waline Counter +1：当前路径（供文章卡片显示阅读量）、站点累计访问、今日访问；访客数另算 |
+| 访客去重 | localStorage 无 `inaline-visitor` 且可写时，累计访客 +1；`inaline-visitor-day` 不是当天时，今日访客 +1。只能近似唯一访客：清缓存 / 换浏览器会重复计；存储不可用时只统计访问量，不写访客数 |
+| 存储路径 | `__site__` 累计访问、`__site__/visitors` 累计访客、`__site__/<YYYY-MM-DD>` 今日访问、`__site__/<YYYY-MM-DD>/visitors` 今日访客；计数类型统一 `time`（Waline 的 SQLite 模型只持久化 `time` / `reactionN`，自定义类型不会落库） |
+| 卡片统计 | 按 `[data-post-card]` 的 `data-post-path` 收集同页路径，`type=count` 批量取评论数、`/api/article` 批量取阅读量，回填 `[data-post-stat]`；同页只发一次请求 |
+| 侧栏 | `[data-sidebar-stat="comments"]` 取全站已通过评论总数；`[data-sidebar-comments]` 请求 `type=recent`，渲染头像 / 昵称 / 相对时间 / 两行正文，链接到文章 `#comment-<顶层评论 id>` 锚点 |
+| 页脚 | 一次批量读四个站点计数器，回填 `data-footer-stat`；数字按 `zh-CN` 分组 |
+| 失败降级 | 请求失败只输出 `console.warn`，占位符保持不动；无 JS 时不做静态降级 |
+| 幂等 | 与其它脚本一致用 init + `dataset` 标记防重复；`window.inalineWalineStatsInit` 供未来 Swup 复用；同一页面只在首次 init 时埋点 |
+
 ---
 
 ## 8. 文章页 ✅
@@ -748,7 +768,7 @@ menu:
 
 - `.post-header` 仍用 `.container`（`--content-width`）居中；顶部内边距 `calc(--header-height + --space-2)` 给 fixed Header 让位，底部 `calc(--space-8 + --space-4 + --space-4)`（其中一档 `--space-4` 给浪花让位），整体比贴底时上提一档。
 - 标题 `clamp(1.75rem, 4vw, 2.5rem)`，白色、`text-wrap: balance`；不再加文字投影，靠大图遮罩保证可读。
-- 基本信息：图标 + 文案「发布于：…」「阅读时长：…」「字数：…」，横排、居中换行，颜色 `--color-over-hero-soft`；相邻信息之间用独立的 `.post-meta-sep` 竖线元素（1px 宽，颜色 / 高度与文字一致，左右间距由 `.post-meta` 的 `--space-2` gap 提供，`aria-hidden`）。阅读时长沿用文章卡片算法（正文去空白字符数 ÷ 400，向上取整、下限 1 分钟），字数取同一字符数。
+- 基本信息：图标 + 文案「发布于：…」「阅读时长：…」「字数：…」，横排、居中换行，颜色 `--color-over-hero-soft`；相邻信息之间用独立的 `.post-meta-sep` 竖线元素（1px 宽，颜色 / 高度与文字一致，左右间距由 `.post-meta` 的 `--space-2` gap 提供，`aria-hidden`）。阅读时长沿用文章卡片算法（正文去空白字符数 ÷ 400，向上取整、下限 1 分钟），字数取同一字符数；字数只加千分位逗号（`format-number.html` 传 `unit=false`），单篇不折成 k / M。
 - 分类与标签同排居中，均为纯文字链接：每组前放一枚组图标（分类 `fa-folder-open`、标签 `fa-tags`，`aria-hidden`，不写文字标签）；链接颜色 `--color-over-hero-soft`，标签保留 `#` 前缀，悬停提亮并加下划线；无对应术语时整组不渲染。
 
 ### 8.3 正文两栏
@@ -853,7 +873,7 @@ menu:
 | 表情提交 | `emoji.js` 在提交 / 预览前把 `:key:` 换成 `<img class="wl-emoji" src="..." alt="key" loading="lazy">`，把颜文字包成 `<span class="wl-kaomoji">...（已转义）...</span>`；服务端 markdown-it（`html: true`）+ DOMPurify 保留两种标签。`.wl-emoji` 也被 lightbox 忽略，点表情不会打开大图 |
 | Markdown 预览 | 预览按钮在 textarea 与 `.post-comment-preview` 之间切换：编辑区隐藏、预览区显示；切换时由 JS 量取 textarea 当前高度写进预览区 inline height，外层高度保持一致，内容更长时在预览区内部滚动。预览区沿用 `.post-comment-content` 排版，外框与输入框同底色 / 描边 / 圆角。`format.js` 先整体转义再渲染，支持常见 Markdown；`emoji.js` 先把表情 / 颜文字换成占位符，渲染完再还原，避免 `*` / `_` 被当成强调符。预览只用于发布前确认，最终以服务端渲染为准 |
 | 提交反馈 | 表单下方 `.post-comment-status`（`role="status"` / `aria-live="polite"`）：成功后显示「评论已发布」或审核提示，校验 / 网络 / 限频错误显示对应中文文案；空内容时加 `hidden`，不占高度 |
-| 列表头 | 表单下方一行：左侧「XX 条评论」总数（Waline 的 `count`，含回复）；右侧文字卡片（`--color-bg` 胶囊）内放「最新 / 最早」排序与刷新。当前排序 `is-active` 为主题色实心 + 白字，另一项默认 muted、悬停只转文字色；排序切换后回到第 1 页；刷新保持当前页，请求中图标旋转并禁用，悬停不改变禁用色 |
+| 列表头 | 表单下方一行：左侧「XX 条评论」总数（Waline 的 `count`，含回复；千分位逗号，不折 k / M）；右侧文字卡片（`--color-bg` 胶囊）内放「最新 / 最早」排序与刷新。当前排序 `is-active` 为主题色实心 + 白字，另一项默认 muted、悬停只转文字色；排序切换后回到第 1 页；刷新保持当前页，请求中图标旋转并禁用，悬停不改变禁用色 |
 | 顶层条目 | 40px 圆形头像 + 内容列；头像取 Waline 返回的 `avatar`，缺省 / 加载失败用名字首字兜底 |
 | 评论信息行 | 昵称（0.9375rem / 500，下缘 30% 高主题色荧光条，与 Markdown `strong` 一致）+ 相对时间 |
 | 气泡卡片 | `--color-bg` 底 + `--radius-md`，内边距 `--space-3 --space-4`，装正文与底部行；底部行左侧设备信息、右侧回复按钮；二级评论内边距收为 `--space-2 --space-3` |
@@ -867,14 +887,13 @@ menu:
 | 空 / 加载 / 失败 | 首次加载显示「评论加载中…」；无评论显示「还没有评论，来抢沙发吧。」；请求失败显示「评论加载失败，点击右上角刷新重试。」，保留刷新按钮 |
 | 正文 | `.post-comment-content` 带 `data-lightbox-group`，评论内图片按条成组预览（§5.4）；补了粗体（30% 主题色荧光条）、斜体、删除线、标题（压到正文级）、有序 / 无序列表、引用、行内代码、代码块、分隔线、表格的基础样式；`.wl-emoji` 按 1.5em 缩放并与文字基线对齐，`.wl-kaomoji` 整枚不折行；长链接 / 长英文串任意位置折行 |
 | 可访问性 | `section` + `aria-labelledby`、`nav` + `aria-label`、表单 `aria-label`；头像纯装饰 `aria-hidden`；三个字段用 `label` 包裹输入框，左侧标签即可访问名称（不再重复 `aria-label`）；回复按钮带 `aria-label="回复 {昵称}"`；排序按钮用 `aria-pressed` 标记当前项；刷新按钮用 `aria-label`；列表区用 `aria-busy` 标记请求中；提交反馈用 `role="status"`；表情按钮用 `aria-haspopup="dialog"` / `aria-expanded` / `aria-controls` 指向面板，面板 `role="dialog"` 并接收焦点，选项卡用 `aria-pressed`，颜文字项带 `aria-label`；预览按钮用 `aria-pressed` 标记当前态 |
-| 锚点 | 评论区 `#comments` 与单条评论 `#comment-<id>` 均设 `scroll-margin-top`，落点让开 fixed Header |
+| 锚点 | 评论区 `#comments` 与单条评论 `#comment-<id>` 均设 `scroll-margin-top`，落点让开 fixed Header；从侧栏近期评论等外部链接带 `#comment-<id>` 进入时，`comment.js` 在首次渲染后补一次定位（评论是异步插入的，浏览器不会自己滚） |
 | 动效降级 | 评论 / 表单 / 排序 / 刷新按钮、表情选项卡 / 表情项、字段外框、输入框、分页与分割线雪花在 `prefers-reduced-motion` 下取消过渡 / 位移；刷新中的旋转图标也停住 |
 
 ### 8.9 待补充 ⏳
 
 - 移动端断点与顶部大图高度微调。
 - 评论图片上传、GIF 搜索等 Waline 客户端能力尚未接入；预览的轻量 Markdown 暂不支持表格、脚注与嵌套列表。
-- 侧栏近期评论、文章卡片评论量、页脚统计随 Waline 回填。
 
 ---
 
@@ -925,10 +944,10 @@ menu:
 | --- | --- |
 | 列表 | `padding-left: 1.6em`；条目间 `.25em`；`::marker` 主题色，序号等宽 |
 | 任务列表 | `li:has(> input[type="checkbox"])` 去圆点；checkbox `accent-color: --color-primary` |
-| 引用 | 左侧 3px 主题色竖线（各层级同色）、`--color-quote-bg-1` 淡底、右侧 `--radius-sm`，文字用 `--color-quote-text`（`#6A737D`，亮暗共用）；嵌套引用竖线不变，底色按层级换 `--color-quote-bg-2` / `--color-quote-bg-3`，由浅到深；`render-blockquote.html` 在内容前铺一枚开引号（复用 `icon.html` 的 `quote` SVG，`1.5rem`，主题色 @ `opacity: .35`，绝对定位在左上角，上内边距为它留位） |
+| 引用 | 左侧 3px 主题色竖线（各层级同色）、`--color-quote-bg-1` 淡底、右侧两角 `--radius-md`（竖线所在的左上 / 左下保持直角，竖线不会被圆角吃掉），文字用 `--color-quote-text`（`#6A737D`，亮暗共用）；嵌套引用竖线不变，底色按层级换 `--color-quote-bg-2` / `--color-quote-bg-3`，由浅到深；`render-blockquote.html` 在内容前铺一枚开引号（复用 `icon.html` 的 `quote` SVG，`1.5rem`，主题色 @ `opacity: .35`，绝对定位在左上角，上内边距为它留位） |
 | 行内代码 | `--font-mono`、`--color-surface` 底、1px 描边、`--radius-sm` |
 | 代码块 | 由 `render-codeblock.html` 包成 macOS 代码窗口（见下节）；Chroma 只输出类名（`noClasses: false`、`lineNos: true`），配色见 `_chroma.scss` |
-| 表格 | 渲染钩子 `render-table.html` 包一层 `.table-scroll`：表格 `width: 100%` 与父级同宽，内容超宽时由包装层横向滚动；`.9375rem / 1.6`；单元格下边框、表头 `--color-surface` + 加粗 + 不换行、偶数行 `--color-bg`；无行悬停变色；`caption` 左对齐 muted 小字 |
+| 表格 | 渲染钩子 `render-table.html` 包一层 `.table-scroll`：表格 `width: 100%` 与父级同宽，内容超宽时由包装层横向滚动；包装层 1px `--color-border` 描边 + `--radius-md` 圆角，表头 / 行底色与滚动内容一起被圆角裁切；`.9375rem / 1.6`；单元格下边框、表头 `--color-bg` 底 + 加粗 + 不换行（与正文行区分；不用 `--color-surface`，暗色下会与 elevated 同值）；默认不做斑马纹，鼠标移入行铺原来斑马纹那一档 `--color-bg` 浅底；`caption` 左对齐 muted 小字 |
 | 图片 / 图注 | 图片 `max-width: 100%` + `--radius-md`；独占段落的图片居中成块，与文字同段时保持行内；`figure` 居中，`figcaption` muted 小字；点击图片打开预览（§5.4），`data-lightbox-*` 可指定大图、图注或跳过 |
 | 分隔线 | 参考 Fomal：`2px` 虚线（`--color-hr-line`）+ 雪花图标（FA `\f2dc`，`--color-primary`）；图标默认在左 5%，悬停 1s 移到右 5%，`prefers-reduced-motion` 下不移动。样式抽成 `md-divider` mixin，评论区（§8.8）共用 |
 | 脚注 | `.footnotes` 顶部细线 + muted 小字；隐藏 Goldmark 自带 `<hr>`；`.footnote-ref` 主题色、无下划线；序号 marker 弱化 |
@@ -941,7 +960,7 @@ menu:
 
 | 项 | 规格 |
 | --- | --- |
-| 外壳 | `--code-window-border` 描边 + `--radius-md` + `--shadow-sm`，底色 `--code-window-bg`，`overflow: hidden` |
+| 外壳 | `--code-window-border` 描边 + `--radius-md`，底色 `--code-window-bg`，`overflow: hidden` |
 | 窗口条 | 高 `2.25rem`，底色 `--code-window-bar` + 底边 1px 描边；左侧依次为三枚 12px 交通灯（`--code-dot-*`，两种主题同色）与语言名（`--font-mono`、`.75rem`、`--code-window-fg`）；右侧依次为换行开关（`fa-level-down`，仅横向溢出时出现）、图标复制按钮与折叠开关（仅长代码出现） |
 | 复制 | 按钮默认 `hidden`，`main.js` 找到代码列后露出并绑定；点击把代码文本写入剪贴板，成功时图标由 `fa-copy` 切为 `fa-check`、`aria-label` 改为"已复制"，1.6s 后复原。按钮 `1.75rem` 见方、无边框，悬停只提亮图标；无 JS 时按钮不出现 |
 | 高亮 | `markup.highlight.noClasses: false` + `lineNos: true`：Chroma 只输出类名；`_chroma-light.scss`（JetBrains Light）与 `_chroma-dark.scss`（Darcula）提供两套配色，`_chroma.scss` 负责亮色默认与暗色覆盖；`--code-window-bg` 必须与 `.chroma` 背景一致 |
@@ -954,7 +973,7 @@ menu:
 
 - 打印时链接保留下划线、隐藏链接图标；代码块 / 引用 / 表格 / 图 / details `break-inside: avoid`，h1–h3 `break-after: avoid`。
 - 打印时代码窗口展开被折叠的内容，并隐藏换行 / 复制 / 折叠开关；标题四角星停止旋转。
-- `prefers-reduced-motion` 下取消链接与 `summary` 的颜色过渡；标题四角星停转、标题悬停位移取消；代码窗口按钮过渡取消。
+- `prefers-reduced-motion` 下取消链接、`summary` 与表格行悬停的颜色过渡；标题四角星停转、标题悬停位移取消；代码窗口按钮过渡取消。
 
 ### 9.6 数学公式 ✅
 

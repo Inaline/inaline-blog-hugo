@@ -52,9 +52,11 @@ params:
   # 评论（Waline）
   #
   # 文章评论区从 Waline 服务端取数据；服务端见 waline/ 目录（npm start）。
+  # 开启后全站还会回填：文章卡片的阅读量 / 评论量、侧栏评论总数与近期评论、
+  # 页脚今日 / 累计访客与访问（见 DESIGN.md §7.11）。
   # server：服务地址。本地开发默认 http://localhost:8360；上线时换成公网地址。
   #   站点走 https 时必须配 https 的 Waline 地址，否则混合内容会被浏览器拦截。
-  # enable：false 时评论区与相关脚本都不渲染 / 不加载。
+  # enable：false 时评论区、统计回填与相关脚本都不渲染 / 不加载。
   # page_size：每页顶层评论数。回复挂在父评论下，不单独分页。
   # avatar_prefix：表单预览头像的前缀，仅用于非 QQ 情况，
   #   需与 Waline 服务端的头像服务一致；默认 Libravatar。
@@ -203,8 +205,9 @@ params:
     # 这是主题自带的身份信息，没得改也没必要改，故只留开关不给配置项
     powered_by: true
 
-    # 访客统计：数字目前是占位符（显示 —），等 Waline 接上后由前端回填，
-    # 见 partials/footer.html 里 data-footer-stat 那几处。false 则整行不渲染
+    # 访客统计：今日 / 累计访客与访问四个数字由 waline-stats.js 回填
+    # （数据存在 Waline 的计数器里，访客数按浏览器本地标记近似去重，
+    # 见 DESIGN.md §7.11）。Waline 未配置时保留占位符；false 则整行不渲染
     stats: true
 
     # 站点开始运行的时刻（RFC 3339，务必带时区）：
@@ -256,7 +259,7 @@ params:
       #   rss / email / wechat / bilibili / github / qq
       # url  → 超链接：以 / 开头的当站内路径（走 relURL）；外链开新标签页；
       #        邮箱写 mailto:xxx@yyy
-      # copy → 点击复制到剪贴板并弹一个"已复制"气泡（微信这类没有网页地址的用它）
+      # copy → 点击复制到剪贴板并弹一个"已复制"气泡（没有可跳转地址时用）
       # 两个都不写的条目会被跳过，名字写错会在构建时告警
       socials:
         - name: "github"
@@ -269,10 +272,10 @@ params:
           url: "mailto:you@example.com"
 
         - name: "wechat"
-          copy: "your_wechat_id"
+          url: "https://example.com/wechat" # ← 换成你的微信添加链接
 
         - name: "qq"
-          copy: "123456789"
+          url: "https://example.com/qq" # ← 换成你的 QQ 添加链接
 
         # - name: "bilibili"
         #   url: "https://space.bilibili.com/0000000"
@@ -285,10 +288,9 @@ params:
       title: "最新文章"
       count: 5
 
-    # 近期评论：评论系统（Waline）尚未接入，列表内容是主题内置的占位数据，
-    # 接上后由前端按 data-sidebar-comments 回填（见 sidebar-comments.html）。
-    # 每条显示圆形头像、用户名、相对时间与正文；count 为显示条数。
-    # enable 关掉或整块删掉则整卡不渲染
+    # 近期评论：数据来自 Waline（type=recent），由 waline-stats.js 渲染。
+    # 每条显示圆形头像、用户名、相对时间与正文，链接指向评论所在文章。
+    # count 为显示条数。enable 关掉、整块删掉或 Waline 未配置 server 时整卡不渲染
     comments:
       enable: true
       title: "近期评论"

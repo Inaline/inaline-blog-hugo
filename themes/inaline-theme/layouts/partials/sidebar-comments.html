@@ -1,75 +1,34 @@
 {{/* 侧栏 · 近期评论
 
-   评论系统（Waline）尚未接入，列表现在渲染模板内的占位数据，
-   但结构按最终形态搭好：每条 = 圆形头像 + 用户名 / 相对时间 + 正文（最多两行）。
-   接上 Waline 后由前端按 data-sidebar-comments 回填，占位数据随之删除。
+   数据来自 Waline：模板只输出卡片骨架、列表容器与条数配置，
+   由全站脚本 assets/js/waline-stats.js 请求 type=recent 后渲染。
+   每条 = 圆形头像 + 用户名 / 相对时间 + 正文（最多两行），
+   链接指向评论所在文章的 #comment-<顶层评论 id> 锚点。
 
-   占位条目的链接循环指向 posts 分区最近的文章——接入评论后应改为评论所在文章的锚点。
    配置见 hugo.yaml 的 params.sidebar.comments；enable 关掉或整块删掉则整卡不渲染。
+   Waline 未配置 server / enable: false 时也没有数据可取，同样不渲染。
 */}}
 {{ $s := default dict site.Params.sidebar }}
 {{ $c := default dict $s.comments }}
+{{ $waline := site.Params.waline }}
 
-{{ if $c.enable }}
+{{ if and $c.enable $waline $waline.server (ne $waline.enable false) }}
   {{ $title := or $c.title "近期评论" }}
   {{ $count := $c.count | default 5 }}
 
-  {{/* 占位数据里的博主回复沿用 hero.avatar（同 sidebar-profile 的解析方式）：
-       网络 URL 原样引用，assets 路径走 resources.Get */}}
-  {{ $author := or site.Params.author "博主" }}
-  {{ $authorAvatar := "" }}
-  {{ with site.Params.hero }}{{ with .avatar }}
-    {{ $authorAvatar = . }}
-    {{ if not (or (hasPrefix . "http://") (hasPrefix . "https://")) }}
-      {{ with resources.Get . }}{{ $authorAvatar = .RelPermalink }}{{ else }}{{ $authorAvatar = "" }}{{ end }}
-    {{ end }}
-  {{ end }}{{ end }}
-
-  {{/* 占位数据：ago 为相对构建时刻的偏移（Go duration 语法），
-       故意覆盖"分钟 / 小时 / 天 / 日期"四档，方便核对 relative-time.html 的显示。
-       avatar 留空则用名字首字生成圆形占位头像；填 URL 或 assets 路径即可换成图片 */}}
-  {{ $now := now }}
-  {{ $comments := slice
-    (dict "name" "阿澈" "ago" "-8m" "avatar" "" "content" "这篇讲 Hugo 目录结构的文章来得正好，之前卡了很久的 shortcode 位置问题终于弄明白了。")
-    (dict "name" "Nana" "ago" "-3h" "avatar" "" "content" "封面图的光影很喜欢，请问是在哪里拍的？")
-    (dict "name" "老白" "ago" "-26h" "avatar" "" "content" "跟着步骤跑通了。记得把 hasCJKLanguage 打开，字数统计才对得上。")
-    (dict "name" "Kite" "ago" "-74h" "avatar" "" "content" "期待评论系统接入后的样子，侧栏的节奏很舒服。")
-    (dict "name" $author "ago" "-216h" "avatar" $authorAvatar "content" "谢谢大家的留言，后续会补上目录与标签页的样式。")
-  }}
-  {{ $comments = first $count $comments }}
-  {{ $posts := first $count ((where site.RegularPages "Section" "posts").ByDate.Reverse) }}
-
-  <div class="sidebar-card sidebar-comments" data-sidebar-comments>
+  <div class="sidebar-card sidebar-comments" data-sidebar-comments data-sidebar-comments-count="{{ $count }}">
     <h2 class="sidebar-title">
       <i class="fa-regular fa-comment" aria-hidden="true"></i>
       <span>{{ $title }}</span>
     </h2>
 
-    <ul class="comment-list">
-      {{ range $i, $comment := $comments }}
-        {{ $time := $now.Add (time.ParseDuration $comment.ago) }}
-        {{ $href := "" }}
-        {{ if $posts }}{{ $href = (index $posts (mod $i (len $posts))).RelPermalink }}{{ end }}
-        <li>
-          {{/* 整行一个链接；没有文章可指时退化为静态条目 */}}
-          {{ if $href }}<a class="comment-item" href="{{ $href }}">{{ else }}<div class="comment-item">{{ end }}
-            <span class="comment-avatar" aria-hidden="true">
-              {{- if $comment.avatar -}}
-                <img src="{{ $comment.avatar }}" alt="" loading="lazy" width="32" height="32">
-              {{- else -}}
-                {{ substr $comment.name 0 1 }}
-              {{- end -}}
-            </span>
-            <span class="comment-body">
-              <span class="comment-meta">
-                <span class="comment-name">{{ $comment.name }}</span>
-                <time class="comment-time" datetime="{{ $time.Format "2006-01-02T15:04:05Z07:00" }}" title="{{ $time.Format "2006年1月2日 15:04" }}">{{ partial "relative-time.html" $time }}</time>
-              </span>
-              <span class="comment-text">{{ $comment.content }}</span>
-            </span>
-          {{ if $href }}</a>{{ else }}</div>{{ end }}
-        </li>
-      {{ end }}
+    <ul class="comment-list" data-sidebar-comment-list>
+      <li class="sidebar-comments-state">评论加载中…</li>
     </ul>
+
+    <noscript>
+      <style>[data-sidebar-comment-list] { display: none; }</style>
+      <p class="sidebar-comments-state">近期评论需要启用 JavaScript 才能加载。</p>
+    </noscript>
   </div>
 {{ end }}

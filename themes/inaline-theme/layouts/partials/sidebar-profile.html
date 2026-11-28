@@ -27,17 +27,12 @@
 
   {{/* 文章：与首页列表同一个集合（posts 分区的常规页）。
        字数：各篇 .WordCount 之和——Hugo 的 WordCount 对中日韩逐字计数，
-       中文站拿到的就是"字数"而不是"空格分隔的词数" */}}
+       中文站拿到的就是"字数"而不是"空格分隔的词数"。
+       两项都是侧栏汇总数字，走 format-number 的全局格式：
+       < 10000 千分位逗号，更大用截断两位小数的 k / M（§7.8） */}}
   {{ $posts := where site.RegularPages "Section" "posts" }}
   {{ $words := 0 }}
   {{ range $posts }}{{ $words = add $words .WordCount }}{{ end }}
-  {{/* 五位数以上折成"万字"，否则一长串数字在卡里读不出来。
-       $k 是"万位 + 千位"拼成的整数，低位为 0 时不显示小数（10000 → 1万，12345 → 1.2万） */}}
-  {{ $wordsText := $words }}
-  {{ if ge $words 10000 }}
-    {{ $k := div $words 1000 }}
-    {{ if mod $k 10 }}{{ $wordsText = printf "%d.%d万" (div $k 10) (mod $k 10) }}{{ else }}{{ $wordsText = printf "%d万" (div $k 10) }}{{ end }}
-  {{ end }}
 
   {{/* 名称 → 无障碍标签。这张表同时是图标名的白名单：主题自绘 SVG 只有这几个 */}}
   {{ $labels := dict
@@ -50,15 +45,15 @@
 
     <div class="profile-stats">
       <div class="profile-stat">
-        <span class="profile-stat-num">{{ len $posts }}</span>
+        <span class="profile-stat-num">{{ partial "format-number.html" (dict "value" (len $posts)) }}</span>
         <span class="profile-stat-label">文章</span>
       </div>
       <div class="profile-stat">
-        <span class="profile-stat-num">{{ $wordsText }}</span>
+        <span class="profile-stat-num">{{ partial "format-number.html" (dict "value" $words) }}</span>
         <span class="profile-stat-label">字数</span>
       </div>
       <div class="profile-stat">
-        {{/* 评论数待接入 Waline 后由前端回填（锚点 data-sidebar-stat），现在渲染占位符 */}}
+        {{/* 全站评论总数由 waline-stats.js 回填；Waline 未接入或无 JS 时保持占位符 */}}
         <span class="profile-stat-num" data-sidebar-stat="comments">--</span>
         <span class="profile-stat-label">评论</span>
       </div>
