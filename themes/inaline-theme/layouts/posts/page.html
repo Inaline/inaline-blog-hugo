@@ -90,6 +90,6 @@
   {{ $js := resources.Get "js/pages/post.js" | minify | fingerprint }}
   <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 
-  {{/* 评论区（§8.8）：表情 → Markdown 预览 → UI，与说说详情页共用同一组脚本 */}}
+  {{/* 评论区（§8.8）：表情 → Markdown 预览 → UI，与动态详情页共用同一组脚本 */}}
   {{ partial "comment-scripts.html" . }}
 {{ end }}

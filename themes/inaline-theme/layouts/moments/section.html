@@ -1,5 +1,5 @@
 {{ define "main" }}
-{{/* 说说页（DESIGN.md §7.14）：只聚合 content/moments/ 下的常规页。
+{{/* 动态页（DESIGN.md §7.14）：只聚合 content/moments/ 下的常规页。
      一张卡片里先放封面，再接按日期倒序的动态列表；右侧沿用侧栏。
      页面没有可见标题，封面上的博主信息承担视觉入口，h1 只留给读屏。 */}}
 {{ $pages := sort .RegularPages "Date" "desc" }}
@@ -26,7 +26,7 @@
       {{ else }}
         <div class="moments-empty">
           <i class="fa-regular fa-comment-dots" aria-hidden="true"></i>
-          <p>还没有说说，去记录一点什么吧。</p>
+          <p>还没有动态，去记录一点什么吧。</p>
         </div>
       {{ end }}
     </div>

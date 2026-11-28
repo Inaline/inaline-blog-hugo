@@ -12,7 +12,7 @@
   字数为正文去掉空白后的字符数，与文章卡片、文章页同一算法；
   最近更新取各篇 .Lastmod 的最大值（未配置 lastmod 时 Hugo 回退到 date）。
 */}}
-{{/* 只统计 posts 分区：说说等内容不进入分类 / 标签页（§7.14） */}}
+{{/* 只统计 posts 分区：动态等内容不进入分类 / 标签页（§7.14） */}}
 {{ $pages := where .RegularPages "Section" "posts" }}
 {{ $count := len $pages }}
 {{ $chars := 0 }}

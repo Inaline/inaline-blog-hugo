@@ -168,7 +168,7 @@ hasCJKLanguage = true
     ]
 
   # ---------------------------------------------------------------------------
-  # 说说页（/moments/）
+  # 动态页（/moments/）
   #
   # cover：封面图。网络 URL 或 assets 路径；留空 / 删除 → 回退封面池第一张。
   # bio：封面右下角的签名，落在图片下方的白色区域；
@@ -365,7 +365,7 @@ hasCJKLanguage = true
       icon = "fa-solid fa-house"
 
   [[menu.main]]
-    name = "说说"
+    name = "动态"
     pageRef = "/moments/"
     weight = 20
     [menu.main.params]

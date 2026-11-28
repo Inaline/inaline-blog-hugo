@@ -16,7 +16,7 @@
 
 {{ if $p.enable }}
   {{/* 头像：sidebar.profile.avatar 优先，留空沿用 hero.avatar——同一个人，不必配两遍。
-       解析抽到 author-avatar.html，说说页封面 / 动态卡共用同一套规则 */}}
+       解析抽到 author-avatar.html，动态页封面 / 动态卡共用同一套规则 */}}
   {{ $avatar := partial "author-avatar.html" . }}
 
   {{ $name := or $p.name site.Params.author }}

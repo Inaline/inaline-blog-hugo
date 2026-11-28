@@ -1,13 +1,13 @@
 {{ define "main" }}
-{{/* 说说详情（DESIGN.md §7.14）：同款封面 + 单条动态，下方接评论区。
-     旧站的"详情"其实也是这张说说卡只显示一条，再跟一张评论卡；
+{{/* 动态详情（DESIGN.md §7.14）：同款封面 + 单条动态，下方接评论区。
+     旧站的"详情"其实也是这张动态卡只显示一条，再跟一张评论卡；
      这里沿用同样的结构，评论区复用文章页的 post-comments.html。 */}}
 {{ $label := .Title }}
 {{ if not $label }}
   {{ if not .Date.IsZero }}
-    {{ $label = printf "%s 的说说" (.Date.Format "2006年1月2日 15:04") }}
+    {{ $label = printf "%s 的动态" (.Date.Format "2006年1月2日 15:04") }}
   {{ else }}
-    {{ $label = "说说" }}
+    {{ $label = "动态" }}
   {{ end }}
 {{ end }}
 <h1 class="visually-hidden">{{ $label }}</h1>

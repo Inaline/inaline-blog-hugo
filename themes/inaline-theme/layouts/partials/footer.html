@@ -6,7 +6,7 @@
 {{ $f := default dict site.Params.footer }}
 {{ $year := now.Year }}
 
-{{/* 文章页、归档页与说说页（列表 + 详情）：没有整页背景，背景图只在页脚出现。
+{{/* 文章页、归档页与动态页（列表 + 详情）：没有整页背景，背景图只在页脚出现。
      把封面池写成 data 属性，main.js 按 localStorage 里首页上次展示的封面替换
      （§7.1 / §7.13 / §7.14） */}}
 {{ $coverURLs := slice }}

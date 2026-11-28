@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-{{/* 无标题页面（如说说）用日期兜底，避免标题里只剩一个孤零零的分隔点 */}}
+{{/* 无标题页面（如动态）用日期兜底，避免标题里只剩一个孤零零的分隔点 */}}
 {{ $pageTitle := .Title }}
 {{ if and (not .IsHome) (not $pageTitle) (not .Date.IsZero) }}{{ $pageTitle = .Date.Format "2006年1月2日 15:04" }}{{ end }}
 <title>{{ if not .IsHome }}{{ with $pageTitle }}{{ . }} · {{ end }}{{ end }}{{ site.Title }}</title>

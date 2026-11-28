@@ -1,6 +1,6 @@
 {{ define "main" }}
 {{/* 分类 / 标签词条页（§7.12）：顶部统一用压在整页背景图上的标题区。
-     列表只取 posts 分区，说说等内容不进入词条页（§7.14）。 */}}
+     列表只取 posts 分区，动态等内容不进入词条页（§7.14）。 */}}
 {{ $pages := where .RegularPages "Section" "posts" }}
 {{ partial "term-hero.html" . }}
 <div class="container container--wide layout">
