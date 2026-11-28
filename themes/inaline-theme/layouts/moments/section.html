@@ -13,8 +13,12 @@
       {{ if $pages }}
         {{ $paginator := .Paginate $pages }}
         <div class="moments-list">
-          {{ range $paginator.Pages }}
-            {{ partial "moment-item.html" (dict "page" . "detail" false) }}
+          {{ range $i, $page := $paginator.Pages }}
+            {{ partial "moment-item.html" (dict "page" $page "detail" false) }}
+            {{/* 条目之间用 Markdown 雪花虚线隔开；最后一条后面不画 */}}
+            {{ if lt (add $i 1) (len $paginator.Pages) }}
+              <hr class="moment-divider" aria-hidden="true">
+            {{ end }}
           {{ end }}
         </div>
 

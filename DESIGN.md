@@ -100,7 +100,6 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 --code-dot-yellow:      #FEBC2E;
 --code-dot-green:       #28C840;
 
---color-moment-author:  #576B95;                  // 动态作者名（旧站微信蓝；暗色翻亮，见 §7.14）
 --moments-cover-scrim-top:    rgba(0, 0, 0, .08); // 动态封面顶部压暗（§7.14）
 --moments-cover-scrim-bottom: rgba(0, 0, 0, .42); // 动态封面底部压暗（姓名 / 签名）
 ```
@@ -115,7 +114,6 @@ Hugo extended 内置 LibSass，环境暂无 Dart Sass：
 > `--brand-github` 是唯一例外：近黑色在暗色卡片上会消失，暗色下翻为 `#FFFFFF`。
 > 压在照片 / 深色上的色块（`--color-over-hero*`、`--post-hero-*`、`--footer-scrim`、`--badge-*`、`--glow-name`、`--moments-cover-scrim-*`）
 > 不跟主题翻色——它们坐在图片上，与页面底色无关。
-> `--color-moment-author` 坐在卡片上而不是照片上，暗色下翻为 `#93A9D8`（§7.14）。
 > `--lightbox-toolbar-bg` 是图片预览里的例外：按主题翻色，亮色叠白偏亮、暗色加深（§5.4）。
 
 ### 3.2 中性色与代码窗口
@@ -803,11 +801,11 @@ menu:
 | 数据 | `content/moments/` 下的常规页，按 `.Date` 倒序，复用 `pagination.pagerSize` 分页；只有一页时不渲染分页条 |
 | 封面 | `.moments-card` 顶部 5:3 封面（高度封顶 520px，避免侧栏撤掉后单栏大屏把封面拉成海报）：图片取 `params.moments.cover`（网络 URL / assets 路径），未配置回退分区 front matter 的 cover，再回退封面池第一张（`post-cover.html` 的 `cover` 入参）；底部 `--moments-cover-scrim-*` 渐变压暗 |
 | 封面信息 | 内容块整体下探 32px：姓名（`params.author`）留在封面上（白字 + 投影），签名（`params.moments.bio`，缺省分区 `bio`，再缺省 `params.description`）落到图片下方的白色区域、取 `--color-text-muted`；博主头像 64px 再向下压一截，与列表留白咬合。无签名时整块文字额外上提，姓名不会掉到白卡上 |
-| 卡片 | 封面与列表同在一张 `.moments-card`（`--color-elevated` + `--shadow-sm` + `--radius-lg`）；列表左右内边距 `--space-5`，条目之间 1px `--color-border` 分割线 |
-| 条目 | `.moment-item`：左侧 48px 方形头像（`author-avatar.html`，与侧栏博主卡同源），右侧作者名（`--color-moment-author`，沿用旧站微信蓝）→ 正文（复用 `.markdown`，字号收一档）→ 可选配图网格 → 底部日期 / 评论 / 详情 |
+| 卡片 | 封面与列表同在一张 `.moments-card`（`--color-elevated` + `--shadow-sm` + `--radius-lg`）；列表左右内边距 `--space-5`。条目之间改为 Markdown 分割线：`section.html` 在两条动态之间输出 `.moment-divider`（`<hr>` + `md-divider`：2px 虚线 + 雪花图标，悬停滑动），列表内把 mixin 的 40px 外边距归零、宽度吃满，上下间距交给条目自己的 padding；最后一条后面不画 |
+| 条目 | `.moment-item`：左侧 48px 方形头像（`author-avatar.html`，与侧栏博主卡同源），右侧作者名（Markdown strong 样式：正文色 + 字重 600 + 30% `--color-primary-highlight` 荧光条，§9.3）→ 正文（复用 `.markdown`，字号收一档）→ 可选配图网格 → 底部日期 / 评论 / 详情 |
 | 配图 | front matter `images`：网络 URL、assets 路径或页面资源；正方形缩略图自适应网格；支持 `{ src, alt }` 写法。每条动态的图片归一个 `data-lightbox-group`，头像在 `data-lightbox-ignore` 子树（§5.4） |
 | 操作 | 评论链接指向详情页 `#comments`，评论数由 `waline-stats.js` 按 `data-post-card` / `data-post-path` 回填（§7.11）；进入详情页只走「详情」链接。整卡不跳转：不设 `data-card-href` / `cursor: pointer`，避免与正文选字、看图冲突（与旧站一致）。Waline 未配置 / 关闭时评论操作与详情评论区整块不渲染 |
-| 评论预览 | 列表页由 `js/pages/moments.js` 接管：先 `count` 批量判断哪些动态有评论，没有评论的容器保持 `hidden`；有评论的动态各请求一页评论（顶层 + 一层回复），按时间倒序取最新 5 条，以「昵称：纯文本」装进浅灰圆角框（`--color-bg`，`0.875rem / 1.6`）显示在日期 / 操作行下方。正文只用 `textContent` 输出，避免把评论 HTML 注入列表；请求失败保持隐藏，不影响卡片 |
+| 评论预览 | 列表页由 `js/pages/moments.js` 接管：先 `count` 批量判断哪些动态有评论，没有评论的容器保持 `hidden`；有评论的动态各请求一页评论（顶层 + 一层回复），按时间倒序取最新 5 条，以「昵称：纯文本」装进浅灰圆角框（昵称与完整评论区一致：正文色 + 30% 主题色荧光条）（`--color-bg`，`0.875rem / 1.6`）显示在日期 / 操作行下方。正文只用 `textContent` 输出，避免把评论 HTML 注入列表；请求失败保持隐藏，不影响卡片 |
 | 详情 | `/moments/<slug>/` 复用同款封面与单条动态，下方追加独立评论卡：复用 `post-comments.html`，隐藏与上方内容重复的雪花分割线；评论区 path 与列表统计共用同一条 `RelPermalink` |
 | 标题 | 动态卡不展示 title；标题只用于浏览器标签 / RSS（archetype 默认生成日期时间），缺失时 `head.html` 用日期兜底；页面用 `.visually-hidden` 的 h1 保留语义 |
 | 空态 | 无动态时在卡内显示图标与"还没有动态"提示 |

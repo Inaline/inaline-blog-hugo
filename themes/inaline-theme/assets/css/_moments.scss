@@ -4,8 +4,9 @@
 // 结构：一张 .moments-card 里先放封面（.moments-cover），再接动态列表
 // （.moments-list）；右侧沿用通用侧栏。详情页复用同款封面 + 单条
 // .moment-item，下方追加一张 .moments-comments 评论卡。
-// 视觉参考旧站 /shuoshuo/：5:3 大封面、右下角博主信息与头像、头像下探进
-// 列表留白、动态之间用细分割线分开。
+// 布局参考旧站 /shuoshuo/：5:3 大封面、右下角博主信息与头像、头像下探进
+// 列表留白；作者名与条目分割线改用本站的 Markdown 语言——strong 荧光条与
+// 雪花虚线（见 §9.3 / §9.4）。
 // ---------------------------------------------------------------------------
 
 // --- 卡片外壳 ---
@@ -132,11 +133,16 @@
 
 .moment-item {
   padding: var(--space-4) 0;
-  border-bottom: 1px solid var(--color-border);
 }
 
-.moment-item:last-child {
-  border-bottom: 0;
+// 条目之间的分割线：直接复用 Markdown 的雪花虚线（_markdown.scss 的
+// md-divider）。列表里不需要正文那种 40px 外边距，上下间距交给条目的
+// padding，所以 margin 归零、宽度吃满；图标悬停从左滑到右，
+// reduced-motion 下停在原位（见文件末尾）。
+.moment-divider {
+  @include md-divider;
+  width: 100%;
+  margin: 0;
 }
 
 // 详情页只有一条：底部留一档，卡片不至于贴住动态的日期行
@@ -184,12 +190,13 @@
   gap: var(--space-2);
 }
 
-// 作者名沿用旧站评论区的微信蓝；暗色下由 --color-moment-author 翻亮
+// 作者名用 Markdown strong 的样式：正文色 + 字重 600 + 30% 主题色荧光条（§9.3）
 .moment-author {
-  color: var(--color-moment-author);
+  color: var(--color-text);
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.4;
+  background: linear-gradient(var(--color-primary-highlight), var(--color-primary-highlight)) bottom / 100% 30% no-repeat;
 }
 
 // 正文复用 Markdown 排版，只把字号与行距收一档：动态比文章短，
@@ -297,10 +304,11 @@
   margin-top: var(--space-1);
 }
 
-// 昵称沿用作者名的微信蓝，正文跟随卡片文字色
+// 昵称与完整评论区一致：正文色 + 30% 主题色荧光条（§8.8）
 .moment-comment-user {
-  color: var(--color-moment-author);
+  color: var(--color-text);
   font-weight: 500;
+  background: linear-gradient(var(--color-primary-highlight), var(--color-primary-highlight)) bottom / 100% 30% no-repeat;
 }
 
 .moment-comment-text {
@@ -427,5 +435,14 @@
 
   .moment-image-item:hover img {
     transform: none;
+  }
+
+  // 雪花图标不再随悬停横向移动
+  .moment-divider::before {
+    transition: none;
+  }
+
+  .moment-divider:hover::before {
+    left: 5%;
   }
 }
