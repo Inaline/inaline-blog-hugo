@@ -1,19 +1,37 @@
 {{ define "main" }}
-<div class="container">
-  <header class="page-header">
-    <h1 class="page-title">{{ .Title }}</h1>
-  </header>
-  {{ if .Data.Terms }}
-  <ul class="term-list">
-    {{ range .Data.Terms.Alphabetical }}
-      <li>
-        <a href="{{ .Page.RelPermalink }}">{{ .Page.Title }}</a>
-        <span class="count">({{ .Count }})</span>
-      </li>
-    {{ end }}
-  </ul>
-  {{ else }}
-  <p class="empty-hint">暂无内容</p>
-  {{ end }}
+{{/* 分类 / 标签索引页（DESIGN.md §7.12）：参考归档页做顶部大图，不铺整页背景；
+     下方是一张标签 / 分类卡 + 通用侧栏。词条按文章数从多到少排列。 */}}
+{{ partial "taxonomy-hero.html" . }}
+
+{{ $isTag := eq .Data.Singular "tag" }}
+{{ $terms := .Data.Terms.ByCount }}
+<div class="container container--wide layout taxonomy-layout">
+  <div class="layout-main">
+    <section class="taxonomy-card" aria-labelledby="taxonomy-card-title">
+      <header class="taxonomy-head">
+        <h2 class="taxonomy-title md-h1" id="taxonomy-card-title">
+          <span>{{ if $isTag }}全部标签{{ else }}全部分类{{ end }}</span>
+        </h2>
+        <span class="taxonomy-hint">按文章数排序</span>
+      </header>
+
+      {{ if $terms }}
+        <ul class="taxonomy-cloud">
+          {{ range $terms }}
+            <li>
+              <a class="taxonomy-chip" href="{{ .Page.RelPermalink }}">
+                {{ if $isTag }}<span class="taxonomy-chip-hash" aria-hidden="true">#</span>{{ end }}
+                <span class="taxonomy-chip-name">{{ .Page.LinkTitle }}</span>
+                <span class="taxonomy-chip-count">{{ .Count }}</span>
+              </a>
+            </li>
+          {{ end }}
+        </ul>
+      {{ else }}
+        <p class="empty-hint">{{ if $isTag }}暂无标签{{ else }}暂无分类{{ end }}</p>
+      {{ end }}
+    </section>
+  </div>
+  {{ partial "sidebar.html" . }}
 </div>
 {{ end }}

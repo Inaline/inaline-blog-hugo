@@ -1,12 +1,15 @@
 // ---------------------------------------------------------------------------
-// 分类 / 标签词条页（DESIGN.md §7.12）
+// 分类 / 标签词条页与索引页（DESIGN.md §7.12）
 //
-// 词条页和首页一样使用整页背景（page-background.html），没有文章页的大图。
-// 顶部沿用文章页标题区的排版：词条名居中，下方一行统计信息；区别是去掉波浪，
-// 标题区直接浮在连续的背景图上，与列表之间只留一档呼吸。
-// 标题前的图标区分词条类型：分类 = 文件夹，标签 = tags。
+// 词条页（单个分类 / 标签）与索引页（/categories/、/tags/）是两种视觉：
+//   · 词条页：和首页一样使用整页背景（page-background.html），没有大图；
+//     顶部 .term-hero 直接浮在连续背景图上，下方是文章卡片列表。
+//   · 索引页：参考归档页，使用一张顶部大图（.post-hero.archive-hero），
+//     不铺整页背景；下方回到灰底，一张 .taxonomy-card 装标签 / 分类云 + 侧栏。
 //
-// 结构见 layouts/partials/term-hero.html + layouts/term.html。
+// 标题前的图标区分类型：分类 = 文件夹，标签 = tags。
+// 结构见 layouts/partials/term-hero.html、taxonomy-hero.html、
+// layouts/term.html 与 layouts/taxonomy.html。
 // ---------------------------------------------------------------------------
 
 .term-hero {
@@ -68,4 +71,116 @@
 // 只留一档上边距，避免统计信息贴到第一张卡片
 .term-hero + .container {
   padding-top: var(--space-6);
+}
+
+// --- 分类 / 标签索引页 ---
+
+// 归档式大图与灰底内容之间的呼吸（归档页用 .archive-layout，同为 --space-6）
+.taxonomy-layout {
+  padding-top: var(--space-6);
+}
+
+// 索引页在 hero 之下放一张白卡，卡片里是标签 / 分类云 + 通用侧栏
+.taxonomy-card {
+  padding: var(--space-6);
+  background: var(--color-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.taxonomy-head {
+  margin-bottom: var(--space-5);
+}
+
+// 标题本身走 .md-h1（与 Markdown h1 同款：四角星 + 实线下划线 + 雪花），
+// 这里只负责它在卡片里的外边距；h2 语义保持不变，页面仍只有 hero 一个 h1。
+.taxonomy-title {
+  margin: 0 0 var(--space-4);
+}
+
+.taxonomy-hint {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: .8125rem;
+}
+
+.taxonomy-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// 索引胶囊：默认灰底，悬停整颗铺主题色。名字后可跟文章数；
+// 标签保留 # 前缀，分类不带。
+.taxonomy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: background-color var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+}
+
+.taxonomy-chip-hash {
+  flex: none;
+  color: var(--color-primary);
+  font-weight: 500;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.taxonomy-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taxonomy-chip-count {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: .8125rem;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.taxonomy-chip:hover {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+
+  .taxonomy-chip-hash,
+  .taxonomy-chip-count {
+    color: var(--color-on-primary);
+  }
+}
+
+.taxonomy-chip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .taxonomy-card {
+    padding: var(--space-5);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 动效降级：必须留在文件末尾（DESIGN.md §2.2）
+// ---------------------------------------------------------------------------
+
+@media (prefers-reduced-motion: reduce) {
+  .taxonomy-chip,
+  .taxonomy-chip-hash,
+  .taxonomy-chip-count {
+    transition: none;
+  }
 }

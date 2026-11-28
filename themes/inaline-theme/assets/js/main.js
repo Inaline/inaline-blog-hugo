@@ -394,7 +394,7 @@
     var selector = [
       '.page-header',
       '.page-content',
-      '.term-list',
+      '.taxonomy-card',
       '.carousel',
       '.post-list > .post-card',
       '.moments-card',

@@ -233,8 +233,8 @@ themes/inaline-theme/
 │   │   ├── _hero.scss             # Hero（§7.2–§7.6）
 │   │   ├── _post.scss             # 文章卡片 / 分页 / 标签（§7.7）
 │   │   ├── _markdown.scss         # Markdown 正文排版（§9）
-│   │   ├── _term.scss             # 分类 / 标签词条页顶部标题区（§7.12）
-│   │   ├── _archive.scss          # 归档页：顶部大图 + 时间线（§7.13）
+│   │   ├── _term.scss             # 分类 / 标签词条页标题区 + 索引页标签卡（§7.12）
+│   │   ├── _archive.scss          # 归档页：顶部大图 + 时间线（索引页复用大图，§7.12 / §7.13）
 │   │   ├── _moments.scss          # 动态页：封面卡 + 动态流 + 详情评论卡（§7.14）
 │   │   ├── _article.scss          # 文章页 / 自定义 hero 页：顶部大图 / 标题区 / 正文两栏 / 信息卡（§8 / §10）
 │   │   ├── _custom.scss           # 自定义 plain 页的外层正文卡（§10）
@@ -262,7 +262,7 @@ themes/inaline-theme/
 │       └── JetBrainsLxgwNerdMono-Regular.subset.woff2  # 代码等宽体（子集，不 preload）
 └── layouts/
     ├── baseof.html
-    ├── home.html / page.html / section.html / taxonomy.html / term.html  # term：分类 / 标签词条页顶部 + 列表（§7.12）
+    ├── home.html / page.html / section.html / taxonomy.html / term.html  # taxonomy：分类 / 标签索引页；term：词条页（§7.12）
     ├── _markup/render-codeblock.html  # 代码块 macOS 窗口外壳（§9.4）
     ├── _markup/render-blockquote.html # 引用块开引号（§9.4）
     ├── _markup/render-table.html      # 表格外层滚动容器（§9.4）
@@ -282,6 +282,7 @@ themes/inaline-theme/
         ├── icon.html              # 主题自绘 SVG 图标（引号 + CC + 社交品牌）
         ├── page-background.html   # 整页背景：首页 / 分类 / 标签词条页（§7.1 / §7.12）
         ├── term-hero.html         # 分类 / 标签词条页顶部标题区（§7.12）
+        ├── taxonomy-hero.html     # 分类 / 标签索引页顶部大图（§7.12）
         ├── archive-hero.html      # 归档页顶部大图与统计（§7.13）
         ├── moments-cover.html     # 动态页封面：封面图 + 博主信息 + 头像（§7.14）
         ├── moment-item.html       # 单条动态：头像 / 正文 / 配图 / 日期与操作（§7.14）
@@ -326,7 +327,7 @@ themes/inaline-theme/
 
 ### 4.3 脚本组织
 
-- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页 / 自定义页 / 归档页 / 动态页页脚背景（§7.1 / §7.13 / §7.14 / §10）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
+- `main.js`：全局逻辑，随每个页面加载（主题切换、首页封面记忆与文章页 / 自定义页 / 归档页 / 分类标签索引页 / 动态页页脚背景（§7.1 / §7.12 / §7.13 / §7.14 / §10）、分类 / 标签词条页背景还原（§7.12）、Header 滚动态、页脚运行时长、整卡跳转（点击监听）、剪贴板复制、代码窗口复制 / 折叠、页面进入 / 滚动进场动效）。
 - `lightbox.js`：全局图片预览（§5.4），点击监听用事件委托，动态内容无需重新初始化；暴露 `window.inalineLightboxInit`。
 - `waline.js`：Waline API 薄封装（§8.8 / §7.11），只负责拼地址、解析 `{ errno, errmsg, data }`、归一错误与按邮箱生成头像地址；不碰 DOM。覆盖评论列表 / 发表、评论数（单篇 / 全站）、近期评论、阅读量计数器读写。
 - `emoji.js`：评论区表情包（§8.8），读取 `params.waline.emoji`，按需拉取 `@waline/emojis` 预设的 `info.json`，渲染选择器，并把 `:key:` / 颜文字转成安全 HTML。
@@ -664,7 +665,7 @@ menu:
 | 宽度 | 容器 1200（含左右内边距各 24）→ 内容 1152；侧栏 280，主栏 848 |
 | 断点 | `max-width: 1080px`：转单列并 `display: none` 侧栏，不做"侧栏变窄"的中间态 |
 | 侧栏 | 纵向 flex，间距 `--space-5`；占位卡 `.sidebar-card` 与文章卡片同语言（`--color-elevated` + `--shadow-sm` + `--radius-lg`，`min-height: 120px`） |
-| 已实现组件 | 博主信息卡 `sidebar-profile.html`、目录 `sidebar-toc.html`（文章页与自定义 hero 页，与最新文章同组，排在博主卡之后，见 §8.5 / §10）、最新文章 `sidebar-latest.html`、近期评论 `sidebar-comments.html`、分类 `sidebar-categories.html`、标签 `sidebar-tags.html`；文章页 / 自定义 hero 页侧栏为「博主卡 +（目录 + 最新文章）吸顶组」，自定义 plain 页与列表页用通用侧栏 |
+| 已实现组件 | 博主信息卡 `sidebar-profile.html`、目录 `sidebar-toc.html`（文章页与自定义 hero 页，与最新文章同组，排在博主卡之后，见 §8.5 / §10）、最新文章 `sidebar-latest.html`、近期评论 `sidebar-comments.html`、分类 `sidebar-categories.html`、标签 `sidebar-tags.html`；文章页 / 自定义 hero 页侧栏为「博主卡 +（目录 + 最新文章）吸顶组」，自定义 plain 页、词条 / 索引页与列表页用通用侧栏 |
 | 待实现组件 | 公告（占一张 `.sidebar-card`，带独立 `enable` 开关） |
 
 **博主信息卡**：
@@ -720,7 +721,7 @@ menu:
 
 深色毛玻璃条：`--footer-scrim` + `backdrop-filter: blur(--footer-blur) saturate(1.08)`，白字 `--color-over-hero-soft`，`0.875rem / 1.6`，居中，上下 `--space-6`。它是全站唯一不随主题翻色的深色块。
 
-首页页脚压在整页背景图上。文章页、自定义页（hero / plain）、归档页与动态页（列表 / 详情）页脚由 `main.js` 把首页上次展示的封面写进 `--footer-cover`：`.has-cover-bg` 状态用 `linear-gradient(var(--footer-scrim), var(--footer-scrim))` 盖在图上（`background-size: cover`、居中、不重复），并取消无意义的毛玻璃；没有记录 / JS 不可用时退回普通深色玻璃。其余内页的页脚压在页面底色上（§7.1）。
+首页页脚压在整页背景图上。文章页、自定义页（hero / plain）、归档页、分类 / 标签索引页与动态页（列表 / 详情）页脚由 `main.js` 把首页上次展示的封面写进 `--footer-cover`：`.has-cover-bg` 状态用 `linear-gradient(var(--footer-scrim), var(--footer-scrim))` 盖在图上（`background-size: cover`、居中、不重复），并取消无意义的毛玻璃；没有记录 / JS 不可用时退回普通深色玻璃。其余内页的页脚压在页面底色上（§7.1）。
 
 六行自上而下全部可选，任一行留空 / 关闭即不渲染：
 
@@ -756,7 +757,7 @@ menu:
 
 ### 7.11 Waline 数据回填 ✅
 
-首页 / 分区页 / 词条页与页脚里依赖评论系统的数据，统一由 `assets/js/waline-stats.js` 在浏览器端回填。`baseof.html` 在 `params.waline` 有 `server` 且未关闭时给 `<body>` 挂 `data-waline-server`，并全局加载 `waline.js` 与 `waline-stats.js`；Waline 未配置时脚本不加载，模板占位符（`—` / `--`）保持原样。文章页与自定义页评论区仍由 `comment.js` 单独接管。
+首页 / 分区页 / 词条页 / 索引页与页脚里依赖评论系统的数据，统一由 `assets/js/waline-stats.js` 在浏览器端回填。`baseof.html` 在 `params.waline` 有 `server` 且未关闭时给 `<body>` 挂 `data-waline-server`，并全局加载 `waline.js` 与 `waline-stats.js`；Waline 未配置时脚本不加载，模板占位符（`—` / `--`）保持原样。文章页与自定义页评论区仍由 `comment.js` 单独接管。
 
 | 项 | 规格 |
 | --- | --- |
@@ -769,21 +770,32 @@ menu:
 | 失败降级 | 请求失败只输出 `console.warn`，占位符保持不动；无 JS 时不做静态降级 |
 | 幂等 | 与其它脚本一致用 init + `dataset` 标记防重复；`window.inalineWalineStatsInit` 供未来 Swup 复用；同一页面只在首次 init 时埋点 |
 
-### 7.12 分类 / 标签词条页 ✅
+### 7.12 分类 / 标签词条页与索引页 ✅
 
-分类词条页（`/categories/<term>/`）与标签词条页（`/tags/<term>/`）共用同一套顶部：都与首页共用整页固定背景（§7.1），不铺文章页的大图；顶部沿用文章页标题区的排版（§8.2），但去掉大图与波浪，标题和统计直接压在连续的背景图上。
+分类 / 标签有两个入口：
+
+- **词条页**（`/categories/<term>/`、`/tags/<term>/`）：某个分类 / 标签下的文章列表；
+- **索引页**（`/categories/`、`/tags/`）：全部分类 / 标签的入口。
+
+两类页面都不套文章页的正文卡：词条页与首页共用整页固定背景（§7.1）；索引页参考归档页（§7.13），顶部用一张封面大图，下方回到灰色页面底。
 
 | 项 | 规格 |
 | --- | --- |
-| 模板 | `layouts/term.html` 统一渲染 `partials/term-hero.html`，下方复用文章卡片 + 侧栏 + 分页 |
-| URL | `hugo.yaml` 的 `permalinks.term` 把 `:slug` 映射到 `/tags/:slug/` 与 `/categories/:slug/`；中文词条在 `content/<taxonomy>/<中文词条>/_index.md` 写 `slug`，`title` 保留中文；旧中文地址写 `aliases` 生成跳转。ASCII 词条没有词条页时回退为小写标题（如 `/tags/hugo/`） |
-| 整页背景 | `baseof.html` 给 term 页加 `body.has-hero` 并渲染 `page-background.html`；`data-page-bg="term"`，不参与首页封面记忆；`main.js` 读取首页记住的封面做一次性还原，没有记录 / 记录失效时用构建期那张；`<main>` 加 `.main--term`（`padding-top: 0`） |
-| 标题区 | `.term-hero`：`display: flex` 垂直居中，`min-height: --post-hero-height`（与文章页大图同高），顶部内边距 `calc(--header-height + --space-5)` 给 fixed Header 让位；没有大图、没有波浪，背景图连续到页脚 |
-| 标题 | `.term-title`：`clamp(1.75rem, 4vw, 2.5rem)`、白色、居中；`display: flex` 让图标与文字同排，文字列 `text-wrap: balance`；背景图亮度不可控，加一档文字投影兜底（与首页 Hero 文案一致） |
-| 类型图标 | 标题文字前的 `.term-title-icon`（`aria-hidden`，`0.8em`，`--color-over-hero-soft`）：分类用 `fa-regular fa-folder-open`，标签用 `fa-solid fa-tags`，与文章页分类 / 标签组的图标一致 |
-| 统计 | 复用 `.post-meta` / `.post-meta-item` / `.post-meta-sep`，居中排一行：文章数（`fa-folder-open`）、总字数（`fa-file-lines`，正文去空白字符数求和，`format-number.html` 只加千分位、不折 k / M）、最近更新（`fa-calendar`，取各篇 `.Lastmod` 最大值；无有效日期时该项不渲染） |
-| 列表 | 标题区下方复用首页两栏布局（`container--wide` + `.layout`）：文章卡片 + 右侧栏 + 分页；`.term-hero + .container` 只补 `--space-6` 上边距。列表与统计只取 `posts` 分区，动态等内容不进入词条页（§7.14） |
-| 分页 | 复用 §7.7 的 `pager.html`；因页面带 `body.has-hero`，页码白底与省略号白色样式自动生效 |
+| 模板 | 词条页：`layouts/term.html` 渲染 `partials/term-hero.html`，下方复用文章卡片 + 侧栏 + 分页；索引页：`layouts/taxonomy.html` 渲染 `partials/taxonomy-hero.html`，下方一张 `.taxonomy-card` + 通用侧栏 |
+| URL | 词条页由 `hugo.yaml` 的 `permalinks.term` 把 `:slug` 映射到 `/tags/:slug/` 与 `/categories/:slug/`；中文词条在 `content/<taxonomy>/<中文词条>/_index.md` 写 `slug`，`title` 保留中文；旧中文地址写 `aliases` 生成跳转。ASCII 词条没有词条页时回退为小写标题（如 `/tags/hugo/`）。索引页固定为 `/tags/` 与 `/categories/`，标题 / description 由 `content/tags/_index.md`、`content/categories/_index.md` 提供 |
+| 词条页整页背景 | `baseof.html` 给 term 页加 `body.has-hero` 并渲染 `page-background.html`；`data-page-bg="term"`，不参与首页封面记忆；`main.js` 读取首页记住的封面做一次性还原，没有记录 / 记录失效时用构建期那张；`<main>` 加 `.main--term`（`padding-top: 0`） |
+| 索引页顶部 | 参考归档页：`.post-hero.archive-hero` 封面（封面池第一张）+ 居中标题区；`body.has-post-hero`，`<main>` 加 `.main--taxonomy`（`padding-top: 0`）；不渲染 `.page-bg`，页脚输出封面背景（§7.9） |
+| 标题区 | 词条页 `.term-hero` 与索引页 `.archive-hero` 都采用居中标题 + 一行统计，都没有波浪；索引页大图下方直接接灰底；`.term-hero + .container` / `.taxonomy-layout` 分别补 `--space-6` 上边距 |
+| 标题 | 词条页 `.term-title` / 索引页 `.archive-hero .post-title`：`clamp(1.75rem, 4vw, 2.5rem)`、白色、居中；`display: flex` 让图标与文字同排，文字列 `text-wrap: balance`；背景图亮度不可控，加一档文字投影兜底（与首页 Hero 文案一致） |
+| 类型图标 | 标题文字前的图标（词条页 `.term-title-icon`、索引页 `.archive-title-icon`，`aria-hidden`，`0.8em`，`--color-over-hero-soft`）：分类用 `fa-regular fa-folder-open`，标签用 `fa-solid fa-tags`，与文章页分类 / 标签组的图标一致 |
+| 词条页统计 | 复用 `.post-meta` / `.post-meta-item` / `.post-meta-sep`，居中排一行：文章数（`fa-folder-open`）、总字数（`fa-file-lines`，正文去空白字符数求和，`format-number.html` 只加千分位、不折 k / M）、最近更新（`fa-calendar`，取各篇 `.Lastmod` 最大值；无有效日期时该项不渲染） |
+| 索引页统计 | 同一套 `.post-meta` 排版，三项为：词条数（`len .Data.Terms`）、文章数（posts 分区里至少带一个该词条的文章数，同一篇多次引用只算一次）、最近更新（这些文章 `.Lastmod` 最大值；无有效日期时该项不渲染） |
+| 词条页列表 | 标题区下方复用首页两栏布局（`container--wide` + `.layout`）：文章卡片 + 右侧栏 + 分页；列表与统计只取 `posts` 分区，动态等内容不进入词条页（§7.14） |
+| 索引页卡片 | `.taxonomy-card`：`--color-elevated` + `--shadow-sm` + `--radius-lg`，内边距 `--space-6`（≤560px 收为 `--space-5`）；头部标题用 `h2.taxonomy-title.md-h1` 复用 §9.2 的 h1 视觉（四角星 + 2px 实线 + 雪花），标题下方一行 muted 的「按文章数排序」提示 |
+| 索引页胶囊 | `.taxonomy-cloud` 可换行；`.taxonomy-chip` 为灰底 `--color-bg` 胶囊，标签名带主题色 `#` 前缀，名称后跟文章数（`0.8125rem` muted、等宽数字）；按 `.Data.Terms.ByCount` 排序；悬停整颗铺 `--color-primary`、文字转白；`:focus-visible` 主题色描边 |
+| 索引页侧栏 | 通用侧栏；索引页已经展示全部标签 / 分类，侧栏跳过同类卡片（标签索引不渲染标签卡，分类索引不渲染分类卡），另一类保留 |
+| 空态 / 分页 | 索引页无词条时显示 `.empty-hint`；词条页复用 §7.7 的 `pager.html`，索引页不分页 |
+| 动效降级 | 索引胶囊的悬停过渡在 `prefers-reduced-motion` 下取消 |
 
 ### 7.13 归档页 ✅（demo）
 
@@ -998,10 +1010,11 @@ menu:
 | 四角星 | 颜色按层级取 `--color-heading-mark-1` … `--color-heading-mark-6`（h1 橙 / h2 紫 / h3 蓝 / h4 绿 / h5 粉 / h6 灰） |
 | h1 | `1.875rem`；上间距 `--space-8`；`padding-bottom: var(--space-3)`，给下划线上的雪花留净空 |
 | h1 下划线 | `::after` 伪元素绘制：2px 实线 `--color-hr-line`（与 §9.4 分割线同色同宽，但为实线），线上左端 5% 骑一枚主题色雪花（`\f2dc`）；悬停时 h1 文字 / 四角星右移 `--space-2`，伪元素反向平移让线留在原位，雪花用 `padding-left` 以 1s `ease-in-out` 滑到 `calc(95% - 20px)` |
+| 复用 | `.md-h1` 类输出同一套 h1 视觉（四角星 / 2px 实线 + 雪花 / 悬停位移），供 Markdown 之外的 h2 使用；元素语义仍是 h2（分类 / 标签索引卡标题，§7.12） |
 | h2 | `1.5rem`，上间距 `--space-8` |
 | h3 | `1.25rem`，上间距 `--space-6` |
 | h4 / h5 / h6 | `1.125rem` / `1rem` / `.9375rem`；h6 用 `--color-text-muted` |
-| 动效降级 | `prefers-reduced-motion` 下四角星停转、悬停位移取消，h1 下划线不再反向补偿、雪花也不滑动；打印时四角星停转 |
+| 动效降级 | `prefers-reduced-motion` 下四角星停转、悬停位移取消，h1 / `.md-h1` 下划线不再反向补偿、雪花也不滑动；打印时四角星停转 |
 
 ### 9.3 行内元素
 

@@ -1,0 +1,62 @@
+{{/*
+  分类 / 标签索引页顶部（DESIGN.md §7.12）
+
+  参考归档页，不铺整页背景：顶部一张封面大图 + 居中标题区，下方直接回到
+  灰色页面底。结构与归档页共用 .post-hero.archive-hero，只是标题图标和统计
+  口径不同：
+    · 词条数：.Data.Terms 的长度；
+    · 文章数：posts 分区里至少带一个该分类 / 标签的文章数（同一篇多次引用只算一次）；
+    · 最近更新：上述文章的最大 Lastmod。
+
+  图标：分类 = 文件夹，标签 = tags，与词条页 / 文章页的分类标签组一致。
+*/}}
+{{ $isCategory := eq .Data.Singular "category" }}
+{{ $iconClass := "fa-solid fa-tags" }}
+{{ $termLabel := "标签" }}
+{{ if $isCategory }}
+  {{ $iconClass = "fa-regular fa-folder-open" }}
+  {{ $termLabel = "分类" }}
+{{ end }}
+
+{{ $plural := .Data.Plural }}
+{{ $tagged := 0 }}
+{{ $latest := time.AsTime "0001-01-01T00:00:00Z" }}
+{{ range where site.RegularPages "Section" "posts" }}
+  {{ if .GetTerms $plural }}
+    {{ $tagged = add $tagged 1 }}
+    {{ if .Lastmod.After $latest }}{{ $latest = .Lastmod }}{{ end }}
+  {{ end }}
+{{ end }}
+{{ $termCount := len .Data.Terms }}
+{{ $cover := partial "post-cover.html" (dict "page" . "index" 0) }}
+
+<section class="post-hero archive-hero taxonomy-hero">
+  {{ with $cover }}
+    <img class="post-hero-image" src="{{ . }}" alt="" fetchpriority="high" decoding="async">
+  {{ end }}
+
+  <header class="container post-header">
+    <h1 class="post-title">
+      <i class="{{ $iconClass }} archive-title-icon" aria-hidden="true"></i>
+      <span>{{ .Title }}</span>
+    </h1>
+    <div class="post-meta">
+      <span class="post-meta-item">
+        <i class="{{ $iconClass }}" aria-hidden="true"></i>
+        <span>共 {{ $termCount }} 个{{ $termLabel }}</span>
+      </span>
+      <div class="post-meta-sep" aria-hidden="true"></div>
+      <span class="post-meta-item">
+        <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
+        <span>共 {{ $tagged }} 篇文章</span>
+      </span>
+      {{ if gt $latest.Year 1 }}
+        <div class="post-meta-sep" aria-hidden="true"></div>
+        <span class="post-meta-item">
+          <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+          <span>最近更新：<time datetime="{{ $latest.Format "2006-01-02" }}">{{ $latest.Format "2006年1月2日" }}</time></span>
+        </span>
+      {{ end }}
+    </div>
+  </header>
+</section>

@@ -3,8 +3,8 @@
 
   一个组件一张 .sidebar-card，自上而下堆叠（间距 = .sidebar 的 gap）。
   文章页与自定义 hero 页为「博主信息卡 →（目录 + 最新文章）吸顶组」（§8.5 / §10）；
-  首页 / 分区页 / 词条页 / 自定义 plain 页继续用博主卡 + 最新文章 / 近期评论 /
-  分类 / 标签，不渲染目录。每个组件自带 enable 开关（见 hugo.yaml 的 params.sidebar）。
+  首页 / 分区页 / 词条页 / 索引页 / 自定义 plain 页继续用博主卡 + 最新文章 /
+  近期评论 / 分类 / 标签，不渲染目录。每个组件自带 enable 开关（见 hugo.yaml 的 params.sidebar）。
 */}}
 <aside class="sidebar" aria-label="侧栏">
   {{ if or (and .IsPage (eq .Type "posts")) (and .IsPage (eq .Type "custom") (eq .Layout "hero")) }}
@@ -19,7 +19,10 @@
     {{ partial "sidebar-profile.html" . }}
     {{ partial "sidebar-latest.html" . }}
     {{ partial "sidebar-comments.html" . }}
-    {{ partial "sidebar-categories.html" . }}
-    {{ partial "sidebar-tags.html" . }}
+    {{/* 索引页本身已经铺满自己的分类 / 标签，侧栏就不再重复同类卡片 */}}
+    {{ $taxonomyPlural := "" }}
+    {{ if eq .Kind "taxonomy" }}{{ $taxonomyPlural = .Data.Plural }}{{ end }}
+    {{ if ne $taxonomyPlural "categories" }}{{ partial "sidebar-categories.html" . }}{{ end }}
+    {{ if ne $taxonomyPlural "tags" }}{{ partial "sidebar-tags.html" . }}{{ end }}
   {{ end }}
 </aside>

@@ -91,6 +91,11 @@ img {
   padding-top: 0;
 }
 
+// 分类 / 标签索引页：复用归档式顶部大图，同样从 y=0 起铺（§7.12）
+.main--taxonomy {
+  padding-top: 0;
+}
+
 // Hero 之后的首页内容，与 Hero 拉开距离
 .hero + .container {
   padding-top: var(--space-6);

@@ -3,14 +3,15 @@
 <head>
   {{ partial "head.html" . }}
 </head>
+{{/* 分类 / 标签词条页铺整页背景（§7.12）；索引页改用归档式顶部大图 */}}
+{{ $isTerm := eq .Kind "term" }}
+{{ $isTaxonomy := eq .Kind "taxonomy" }}
+{{ $pageBg := or .IsHome $isTerm }}
 {{/* 文章页与自定义 hero 页都带顶部大图（§8 / §10），Header 顶部态一致 */}}
 {{ $postHero := or (and .IsPage (eq .Type "posts")) (and .IsPage (eq .Type "custom") (eq .Layout "hero")) }}
-{{/* 归档页也带顶部大图（§7.13），Header 与文章页一样转透明态 */}}
+{{/* 归档页与分类 / 标签索引页也带顶部大图（§7.12 / §7.13），Header 转透明态 */}}
 {{ $archivePage := and .IsSection (eq .Section "archives") }}
-{{ $heroPage := or $postHero $archivePage }}
-{{/* 分类 / 标签词条页也铺整页背景（§7.12） */}}
-{{ $isTerm := eq .Kind "term" }}
-{{ $pageBg := or .IsHome $isTerm }}
+{{ $heroPage := or $postHero $archivePage $isTaxonomy }}
 {{/* Waline 总开关：缺 server 或 enable: false 时，全站都不输出评论区骨架、
      阅读量 / 评论数 / 近期评论 / 页脚统计的脚本，占位符保持原样 */}}
 {{ $waline := site.Params.waline }}
@@ -22,7 +23,7 @@
        （footer.html + main.js）。 */}}
   {{ if $pageBg }}{{ partial "page-background.html" . }}{{ end }}
   {{ partial "header.html" . }}
-  <main class="main{{ if .IsHome }} main--home{{ else if $isTerm }} main--term{{ else if $archivePage }} main--archive{{ else if $postHero }} main--post{{ end }}">
+  <main class="main{{ if .IsHome }} main--home{{ else if $isTerm }} main--term{{ else if $archivePage }} main--archive{{ else if $isTaxonomy }} main--taxonomy{{ else if $postHero }} main--post{{ end }}">
     {{ block "main" . }}{{ end }}
   </main>
   {{ partial "footer.html" . }}
