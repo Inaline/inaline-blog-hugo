@@ -7,6 +7,9 @@
 {{ with or .Description (.Summary | plainify) site.Params.description }}<meta name="description" content="{{ . | truncate 160 }}">{{ end }}
 {{ with site.Params.author }}<meta name="author" content="{{ . }}">{{ end }}
 
+{{/* 搜索索引（§7.15）：Fuse.js 客户端搜索懒加载 /index.json */}}
+<link rel="search" type="application/json" href="{{ "/index.json" | relLangURL }}">
+
 {{/* 主题初始化：必须内联且在样式表之前，否则刷新会闪烁（DESIGN.md §5.1） */}}
 <script>
   (function () {

@@ -1,0 +1,54 @@
+{{/*
+  搜索索引（§7.15）：首页的 JSON 输出，构建为 /index.json。
+
+  收录 posts 与 moments；每篇输出搜索需要的纯文本与卡片需要的字段。
+  前端用 Fuse.js 在此之上做客户端搜索，浮层最多取 5 条，搜索页分页展示。
+  搜索方案：Fuse.js（见 DESIGN.md §7.15）。
+*/}}
+{{- $posts := where site.RegularPages "Section" "posts" -}}
+{{- $moments := where site.RegularPages "Section" "moments" -}}
+{{- $pages := union $posts $moments -}}
+{{- $momentCover := "" -}}
+{{- with site.Params.moments -}}{{- with .cover -}}{{- $momentCover = . -}}{{- end -}}{{- end -}}
+{{- $docs := slice -}}
+{{- range $i, $p := sort $pages "Date" "desc" -}}
+  {{- $plain := $p.Content | plainify | htmlUnescape | replaceRE `\s+` " " -}}
+  {{- $summary := "" -}}
+  {{- with $p.Description -}}
+    {{- $summary = . | plainify | htmlUnescape -}}
+  {{- else -}}
+    {{- $summary = $p.Summary | plainify | htmlUnescape -}}
+  {{- end -}}
+  {{- $chars := countrunes (replaceRE `\s+` "" $plain) -}}
+  {{- $minutes := math.Max 1 (math.Ceil (div (float $chars) 400.0)) -}}
+  {{- $type := "moment" -}}
+  {{- if eq $p.Section "posts" -}}{{- $type = "post" -}}{{- end -}}
+  {{- $title := $p.Title -}}
+  {{- if not $title -}}{{- $title = $p.Date.Format "2006年1月2日" -}}{{- end -}}
+  {{- $cover := "" -}}
+  {{- if eq $type "post" -}}
+    {{- $cover = partial "post-cover.html" (dict "page" $p "index" $i) -}}
+  {{- else -}}
+    {{- $cover = partial "post-cover.html" (dict "page" $p "index" $i "cover" $momentCover) -}}
+  {{- end -}}
+  {{- $tags := slice -}}
+  {{- with $p.Params.tags -}}{{- $tags = . -}}{{- end -}}
+  {{- $categories := slice -}}
+  {{- with $p.Params.categories -}}{{- $categories = . -}}{{- end -}}
+  {{- $docs = $docs | append (dict
+    "title" $title
+    "url" $p.RelPermalink
+    "type" $type
+    "date" ($p.Date.Format "2006-01-02")
+    "dateText" ($p.Date.Format "2006年1月2日")
+    "minutes" $minutes
+    "summary" ($summary | truncate 160)
+    "content" $plain
+    "tags" $tags
+    "categories" $categories
+    "tagsText" (delimit $tags " ")
+    "categoriesText" (delimit $categories " ")
+    "cover" $cover
+  ) -}}
+{{- end -}}
+{{- dict "docs" $docs | jsonify -}}

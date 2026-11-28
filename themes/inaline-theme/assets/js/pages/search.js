@@ -1,12 +1,9 @@
 /**
  * 搜索页（DESIGN.md §7.15）
  *
- * 默认只显示空态；输入变化 300ms 防抖后展开结果。
- * 搜索索引尚未接入（⏳）：结果仍是全部文章占位，前端每页 10 篇分页；
- * 接入后把真实结果交给同一套列表 / 分页即可。
- *
- * URL 的 ?q= 用来承接浮层「查看全部文章」带过来的关键词：页面加载时回填输入框
- * 并直接展开结果；用户输入 / 清空时同步写回 URL。分页翻页不改变 URL。
+ * 默认空态；输入变化 300ms 防抖后用 Fuse.js 搜索（共用 search-core.js）。
+ * 结果沿用首页 .post-card，前端每页 10 篇分页；?q= 用于承接浮层跳转。
+ * 分页翻页不改变 URL。
  */
 (function () {
   'use strict';
@@ -23,13 +20,15 @@
     var list = page.querySelector('[data-search-page-list]');
     var pager = page.querySelector('[data-search-page-pager]');
     var count = page.querySelector('[data-search-page-count]');
+    var status = page.querySelector('[data-search-page-status]');
+    var core = window.inalineSearchCore;
     if (!results || !empty || !list) return;
 
-    var cards = Array.prototype.slice.call(list.querySelectorAll('.post-card'));
-    var total = cards.length;
+    var allResults = [];
     var pageSize = parseInt(list.getAttribute('data-page-size'), 10) || 10;
     var current = 1;
     var timer = null;
+    var searchToken = 0;
     var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function readQuery() {
@@ -51,16 +50,21 @@
       }
     }
 
-    function totalPages() {
-      return Math.max(1, Math.ceil(total / pageSize));
+    function setStatus(text) {
+      if (!status) return;
+      status.textContent = text || '';
+      status.hidden = !text;
     }
 
-    function applyPage() {
-      var start = (current - 1) * pageSize;
-      var end = start + pageSize;
-      cards.forEach(function (card, i) {
-        card.hidden = i < start || i >= end;
-      });
+    function hidePager() {
+      if (pager) {
+        pager.hidden = true;
+        pager.innerHTML = '';
+      }
+    }
+
+    function totalPages() {
+      return Math.max(1, Math.ceil(allResults.length / pageSize));
     }
 
     function scrollToResults() {
@@ -117,56 +121,101 @@
       if (current < pages) pager.appendChild(stepLink(current + 1, 'fa-chevron-right', '下一页'));
     }
 
+    function render(scroll) {
+      list.textContent = '';
+      if (count) count.textContent = '共 ' + allResults.length + ' 条';
+
+      if (!allResults.length) {
+        setStatus('没有找到相关内容');
+        hidePager();
+        return;
+      }
+
+      setStatus('');
+      var start = (current - 1) * pageSize;
+      var end = Math.min(start + pageSize, allResults.length);
+      for (var i = start; i < end; i++) {
+        list.appendChild(core.createCard(allResults[i], i - start));
+      }
+      core.bindCards();
+      buildPager();
+      if (scroll) scrollToResults();
+    }
+
     function go(pageNo) {
       current = Math.min(Math.max(1, pageNo), totalPages());
-      applyPage();
-      buildPager();
-      scrollToResults();
+      render(true);
     }
 
-    function renderPage() {
-      applyPage();
-      buildPager();
-      if (count) count.textContent = '共 ' + total + ' 篇';
-    }
-
-    function showResults(q) {
+    function showShell() {
       results.hidden = false;
       empty.hidden = true;
-      current = 1;
-      renderPage();
-      if (q) writeQuery(q);
+      list.textContent = '';
+      hidePager();
+    }
+
+    function runSearch(query) {
+      if (!core) {
+        showShell();
+        setStatus('搜索组件加载失败');
+        return;
+      }
+
+      var token = ++searchToken;
+      showShell();
+      setStatus('正在搜索…');
+
+      core.search(query).then(function (data) {
+        if (token !== searchToken) return;
+        allResults = data;
+        current = 1;
+        writeQuery(query);
+        render(false);
+      }).catch(function () {
+        if (token !== searchToken) return;
+        allResults = [];
+        current = 1;
+        list.textContent = '';
+        hidePager();
+        if (count) count.textContent = '共 0 条';
+        setStatus('搜索索引加载失败，请稍后再试');
+      });
     }
 
     function hideResults() {
+      searchToken++;
+      window.clearTimeout(timer);
       results.hidden = true;
       empty.hidden = false;
+      list.textContent = '';
+      allResults = [];
       current = 1;
-      if (pager) {
-        pager.hidden = true;
-        pager.innerHTML = '';
-      }
+      hidePager();
+      setStatus('');
+      if (count) count.textContent = '共 0 条';
       writeQuery('');
     }
 
     function onInput() {
       window.clearTimeout(timer);
-      var q = input.value.trim();
-      if (!q) {
+      var query = input.value.trim();
+      if (!query) {
         hideResults();
         return;
       }
       timer = window.setTimeout(function () {
-        showResults(q);
+        runSearch(query);
       }, DEBOUNCE);
     }
 
     input.addEventListener('input', onInput);
 
+    if (core) core.load().catch(function () {});
+
     var initial = readQuery();
     if (initial) {
       input.value = initial;
-      showResults(initial);
+      runSearch(initial);
     } else {
       hideResults();
     }

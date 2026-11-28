@@ -39,7 +39,11 @@
   {{ $lightbox := resources.Get "js/lightbox.js" | minify | fingerprint }}
   <script src="{{ $lightbox.RelPermalink }}" integrity="{{ $lightbox.Data.Integrity }}" defer></script>
 
-  {{/* 全屏搜索浮层（§7.15）：开合 / 焦点 / ⌘ K；搜索数据待接入 */}}
+  {{/* 搜索：Fuse.js（本地 vendor）+ 共享核心 + 浮层开合（§7.15） */}}
+  {{ $fuse := resources.Get "js/vendor/fuse.min.js" | fingerprint }}
+  <script src="{{ $fuse.RelPermalink }}" integrity="{{ $fuse.Data.Integrity }}" defer></script>
+  {{ $searchCore := resources.Get "js/search-core.js" | minify | fingerprint }}
+  <script src="{{ $searchCore.RelPermalink }}" integrity="{{ $searchCore.Data.Integrity }}" defer></script>
   {{ $searchJS := resources.Get "js/search.js" | minify | fingerprint }}
   <script src="{{ $searchJS.RelPermalink }}" integrity="{{ $searchJS.Data.Integrity }}" defer></script>
 

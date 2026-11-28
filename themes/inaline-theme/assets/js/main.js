@@ -473,4 +473,6 @@
 
   // 供后续 Swup 生命周期复用
   window.inalineInit = init;
+  // 搜索结果是运行时插入的卡片，渲染完后单独补一次整卡点击绑定
+  window.inalineBindCards = initClickableCards;
 })();

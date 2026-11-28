@@ -17,6 +17,12 @@ permalinks:
     tags: "/tags/:slug/"
     categories: "/categories/:slug/"
 
+# 搜索索引：首页额外输出 /index.json，供全屏搜索与 /search/ 页懒加载
+outputs:
+  home:
+    - HTML
+    - JSON
+
 params:
   description: "个人技术博客"
   author: "Inaline"

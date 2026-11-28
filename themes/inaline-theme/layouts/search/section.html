@@ -1,14 +1,12 @@
 {{/*
   搜索页（§7.15）
 
-  默认不展示文章，只留空态提示；顶部搜索框输入后（300ms 防抖）展开结果。
-  结果仍是占位：全部文章，前端每页 10 篇分页；搜索索引接入后替换数据即可。
-  页面复用站点两栏骨架：左侧结果 / 空态，右侧通用侧栏（partials/sidebar.html）。
+  默认不展示文章，只留空态；输入后 300ms 防抖，用 Fuse.js 搜索 /index.json。
+  结果卡由 search-core.js 渲染，沿用首页 .post-card；前端每页 10 篇分页。
+  页面沿用站点两栏骨架：左侧空态 / 结果，右侧通用侧栏。
 */}}
 {{ define "main" }}
   {{ partial "search-hero.html" . }}
-
-  {{- $posts := sort (where site.RegularPages "Section" "posts") "Date" "desc" -}}
 
   <div class="container container--wide layout search-page-layout" id="search-page-results" data-search-page>
     <div class="layout-main">
@@ -17,22 +15,16 @@
         <p>输入关键词，开始搜索。</p>
       </div>
 
-      {{ with $posts }}
-        <section class="search-page-results" data-search-page-results hidden aria-labelledby="search-page-results-title">
-          <header class="search-page-head">
-            <h2 class="search-page-title" id="search-page-results-title">搜索结果</h2>
-            <span class="search-page-count" data-search-page-count>共 {{ len . }} 篇</span>
-          </header>
+      <section class="search-page-results" data-search-page-results hidden aria-labelledby="search-page-results-title">
+        <header class="search-page-head">
+          <h2 class="search-page-title" id="search-page-results-title">搜索结果</h2>
+          <span class="search-page-count" data-search-page-count>共 0 条</span>
+        </header>
 
-          <div class="post-list search-page-post-list" data-search-page-list data-page-size="10">
-            {{ range $i, $page := . }}
-              {{ partial "post-card.html" (dict "page" $page "index" $i) }}
-            {{ end }}
-          </div>
-
-          <nav class="pager search-page-pager" data-search-page-pager aria-label="搜索结果分页" hidden></nav>
-        </section>
-      {{ end }}
+        <p class="search-status" data-search-page-status hidden></p>
+        <div class="post-list search-page-post-list" data-search-page-list data-page-size="10"></div>
+        <nav class="pager search-page-pager" data-search-page-pager aria-label="搜索结果分页" hidden></nav>
+      </section>
     </div>
 
     {{ partial "sidebar.html" . }}
@@ -40,7 +32,7 @@
 {{ end }}
 
 {{ define "page-scripts" }}
-  {{/* 搜索页：URL q 状态 / 300ms 防抖 / 前端分页 */}}
+  {{/* 搜索页：URL q 状态 / 300ms 防抖 / 前端分页（共用 search-core.js） */}}
   {{ $js := resources.Get "js/pages/search.js" | minify | fingerprint }}
   <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 {{ end }}

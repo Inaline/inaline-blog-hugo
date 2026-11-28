@@ -1,16 +1,13 @@
 {{/*
   全屏搜索浮层（§7.15）
 
-  极简初态：只有一块居中的搜索框（边框胶囊，无阴影、无品牌、无标签、无键位提示）。
-  聚焦输入框后，搜索框上移到顶部；输入变化 300ms 防抖后，才展示结果区。
-  结果是首页同款 .post-card（最多 5 条），下方「查看全部文章」→ /search/。
+  极简初态：只有一块居中的胶囊搜索框（边框胶囊，无阴影、无品牌、无标签、无键位提示）。
+  聚焦输入框后，搜索框上移到顶部；输入变化 300ms 防抖后，用 Fuse.js 搜索 /index.json，
+  展示最多 5 条首页同款文章卡；更多走「查看全部文章」→ /search/?q=…。
 
-  搜索索引尚未接入（⏳）：结果先用最近 5 篇文章占位；接入后替换这份列表即可。
-  背景取当前页面封面并虚化，叠 --search-veil；层级 --z-search（900），低于图片预览。
+  背景取当前页面封面并虚化，叠 --search-veil 静态遮罩（不做淡入）；层级 --z-search（900），低于图片预览。
 */}}
 {{- $cover := partial "post-cover.html" (dict "page" . "index" 0) -}}
-{{- $posts := sort (where site.RegularPages "Section" "posts") "Date" "desc" -}}
-{{- $recent := first 5 $posts -}}
 
 <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-labelledby="search-overlay-title" tabindex="-1" data-search-overlay hidden{{ with $cover }} style="--search-cover: url('{{ . }}')"{{ end }}>
   <div class="search-overlay-bg" aria-hidden="true"></div>
@@ -26,17 +23,12 @@
       </button>
     </div>
 
-    {{- with $recent -}}
-      <div class="search-overlay-results" id="search-results" data-search-results hidden>
-        <div class="post-list search-post-list">
-          {{- range $i, $page := . -}}
-            {{ partial "post-card.html" (dict "page" $page "index" $i) }}
-          {{- end -}}
-        </div>
-        <div class="search-overlay-more">
-          <a class="search-more-link" href="{{ "/search/" | relLangURL }}" data-search-more>查看全部文章 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
-        </div>
+    <div class="search-overlay-results" id="search-results" data-search-results hidden>
+      <p class="search-status" data-search-status hidden></p>
+      <div class="post-list search-post-list" data-search-result-list></div>
+      <div class="search-overlay-more" data-search-more-wrap hidden>
+        <a class="search-more-link" href="{{ "/search/" | relLangURL }}" data-search-more>查看全部文章 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
       </div>
-    {{- end -}}
+    </div>
   </div>
 </div>

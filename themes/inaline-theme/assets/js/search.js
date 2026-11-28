@@ -3,16 +3,13 @@
  *
  * 交互：
  *  - 点击 Header 搜索按钮：浮层打开，搜索框在视口中央，不自动聚焦；
- *  - 点击 / 聚焦搜索框：搜索框上移到顶部，结果区暂不展示；
- *  - 输入变化 300ms 防抖后：展示结果区（首页同款文章卡，最多 5 条）；
+ *  - 点击 / 聚焦搜索框：搜索框上移到顶部；
+ *  - 输入变化 300ms 防抖后：Fuse.js 搜索 /index.json，展示最多 5 条结果；
  *  - ⌘ / Ctrl K：打开并直接聚焦输入框；Esc / 关闭按钮 / 点浮层空白收起；
  *  - 关闭 / 重新打开时清空输入并复位到居中初态。
  *
- * 搜索索引尚未接入（⏳）：结果区先用最近 5 篇文章占位；输入只负责触发
- * 展示，不做真实过滤。接入后替换列表数据即可，交互骨架不变。
- *
- * 事件用 dataset.bound 防重复绑定；后续接入 Swup 时在 page:view 再调用
- * window.inalineSearchInit 即可。
+ * 索引懒加载（打开时就预取），之后与 /search/ 页共用缓存；
+ * 结果卡由 search-core.js 渲染，沿用首页 .post-card。
  */
 (function () {
   'use strict';
@@ -28,18 +25,16 @@
     var input = overlay.querySelector('[data-search-input]');
     var field = overlay.querySelector('.search-field');
     var results = overlay.querySelector('[data-search-results]');
+    var list = overlay.querySelector('[data-search-result-list]');
+    var status = overlay.querySelector('[data-search-status]');
+    var moreWrap = overlay.querySelector('[data-search-more-wrap]');
     var moreLink = overlay.querySelector('[data-search-more]');
     var moreBase = moreLink ? moreLink.getAttribute('href') : '';
     var closers = overlay.querySelectorAll('[data-search-close]');
+    var core = window.inalineSearchCore;
     var lastFocus = null;
     var timer = null;
-
-    // 「查看全部文章」带上当前输入，交给搜索页读取 ?q=
-    function updateMore(query) {
-      if (!moreLink || !moreBase) return;
-      var base = moreBase.split('?')[0];
-      moreLink.setAttribute('href', query ? base + '?q=' + encodeURIComponent(query) : moreBase);
-    }
+    var searchToken = 0;
 
     function focusable() {
       var nodes = overlay.querySelectorAll(
@@ -50,13 +45,108 @@
       });
     }
 
+    function updateMore(query) {
+      if (!moreLink || !moreBase) return;
+      var base = moreBase.split('?')[0];
+      moreLink.setAttribute('href', query ? base + '?q=' + encodeURIComponent(query) : moreBase);
+    }
+
+    function setStatus(text) {
+      if (!status) return;
+      status.textContent = text || '';
+      status.hidden = !text;
+    }
+
+    function hideMore() {
+      if (moreWrap) moreWrap.hidden = true;
+    }
+
+    function clearResults() {
+      if (list) list.textContent = '';
+      setStatus('');
+      hideMore();
+    }
+
+    function hideResults() {
+      searchToken++;
+      window.clearTimeout(timer);
+      if (results) results.hidden = true;
+      clearResults();
+      updateMore('');
+    }
+
+    function showResults(resultsData, query) {
+      if (!results || !list) return;
+      results.hidden = false;
+      list.textContent = '';
+      setStatus('');
+      hideMore();
+
+      if (!resultsData.length) {
+        setStatus('没有找到相关内容');
+        return;
+      }
+
+      var limit = Math.min(resultsData.length, 5);
+      for (var i = 0; i < limit; i++) {
+        list.appendChild(core.createCard(resultsData[i], i));
+      }
+      if (moreWrap) moreWrap.hidden = false;
+      updateMore(query);
+      core.bindCards();
+    }
+
+    function runSearch(query) {
+      if (!core) {
+        setStatus('搜索组件加载失败');
+        results.hidden = false;
+        return;
+      }
+      var token = ++searchToken;
+      results.hidden = false;
+      list.textContent = '';
+      hideMore();
+      setStatus('正在搜索…');
+
+      core.search(query).then(function (resultsData) {
+        if (token !== searchToken || overlay.hidden) return;
+        showResults(resultsData, query);
+      }).catch(function () {
+        if (token !== searchToken || overlay.hidden) return;
+        list.textContent = '';
+        hideMore();
+        setStatus('搜索索引加载失败，请稍后再试');
+      });
+    }
+
+    function scheduleSearch() {
+      window.clearTimeout(timer);
+      var query = input ? input.value.trim() : '';
+      updateMore(query);
+
+      if (!query) {
+        hideResults();
+        return;
+      }
+
+      timer = window.setTimeout(function () {
+        runSearch(query);
+      }, DEBOUNCE);
+    }
+
     function reset() {
+      searchToken++;
       window.clearTimeout(timer);
       overlay.classList.remove('is-active');
       overlay.scrollTop = 0;
       if (input) input.value = '';
       if (results) results.hidden = true;
+      clearResults();
       updateMore('');
+    }
+
+    function preload() {
+      if (core) core.load().catch(function () {});
     }
 
     function open(opts) {
@@ -71,6 +161,7 @@
       overlay.hidden = false;
       document.body.classList.add('search-open');
       trigger.setAttribute('aria-expanded', 'true');
+      preload();
 
       window.requestAnimationFrame(function () {
         if (opts.focusInput && input) {
@@ -86,7 +177,6 @@
 
     function close() {
       if (overlay.hidden) return;
-      window.clearTimeout(timer);
       overlay.hidden = true;
       document.body.classList.remove('search-open');
       trigger.setAttribute('aria-expanded', 'false');
@@ -97,26 +187,11 @@
       }
     }
 
-    function scheduleResults() {
-      window.clearTimeout(timer);
-      var query = input ? input.value.trim() : '';
-      if (!query) {
-        if (results) results.hidden = true;
-        return;
-      }
-      timer = window.setTimeout(function () {
-        if (results) results.hidden = false;
-      }, DEBOUNCE);
-    }
-
     if (input) {
       input.addEventListener('focus', function () {
         overlay.classList.add('is-active');
       });
-      input.addEventListener('input', function () {
-        updateMore(input.value.trim());
-        scheduleResults();
-      });
+      input.addEventListener('input', scheduleSearch);
     }
 
     // 点胶囊内除关闭按钮外的任何空白 / 图标都聚焦输入框

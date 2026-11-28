@@ -2,9 +2,8 @@
 // 全屏搜索（DESIGN.md §7.15）
 //
 // 浮层初态只有一块居中的胶囊搜索框；聚焦后上移，输入变化 300ms 防抖后
-// 才展示结果。结果是首页同款 .post-card（最多 5 条），搜索页同样沿用这套卡片。
-// 搜索索引尚未接入（⏳）：浮层先用最近 5 篇占位；搜索页默认空态，
-// 输入后展示全部文章占位，并做前端分页。
+// 用 Fuse.js 搜索 /index.json，结果沿用首页 .post-card（最多 5 条）。
+// 搜索页默认空态，输入后展示两栏结果，前端每页 10 篇分页。
 // ---------------------------------------------------------------------------
 
 // --- 浮层骨架 ---------------------------------------------------------------
@@ -29,7 +28,7 @@ body.search-open {
   overflow: hidden;
 }
 
-// 当前页面封面 → 虚化；初态只露一层雾，不抢搜索框
+// 当前页面封面 → 虚化 → 静态遮罩；遮罩不做淡入，避免屏幕闪一下
 .search-overlay-bg {
   position: fixed;
   inset: -40px;
@@ -51,7 +50,6 @@ body.search-open {
   z-index: 0;
   pointer-events: none;
   background: var(--search-veil);
-  animation: search-veil-in var(--duration-slower) var(--ease) both;
 }
 
 // 初态居中；聚焦后 top / transform 一起过渡到页面顶部
@@ -177,6 +175,36 @@ body.search-open {
   padding-bottom: var(--space-7);
 }
 
+.search-overlay-more[hidden] {
+  display: none;
+}
+
+// 加载中 / 无结果：浮层与搜索页共用
+.search-status {
+  margin: 0;
+  padding: var(--space-7) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: .95rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.search-status[hidden] {
+  display: none;
+}
+
+.search-overlay .search-status {
+  padding: var(--space-6) 0;
+}
+
+// 命中词高亮
+.search-mark {
+  padding: 0 .08em;
+  border-radius: 3px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
 .search-more-link {
   display: inline-flex;
   align-items: center;
@@ -274,8 +302,7 @@ body.search-open {
 // hidden 必须压过组件自身的 display / flex
 .search-page-empty[hidden],
 .search-page-results[hidden],
-.search-page-pager[hidden],
-.search-page-post-list .post-card[hidden] {
+.search-page-pager[hidden] {
   display: none;
 }
 
@@ -309,11 +336,6 @@ body.search-open {
 @keyframes search-bg-in {
   from { opacity: 0; transform: scale(1.09); }
   to { opacity: 1; transform: scale(1.04); }
-}
-
-@keyframes search-veil-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 @keyframes search-field-in {
@@ -430,7 +452,6 @@ body.search-open {
 
 @media (prefers-reduced-motion: reduce) {
   .search-overlay-bg,
-  .search-overlay-veil,
   .search-overlay .search-field,
   .search-overlay-results {
     animation: none;

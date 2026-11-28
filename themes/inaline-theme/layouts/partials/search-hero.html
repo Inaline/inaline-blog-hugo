@@ -3,7 +3,7 @@
 
   复用归档页的 .post-hero.archive-hero：封面 + 压暗遮罩 + 居中标题区；
   保留大搜索框，去掉统计行与热门标签，尽量把页面留给文章列表。
-  搜索后端待接入（⏳）；下方默认空态，输入后展开全部文章占位，接入后改为结果。
+  下方默认空态，输入后由 Fuse.js 搜索结果（§7.15）。
 */}}
 {{- $cover := partial "post-cover.html" (dict "page" . "index" 0) -}}
 <section class="post-hero archive-hero search-hero">
